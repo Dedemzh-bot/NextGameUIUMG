@@ -1,6 +1,6 @@
-# UMGNextGame
+# NextGameUIUMG
 
-UMGNextGame 把 NextGame 的设计接收、UMG 需求分析、构建验证和程序交接规范封装成一套文件合同工作流，并为原始图文分析提供 Codex、Hermes、WorkBuddy 三种调度适配。
+NextGameUIUMG 把 NextGame 的设计接收、UMG 需求分析、构建验证和程序交接规范封装成一套文件合同工作流，并为原始图文分析提供 Codex、Hermes、WorkBuddy 三种调度适配。
 
 现有设计决定通过结构化合同直接采用；缺少设计决定的图文输入经过独立分析。两种来源共用完整校验、Accepted Build View、UMG 构建和实际验收。运行时只负责派发和等待；通过校验的文件才是权威结果。
 
@@ -104,8 +104,8 @@ python -m pip install -r requirements-optional.txt
 ## Codex 安装
 
 ```bash
-git clone https://github.com/Dedemzh-bot/UMGNextGame.git
-cd UMGNextGame
+git clone https://github.com/Dedemzh-bot/NextGameUIUMG.git
+cd NextGameUIUMG
 codex plugin marketplace add .
 codex plugin add nextgame-ui@umg-nextgame
 ```
