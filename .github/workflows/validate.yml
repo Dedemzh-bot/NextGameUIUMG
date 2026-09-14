@@ -16,6 +16,7 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
+          cache-dependency-path: requirements-optional.txt
       - name: Install optional test dependencies
         run: python -m pip install -r requirements-optional.txt
       - name: Validate portable workflow, adapters, and plugin contracts
