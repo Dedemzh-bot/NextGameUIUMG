@@ -35,6 +35,7 @@ from prepare_agent_inputs import (
     validate_role_packet,
 )
 from validate_request_packet import DEFAULT_SCHEMA as REQUEST_PACKET_SCHEMA, validate_request_packet
+from semantic_text import validate_requirement_semantic_text
 
 
 DEFAULT_SCHEMA = ASSETS_ROOT / "ui-requirement-spec.schema.json"
@@ -254,13 +255,21 @@ def validate_requirement_spec(
     if not isinstance(spec, dict):
         return result(errors, warnings)
 
+    design_origin = spec.get("version") == "0.2"
+    if design_origin:
+        from design_contract import bound_request_packet, validate_design_provenance
+        provenance_errors = validate_design_provenance(spec, spec_path=spec_path)
+        errors.extend(provenance_errors)
+        if not provenance_errors and request_packet is None:
+            request_packet, request_packet_path = bound_request_packet(spec)
+
     index = build_requirement_index(spec)
     analysis_policy = spec.get("analysisPolicy") if isinstance(spec.get("analysisPolicy"), dict) else {}
     static_visual_coverage_required = analysis_policy.get("staticVisualCoverageRequired") is True
     explicit_panel_slots_required = analysis_policy.get("explicitPanelSlotsRequired") is True
     explicit_image_owner_intent_required = analysis_policy.get("explicitImageOwnerIntentRequired") is True
     design_size_mode_required = analysis_policy.get("designSizeModeRequired") is True
-    no_history_role_packets_required = analysis_policy.get("noHistoryRolePacketsRequired") is True
+    no_history_role_packets_required = not design_origin and analysis_policy.get("noHistoryRolePacketsRequired") is True
     all_ids: set[str] = set()
     for kind, path, entity in index["entities"]:
         entity_id = entity.get("id")
@@ -404,7 +413,7 @@ def validate_requirement_spec(
     loaded_findings_local_ids: dict[str, set[str]] = {}
     loaded_findings_documents: dict[str, dict[str, Any]] = {}
     loaded_review_findings: dict[tuple[str, str], dict[str, Any]] = {}
-    if check_findings_files and (spec_path is None or request_packet is None):
+    if not design_origin and check_findings_files and (spec_path is None or request_packet is None):
         errors.append(issue("normalization.check_inputs", "$.normalization", "Linked findings validation requires both spec_path and RequestPacket."))
     findings_schema = load_json(AGENT_FINDINGS_SCHEMA) if check_findings_files else None
     packet_schema_for_findings = request_packet_schema or (load_json(REQUEST_PACKET_SCHEMA) if check_findings_files else None)
@@ -779,7 +788,7 @@ def validate_requirement_spec(
                 f"The no-history role-packet policy requires exactly all nine roles; missing={sorted(REQUIRED_AGENT_ROLES - findings_roles)}, extra={sorted(findings_roles - REQUIRED_AGENT_ROLES)}.",
             )
         )
-    if review_preview.get("status") == "accepted" and findings_roles != REQUIRED_AGENT_ROLES:
+    if not design_origin and review_preview.get("status") == "accepted" and findings_roles != REQUIRED_AGENT_ROLES:
         errors.append(
             issue(
                 "normalization.role_coverage",
@@ -787,7 +796,7 @@ def validate_requirement_spec(
                 f"An accepted synthesis must contain exactly one findings input from every required role; missing={sorted(REQUIRED_AGENT_ROLES - findings_roles)}, extra={sorted(findings_roles - REQUIRED_AGENT_ROLES)}.",
             )
         )
-    if review_preview.get("status") == "accepted" and not (alias_keys or discarded_keys):
+    if not design_origin and review_preview.get("status") == "accepted" and not (alias_keys or discarded_keys):
         errors.append(issue("normalization.empty_trace", "$.normalization", "Accepted synthesis requires at least one aliased or explicitly discarded local id."))
     if check_findings_files:
         for findings_ref, actual_local_ids in loaded_findings_local_ids.items():
@@ -1044,7 +1053,7 @@ def validate_requirement_spec(
                 errors.append(issue("review.resolution_duplicate", resolution_path, "A review finding may have only one resolution."))
             review_resolution_keys.add(key)
         findings_input = findings_inputs.get(resolution.get("findingsRef"))
-        if findings_input is None or findings_input.get("agentRole") != resolution.get("agentRole"):
+        if not design_origin and (findings_input is None or findings_input.get("agentRole") != resolution.get("agentRole")):
             errors.append(issue("review.resolution_source", resolution_path, "Resolution must point to the declared review findings file and its matching role."))
         if resolution.get("status") == "open" and (resolution.get("impact") == "high"):
             errors.append(issue("review.high_open_finding", resolution_path, "High-impact review findings must be resolved before acceptance."))
@@ -2487,6 +2496,7 @@ def validate_requirement_spec(
         ):
             errors.append(issue("packet.target_hint", "$.target.targetAssetPaths", "Resolved targetAssetPaths must include every RequestPacket target hint."))
 
+    errors.extend(validate_requirement_semantic_text(spec))
     return result(errors, warnings)
 
 
@@ -2498,8 +2508,27 @@ def main() -> int:
     parser.add_argument("--request-schema", type=Path, default=REQUEST_PACKET_SCHEMA)
     parser.add_argument("--check-findings-files", action="store_true", help="Rehash every normalization findingsRef relative to the RequirementSpec.")
     parser.add_argument("--review-draft", type=Path, help="Immutable pending Requirement sidecar used to revalidate all linked review views.")
+    parser.add_argument("--authority-lock", type=Path, help="Explicit integrity lock for trusted historical analysis provenance; requires --allow-authority-root and full strict sidecars.")
+    parser.add_argument("--allow-authority-root", type=Path, help="Exact trusted frozen nextgame-ui directory; never inferred from the evidence or cache.")
     args = parser.parse_args()
     try:
+        if args.authority_lock is not None or args.allow_authority_root is not None:
+            if (args.authority_lock is None or args.allow_authority_root is None
+                    or not args.check_findings_files or args.review_draft is None):
+                raise ValueError("Historical revalidation requires --authority-lock, --allow-authority-root, --check-findings-files and --review-draft together.")
+            if args.schema.resolve() != DEFAULT_SCHEMA.resolve() or args.request_schema.resolve() != REQUEST_PACKET_SCHEMA.resolve():
+                raise ValueError("Historical revalidation requires the current plugin's default complete schemas.")
+            import importlib.util
+            helper_path = Path(__file__).resolve().parents[3] / "scripts" / "revalidate_historical_authority.py"
+            helper_spec = importlib.util.spec_from_file_location("nextgame_historical_authority", helper_path)
+            if helper_spec is None or helper_spec.loader is None:
+                raise ValueError("Historical revalidation helper is unavailable.")
+            helper = importlib.util.module_from_spec(helper_spec)
+            helper_spec.loader.exec_module(helper)
+            output = helper.revalidate(args.spec, args.request_packet, args.review_draft,
+                                       args.authority_lock, args.allow_authority_root)
+            print(json.dumps(output, ensure_ascii=False, indent=2))
+            return 0 if output["valid"] else 1
         packet = load_json(args.request_packet) if args.request_packet else None
         output = validate_requirement_spec(
             load_json(args.spec),

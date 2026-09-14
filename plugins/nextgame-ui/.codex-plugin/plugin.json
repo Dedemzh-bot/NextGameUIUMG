@@ -1,7 +1,7 @@
 {
   "name": "nextgame-ui",
-  "version": "0.1.0+codex.20260904142757",
-  "description": "Analyze and review UI requirements, build and verify Unreal UMG, pause for user acceptance of the actual result, then deliver standardized program-facing handoff documents.",
+  "version": "0.1.0+codex.20260914090538",
+  "description": "Receive locked design contracts or analyze raw UI references, compile shared requirements, build and verify Unreal UMG, and maintain versioned design and production standards.",
   "homepage": "https://github.com/Dedemzh-bot/UMGNextGame",
   "repository": "https://github.com/Dedemzh-bot/UMGNextGame",
   "author": {
@@ -10,8 +10,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "NextGame UI",
-    "shortDescription": "Analyze, build, review, and document UMG.",
-    "longDescription": "Uses evidence-driven Multi-Agent analysis to turn UI references and user text into a reviewed requirement specification, maps accepted requirements to validated layouts and Unreal UMG assets, reads the actual implementation back from Unreal, pauses for explicit user acceptance of that built result, and only then produces a program-facing handoff DOCX with render verification.",
+    "shortDescription": "Design contracts, UMG builds, and specification maintenance.",
+    "longDescription": "Uses a deterministic structured-design route or evidence-driven raw-reference analysis to produce a reviewed UIRequirementSpec. Both routes share validated layout, UMG build, post-save readback and visual checks. Provides reusable specification maintenance guidance and retains independent acceptance before formal program handoff.",
     "developerName": "NextGame Team",
     "category": "Productivity",
     "capabilities": [
@@ -19,9 +19,9 @@
       "Write"
     ],
     "defaultPrompt": [
-      "Run the NextGame UI flow with two gates: confirm requirements, then confirm verified UMG before its DOCX.",
-      "Analyze UI references into a reviewable NextGame UIRequirementSpec before any Unreal changes.",
-      "Build accepted UMG, verify Widgets, present the result for user acceptance, then generate its validated handoff."
+      "Receive a structured NextGame design contract without reinterpreting locked decisions.",
+      "Analyze raw UI references into a reviewed NextGame requirement before building UMG.",
+      "Maintain NextGame design rules, recipes, mappings and validation with explicit versions."
     ]
   },
   "mcpServers": "./.mcp.json"

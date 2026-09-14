@@ -4,3 +4,7 @@
 *.jpeg binary
 *.docx binary
 *.pdf binary
+
+# Plugin contracts bind physical file bytes, including their original newlines.
+# Keep the published authoritative package unchanged on every platform.
+plugins/nextgame-ui/** -text whitespace=cr-at-eol

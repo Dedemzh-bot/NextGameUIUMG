@@ -45,6 +45,54 @@ AUTHORITATIVE_SHARED_REGISTRY_SCHEMA = SHARED_REGISTRY_SCHEMA.resolve()
 RECT_TOLERANCE = 0.001
 
 
+def _validate_prototype_readback_checks(bundle, requirement, bundle_path, requirement_path, errors):
+    """Route explicit prototype structural evidence without changing production authority.
+
+    Prototype status cannot be inferred from an artifact alone: every bound
+    Layout mode and asset identity is revalidated by the separate trusted gate.
+    Formal readback remains owned by document-nextgame-umg's unchanged schema.
+    """
+    checks = [check for check in bundle.get("verification", {}).get("checks", [])
+              if isinstance(check, dict) and check.get("status") == "passed"
+              and check.get("type") in {"widget-tree", "key-properties"}]
+    if not checks:
+        return
+    asset_paths = [a.get("assetPath", "") for a in bundle.get("assets", []) if isinstance(a, dict)]
+    prototype_flags = [isinstance(path, str) and path.startswith("/Game/UI/AIPrototype/") for path in asset_paths]
+    is_prototype = bool(prototype_flags) and all(prototype_flags)
+    if any(prototype_flags) and not is_prototype:
+        errors.append(issue("prototype.mixed_bundle", "$.assets", "Mixed prototype and production readback is unsupported; use a separately reviewed contract."))
+        return
+    build_scripts = PLUGIN_ROOT / "skills" / "build-nextgame-umg" / "scripts"
+    if str(build_scripts) not in sys.path:
+        sys.path.append(str(build_scripts))
+    from validate_prototype_widget_readback import ARTIFACT_TYPE, _validate_prototype_payload
+    from _document_contract_common import resolve_request_path
+    loaded = {}
+    for check in checks:
+        try:
+            path = resolve_request_path(bundle_path, check.get("artifactPath"))
+            if path not in loaded:
+                loaded[path] = load_json(path)
+        except (OSError, ValueError, TypeError):
+            # The formal pipeline preserves its existing downstream readback
+            # validator; prototype checks must fail here on missing evidence.
+            if is_prototype:
+                errors.append(issue("prototype.artifact_read", "$.verification.checks", "A passed prototype structural check requires a readable scoped JSON artifact."))
+            continue
+        artifact = loaded[path]
+        if not is_prototype:
+            if isinstance(artifact, dict) and artifact.get("artifactType") == ARTIFACT_TYPE:
+                errors.append(issue("prototype.production_forbidden", "$.verification.checks", "Prototype readback cannot satisfy a production structural check or document gate."))
+    if not is_prototype:
+        return
+    for path, artifact in loaded.items():
+        report = _validate_prototype_payload(artifact, readback_path=path,
+                                             requirement=requirement, requirement_path=requirement_path,
+                                             bundle=bundle, bundle_path=bundle_path)
+        errors.extend(issue("prototype-readback." + e["code"], e["path"], e["message"]) for e in report["errors"])
+
+
 def _image_requirement_realizations(
     element_id: str,
     mappings: list[dict[str, Any]],
@@ -3274,6 +3322,8 @@ def validate_build_bundle(
         if material_unaccepted:
             errors.append(issue("verification.material_deviation", "$.verification.deviations", f"Passed verification cannot retain unaccepted material deviations: {material_unaccepted}."))
 
+    if check_linked_files and isinstance(requirement_spec, dict) and requirement_path is not None:
+        _validate_prototype_readback_checks(bundle, requirement_spec, bundle_path, requirement_path, errors)
     return result(errors, warnings)
 
 

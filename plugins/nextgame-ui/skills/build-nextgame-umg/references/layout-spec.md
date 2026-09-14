@@ -65,8 +65,11 @@ Use canonical property names from the component catalog, not guessed Unreal prop
 - Text: `{"text": "Play", "color": {"r": 1, "g": 1, "b": 1, "a": 1}}`
 - Progress: `{"percent": 0.75, "fillDirection": "LeftToRight"}`
 - GameImage: `{"color": {"r": 0.2, "g": 0.4, "b": 1, "a": 1}}`
+- Button brushes: `{"buttonBrushes": {"Normal": "NoDrawType", "Hovered": "NoDrawType", "Pressed": "NoDrawType"}}`
 
 The build plan maps canonical names to Unreal names. The Editor workflow must still discover each real property with `list_properties` before writing it.
+
+`buttonBrushes` is optional and valid only on `input.button`. Supply a nonempty object with only `Normal`, `Hovered`, `Pressed`, or `Disabled` keys and values from `NoDrawType`, `Box`, `Border`, `Image`, or `RoundedBox`. The plan lowers only the declared states to `widgetStyle.<lower-case-state>.drawAs`; it does not replace the entire style or inject omitted states. For a Button whose visual children supply the accepted artwork, explicitly accepted `NoDrawType` states prevent the native brush from covering that artwork. Do not hide every Button's brush by default. When all four states are explicitly `NoDrawType`, the transparent hit-area contract also writes `widgetStyle.normalPadding` and `pressedPadding` to zero on all four edges, so native style padding cannot shrink the content inside a zero-padding, Fill-aligned ButtonSlot. Partial or mixed brush declarations retain their previous padding behavior. Discover the live nested style schema, read the current style, apply the partial style update, and verify the draw types and applicable padding after save; preserve all other brush fields, sounds, and undeclared states. A successful transient property test is not persistent-asset or rendered-preview verification.
 
 `isVariable` is node metadata rather than a normal entry in `properties`. The build planner applies it with `UMGToolSet.UMGToolSet.ToggleWidgetAsVariable`, because Unreal protects `bIsVariable` from ordinary property writes.
 
@@ -74,11 +77,11 @@ Use `visibility: "SelfHitTestInvisible"` for displayed passive components. The b
 
 ## Build mode and project target
 
-- `mode: prototype`: keep `asset` under `/Game/UI/AIPrototype` and describe the intended project destination separately in `profile`.
+- `mode: prototype`: keep `asset` under `/Game/UI/AIPrototype` using safe alphanumeric/underscore folder segments and describe the intended project destination separately in `profile`. Use `umg_ai_<purpose>` for screens; an explicit `child-widget` may use `uw_ai_<purpose>` so its actual basename can execute the accepted `Desired` decision. Archived `umg_ai_*` child names remain readable and always use `FillScreen`.
 - `mode: production`: set `asset.folder/name` to the exact validated formal destination in `profile.targetAsset`.
 
 - `assetKind`: `prototype`, `screen`, or `child-widget`.
-- `designSizeMode`: `FillScreen` or `Desired`. New layouts must set it explicitly. A target basename beginning `umg_` requires `FillScreen`; `Desired` is valid only for a formal `uw_*` target with positive local/content-sized evidence. A missing `uw_*` value enters `fallback-unclear -> FillScreen`; an unknown/legacy basename enters `fallback-unknown-target -> FillScreen`. This guard is independent of `assetKind` and directory. The `prototype` kind is archived compatibility only and must not be newly emitted.
+- `designSizeMode`: `FillScreen` or `Desired`. New layouts must set it explicitly. The resolved basename beginning `umg_` requires `FillScreen`; `Desired` is valid only for a resolved `uw_*` basename, including a prototype `uw_ai_*` child, with positive local/content-sized evidence. Prototype mode resolves the actual `asset.name`, never future-target metadata. A missing `uw_*` value enters `fallback-unclear -> FillScreen`; an unknown/legacy basename enters `fallback-unknown-target -> FillScreen`. This guard is independent of `assetKind` and directory. The `prototype` kind is archived compatibility only and must not be newly emitted.
 - `assetScope`: optional `system` or `project-common`; omission keeps the historical `system` behavior. Use the explicit `project-common` value only for a cross-system child widget whose formal destination is `/Game/UI/UMG/Widgets`.
 - `system`: lower-case system token used in the Widget Blueprint asset name.
 - `systemFolder`: canonical Content Browser spelling of that same system. It may differ from `system` only by letter case.
@@ -87,8 +90,8 @@ Use `visibility: "SelfHitTestInvisible"` for displayed passive components. The b
 - `secondaryFunction`: optional child-widget detail token.
 - `targetAsset.folder` and `targetAsset.name`: intended production destination.
 - `targetAsset.integrationAsset`: integration screen for a child module when applicable.
-- `listRole`: optional `container` or `entry` marker for a data-driven list pair.
-- `collectionSizing`: required when `listRole` is `container`; choose `show-all` or `fixed-viewport` from the feature's overflow requirement.
+- `listRole`: optional `container` or `entry` marker. An explicit non-fight system screen may use `container` for one or several screen-local collections. A separate child-widget collection module still contains exactly one endpoint; entries remain child widgets and cannot contain nested collections. Fight retains its collection-module integration boundary.
+- `collectionSizing`: required when `listRole` is `container`; choose `show-all` or `fixed-viewport` from the feature's overflow requirement. The profile contract applies independently to every collection endpoint in the layout.
 - `parentClass`: required as `/Script/UIFramework.ListViewItem` when `listRole` is `entry`.
 - `explicitPanelSlots`: set to `true` on every newly generated layout so VerticalBox, HorizontalBox, and GameScrollBox child Slot decisions are explicit and executable. Omission is legacy 0.2 compatibility only.
 
@@ -148,7 +151,8 @@ Create or reuse the system folder when production mutation is authorized. For sy
 - Store one independently bounded visual text block in each `text.label` node.
 - Do not include tabs, manual line breaks, repeated layout spaces, icon glyphs, or decorative separators in `properties.text`.
 - Use `properties.autoWrap: true` for a continuous paragraph that should wrap inside one TextBlock.
-- Put `properties.font: {"size": <even integer>}` on every text node so the size can be validated. Preserve other font-struct members during updates.
+- New text nodes must declare node-level `fontSizeUnit: "px"|"pt"`; omission keeps legacy `pt` semantics. Keep `properties.font.size` in that source unit: positive finite numbers for px, positive even integers for pt. The unit is metadata, never a `font` struct member or an Unreal property.
+- A px font is lowered at 96 DPI to the next positive even Slate point size, with uniform render-scale compensation and a justification-based pivot as specified in `common-widget-rules.md` under `Even font sizes`. Require explicit Left/Center/Right justification; preserve the source `rect`, every Slot, and other font members. A pt node receives no new transform or pivot writes.
 - Put `properties.justification` on every text node with `Left`, `Center`, or `Right`, selected from the intended stable edge and safe text-growth direction.
 - Set `properties.wrapTextAt` to a positive explicit pixel width for wrapping text. `autoWrap: true` never replaces this width.
 - Use separate `visual.image` nodes for icons and separator lines. This role maps exclusively to `/Script/UIFramework.GameImage`; keep the `Img` name prefix and never author native `/Script/UMG.Image` in new specs.
@@ -231,10 +235,10 @@ GameScrollBox child Slots expose Padding and horizontal/vertical Alignment, not 
 ## Data-driven list nodes
 
 - Read `dynamic-list-widgets.md` when runtime data controls item count. A repeated family with the same structure whose text, numerical values, images, or visual state are supplied as data is list-preferred even when the reference shows only a fixed number of examples.
-- Set `profile.listRole: container` on the collection module and use `collection.lua-list` or `collection.lua-tile` as a WidgetTree leaf.
+- Set `profile.listRole: container` on the owning non-fight system screen or collection module and use `collection.lua-list` or `collection.lua-tile` as a WidgetTree leaf. A screen may contain several distinct collections; every endpoint keeps its own entry-class binding, variables, geometry, and sizing checks. Do not merge independent business collections to satisfy an endpoint count.
 - Set `profile.collectionSizing: show-all` when every entry must remain visible, or `fixed-viewport` when scrolling, clipping, or paging is intentional.
 - Set `profile.listRole: entry`, `profile.secondaryFunction: list`, and `profile.parentClass: /Script/UIFramework.ListViewItem` on the entry asset.
-- On a collection node, set `entryWidgetClass` to a `{ "refPath": "<entry-generated-class>" }` object.
+- On every collection node, set `entryWidgetClass` to a `{ "refPath": "<entry-generated-class>" }` object. Production references must remain under `/Game/UI/UMG`; prototype mode also accepts `/Game/UI/AIPrototype`. Use safe alphanumeric/underscore path segments and identical package/object basenames, such as `/Game/UI/AIPrototype/Widgets/uw_ai_task_list.uw_ai_task_list_C`. Traversal, sibling-prefix roots, and mismatched package/class names are invalid.
 - Set `isVariable: true` on every `LuaListView` or `LuaTileView` collection node because project code populates or controls the collection at runtime.
 - Set `isVariable: true` on entry TextBlocks, GameImages, progress displays, or other fields whose content project code changes. Leave purely decorative entry elements false or omitted.
 - Use `orientation`, `selectionMode`, `verticalEntrySpacing`, `horizontalEntrySpacing`, and `designerPreviewEntries` only when they are part of the intended collection behavior.

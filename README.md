@@ -1,8 +1,25 @@
 # UMGNextGame
 
-UMGNextGame 把 NextGame 的 UMG 需求分析、构建验证和程序交接规范封装成一套“文件合同优先”的工作流，并提供 Codex、Hermes、WorkBuddy 三种调度适配。
+UMGNextGame 把 NextGame 的设计接收、UMG 需求分析、构建验证和程序交接规范封装成一套文件合同工作流，并为原始图文分析提供 Codex、Hermes、WorkBuddy 三种调度适配。
 
-核心不是某个厂商的 subagent API，而是同一组版本化 Schema、9 份独立 `AgentFindings`、9 份无历史角色包、严格哈希/引用校验和两次直接用户确认。运行时只负责派发和等待；通过校验的文件才是权威结果。
+现有设计决定通过结构化合同直接采用；缺少设计决定的图文输入经过独立分析。两种来源共用完整校验、Accepted Build View、UMG 构建和实际验收。运行时只负责派发和等待；通过校验的文件才是权威结果。
+
+## 两种来源与共同下游
+
+| 输入 | 插件入口 | 需求合同 | 当前调度支持 |
+| --- | --- | --- | --- |
+| 截图、文字需求、尚未确定的设计 | `analyze-nextgame-ui-requirements` | `UIRequirementSpec 0.1`，九角色 Findings 和原始审查证明 | 本仓库 portable DAG 及三种运行时 adapter |
+| 已写明字段、状态、列表、适配等决定的完整设计包 | `receive-nextgame-design` | `UIRequirementSpec 0.2`，真实设计来源和确定性逐值编译 | 插件 Skill / `design_contract.py`；portable DAG 尚未实现这个接收分支 |
+
+`design-contract/1` 的精确识别是 `kind: "nextgame-ui-design-contract"`、`version: "1"`。只有完整、可追溯的规范化设计内容才是这个输入；截图、Figma 链接和配方名列表本身都不等于完整合同。
+
+结构化接收保留已锁定值，只对具体缺项或冲突作出补充决定；它不生成虚构的九份 Findings。所有源文件和精确版本都会核对，未决高影响项、未支持映射和生产 Draft 参数仍会阻断。兼容审查只是设计层证据，不能冒充 Unreal 读回或界面验收。
+
+两条路线在审核通过后汇合到同一 Accepted Build View，再运行完整 Requirement、Bundle、Coverage、布局、编译保存、实际读回和预览验证。默认由用户审核具体设计；只有项目已明确委托设计决策时，才可用真实原话和独立 `delegated-design-review` receipt 记录该次具体审核，不能套用为其他项目的自动同意。制作结果展示后的第二次直接用户验收保持独立。
+
+结构化接收命令及来源规则见 [`receive-nextgame-design`](plugins/nextgame-ui/skills/receive-nextgame-design/references/design-contract-workflow.md)；新增规范、模块、配方或映射的维护入口见 [`maintain-nextgame-ui-spec`](plugins/nextgame-ui/skills/maintain-nextgame-ui-spec/SKILL.md)。
+
+项目设计参数和配方在独立的 [NextGameUIDesign](https://github.com/Dedemzh-bot/NextGameUIDesign) 仓库管理，访问权限独立控制。设计仓库负责参数、设计规则和配方；本仓库 `plugins/nextgame-ui` 是设计交接合同 Schema、来源校验、UE 映射及构建验证的唯一实现权威。
 
 ## 能力边界
 
@@ -14,7 +31,9 @@ UMGNextGame 把 NextGame 的 UMG 需求分析、构建验证和程序交接规�
 
 当宿主没有并行 subagent 时，可以按同一组内的角色顺序执行兼容模式，但每次仍必须从无历史状态启动、只读取自己的 `agent-inputs/<role>.json`，并保留独立文件和全部校验屏障；同时明确说明这不是并行 multi-agent 执行。
 
-## 受保护的主链
+## 原始图文的 portable 主链
+
+下列 DAG 对应原始图文到 Requirement 0.1。结构化 0.2 使用前述插件接收入口，不能把设计合同替换进这个 DAG 的 RequestPacket 参数，也不能跳过它的九角色步骤后声称完成了同一个工作流。
 
 ```text
 RequestPacket 校验 + Registry shortlist + discovery role packets
@@ -37,7 +56,7 @@ RequestPacket 校验 + Registry shortlist + discovery role packets
   -> build acceptance / programmer handoff / 文档验证
 ```
 
-九个 findings 角色固定为：
+原始图文路线的九个 findings 角色固定为：
 
 - `visual-structure`、`text-requirements`、`project-pattern`
 - `state-modeling`、`data-adaptation`、`asset-decomposition`
@@ -56,6 +75,8 @@ adapters/hermes/                   Hermes Skill 适配
 adapters/workbuddy/                WorkBuddy Workflow Knowledge Units
 scripts/validate_release.py        一键发布验证
 ```
+
+插件目录按权威来源的原始字节发布。`.gitattributes` 禁止 Git 对该目录转换换行，避免改变 Schema、fixture 和来源锁记录的物理 SHA-256。
 
 ## 快速验证
 

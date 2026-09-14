@@ -4,6 +4,13 @@ This directory defines the vendor-neutral coordination contract for the
 NextGame UI requirements workflow. It does not call Codex, Hermes, WorkBuddy,
 Unreal, or any other vendor API.
 
+This `2.0.0` DAG schedules raw image/text analysis and its UIRequirementSpec 0.1
+provenance. It does not implement design-contract/1 intake scheduling. The plugin
+also supports deterministic structured intake to Requirement 0.2 through
+`receive-nextgame-design` / `design_contract.py`, with the same downstream
+validators, but that is a separate entry point. Do not substitute a design
+contract for this DAG's RequestPacket or omit its nine Findings stages.
+
 The contract is deliberately file-first:
 
 - each worker owns one declared output path;

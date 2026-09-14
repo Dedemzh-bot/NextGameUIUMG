@@ -1,0 +1,83 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "version",
+    "reviewKind",
+    "scope",
+    "reviewedBy",
+    "reviewedAt",
+    "messagePath",
+    "messageSha256",
+    "notice"
+  ],
+  "properties": {
+    "kind": {
+      "const": "nextgame-ui-design-review-receipt"
+    },
+    "version": {
+      "const": "1"
+    },
+    "reviewKind": {
+      "enum": [
+        "direct-user-message",
+        "delegated-design-review"
+      ]
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requestId",
+        "revision",
+        "contractFileSha256",
+        "contractCanonicalSha256",
+        "contentSha256"
+      ],
+      "properties": {
+        "requestId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "contractFileSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "contractCanonicalSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "contentSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "reviewedBy": {
+      "type": "string",
+      "minLength": 1
+    },
+    "reviewedAt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "messagePath": {
+      "type": "string",
+      "minLength": 1
+    },
+    "messageSha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "notice": {
+      "const": "Design review only; never post-build user acceptance or new production authorization."
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nextgame.local/schemas/design-review-receipt-1.json"
+}

@@ -294,6 +294,11 @@
 
 # NextGame UI protected build and acceptance
 
+This unit is the continuation of the bundled raw-analysis workflow. The plugin
+validators also support structured Requirement 0.2, but the bundled WorkBuddy
+mapping does not schedule that intake or its design-review receipt. Do not
+claim a structured end-to-end WorkBuddy run from this static continuation alone.
+
 This workflow resumes only after the first user gate has produced the exact
 accepted `ui-requirement.json`. It structurally maps the protected continuation;
 it is not a shortcut from raw requirements to Unreal mutation.

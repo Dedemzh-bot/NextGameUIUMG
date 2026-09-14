@@ -26,8 +26,13 @@ PanelTaskHeader
 - Do not use tabs, manual line breaks, or repeated spaces to align multiple labels inside one component.
 - Keep a continuous paragraph in one `TextBlock`; store its source text without manual line breaks and enable `autoWrap` when it must wrap within its bounds.
 - Use separate components when different lines need independent layout, styling, visibility, data binding, or replacement.
-- Use a positive even integer for every explicit font size.
+- The same rule applies within one line: risk/category, message count/folding status, or separately authored objective phrases are independent fields, not one combined string. Split by meaning and control/layout responsibility, never merely by a slash, colon or middle dot. Keep a grammatical sentence, number with its unit, URL and continuous localized paragraph intact unless independently controlled parts are evidenced.
+- For an accepted `semanticTextGroup` pair, create exactly the two reviewed TextBlocks directly under the reviewed HorizontalBox. Preserve distinct requirement/runtime mappings, source copy, order, capacity and explicit flow Slots. Use native content-driven right alignment for a right-edge group; do not add a SizeBox for alignment. A positive inter-field padding replaces a presentation-only separator when approved.
+- Do not use a measured glyph-ink width as the available paragraph width. Fit against the actual parent allocation. A short pair intended as one row uses no wrapping and a width budget including both fields and the gap; a continuous description uses the full available width and explicit wrapping. Deliberately independent lines use independent TextBlocks and an explicit vertical layout, not embedded newlines.
+- Include exact-length readable character-capacity samples in design evidence, for example a seven-character sample `这是五个字这是`. Character capacity is a design budget, not a claim of native font-metric validation; verify actual rendered fit after px-to-point conversion, empty/long values, and wider/taller layouts.
+- Declare the source `fontSizeUnit` on each new text node. Preserve source px values and use positive even pt values; follow the 96 DPI conversion and compensation rule in `common-widget-rules.md` under `Even font sizes`.
 - Set `Wrap Text At` to a concrete positive value whenever the text is intended to wrap; do not leave it at `0`.
+- To turn wrapping off on an existing single-line component, explicitly lower both `autoWrap:false` and `wrapTextAt:0`. Omitting the width does not clear a previous positive Unreal width. Zero is valid only with explicit no-wrap; wrapped paragraphs still require a positive width.
 - Plan expandable text bounds and related backgrounds for longer localized strings as defined in `common-widget-rules.md`.
 
 ## Validation expectations

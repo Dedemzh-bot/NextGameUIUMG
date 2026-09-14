@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from pathlib import Path
 from typing import Any
@@ -301,6 +302,34 @@ def build_plan(spec_path: Path, spec: dict[str, Any], catalog: dict[str, Any], r
                     "specifiedColor": value,
                     "colorUseRule": "UseColor_Specified",
                 }
+            elif component.get("role") == "text.label" and canonical_name == "font" and node.get("fontSizeUnit") == "px":
+                source_points = value["size"] * (72 / 96)
+                target_points = max(2, 2 * math.ceil(source_points / 2))
+                scale = source_points / target_points
+                mapped_values[unreal_name] = {**value, "size": target_points}
+                # Partial struct writes preserve unrelated font and transform
+                # fields. Pivot keeps the justified edge/center fixed without
+                # changing the source rectangle or the parent Slot.
+                mapped_values["renderTransform"] = {"scale": {"x": scale, "y": scale}}
+                mapped_values["renderTransformPivot"] = {
+                    "x": {"Left": 0, "Center": 0.5, "Right": 1}[canonical_values["justification"]],
+                    "y": 0.5,
+                }
+            elif component.get("role") == "input.button" and canonical_name == "buttonBrushes":
+                # ObjectTools merges this partial FButtonStyle into the live
+                # struct. Four explicitly transparent states describe a hit
+                # area whose content must not inherit native style padding.
+                brush_states = ("Normal", "Hovered", "Pressed", "Disabled")
+                mapped_values[unreal_name] = {
+                    state.lower(): {"drawAs": value[state]}
+                    for state in brush_states
+                    if state in value
+                }
+                if all(value.get(state) == "NoDrawType" for state in brush_states):
+                    for padding in ("normalPadding", "pressedPadding"):
+                        mapped_values[unreal_name][padding] = {
+                            "left": 0, "top": 0, "right": 0, "bottom": 0,
+                        }
             else:
                 mapped_values[unreal_name] = value
         if mapped_values:

@@ -39,7 +39,8 @@ DEFAULT_VIEW_SCHEMA = ASSETS_ROOT / "review-view.schema.json"
 # This digest is a reviewed projection-policy boundary, not merely telemetry.  A
 # future Requirement schema must be deliberately audited before projected mode is
 # re-enabled.  Until then the safe behavior is an exact full-Draft fallback.
-SUPPORTED_REQUIREMENT_SCHEMA_SHA256 = "ab6f0b0cb875046f0a3f03565c7c28a146be6eef89b1e870f6e2b54d46e0c5e8"
+SUPPORTED_REQUIREMENT_SCHEMA_SHA256 = "53f7907dc33099c8d9aa76795ad5f1b819a9edcdb6702d71397453130296f081"
+SUPPORTED_REQUIREMENT_SCHEMA_SHA256S = frozenset({SUPPORTED_REQUIREMENT_SCHEMA_SHA256, "ab6f0b0cb875046f0a3f03565c7c28a146be6eef89b1e870f6e2b54d46e0c5e8"})
 
 VIEW_NOTICE = (
     "Review-only projection; the complete Requirement remains authoritative and is validated after review."
@@ -554,6 +555,10 @@ def collect_references(
     if isinstance(value, dict):
         is_change = {"elementId", "property", "value"}.issubset(value)
         for key, child in value.items():
+            # v0.2 provenance is closed metadata, validated by design_contract;
+            # all design values remain in the ordinary canonical semantic fields.
+            if not path and key == "normalization" and value.get("version") == "0.2":
+                continue
             child_path = (*path, key)
             child_opaque = opaque or key == "properties" or (is_change and key == "value")
             rule = REFERENCE_RULES.get(key)
@@ -828,7 +833,7 @@ def build_review_view(
     dangling, mismatched = _reference_integrity_issues(references, canonical_index)
 
     fallback_reasons: set[str] = set()
-    if requirement_schema_sha256 != SUPPORTED_REQUIREMENT_SCHEMA_SHA256:
+    if requirement_schema_sha256 not in SUPPORTED_REQUIREMENT_SCHEMA_SHA256S:
         fallback_reasons.add("unknown-requirement-schema")
     if unknown_paths:
         fallback_reasons.add("unknown-field")

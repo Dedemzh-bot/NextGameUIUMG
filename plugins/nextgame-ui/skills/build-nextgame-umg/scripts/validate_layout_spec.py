@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 import sys
 import unicodedata
@@ -33,6 +34,8 @@ OVERLAY_PURPOSES = {"layering", "adaptive-bounds", "independent-alignment"}
 TEXT_JUSTIFICATIONS = {"Left", "Center", "Right"}
 PASSIVE_VISIBILITIES = {"SelfHitTestInvisible", "Hidden", "Collapsed"}
 BUTTON_SLOT_FILL = "Fill"
+BUTTON_BRUSH_STATES = {"Normal", "Hovered", "Pressed", "Disabled"}
+BUTTON_BRUSH_DRAW_TYPES = {"NoDrawType", "Box", "Border", "Image", "RoundedBox"}
 OVERLAY_HORIZONTAL_ALIGNMENTS = {"Fill", "Left", "Center", "Right"}
 OVERLAY_VERTICAL_ALIGNMENTS = {"Fill", "Top", "Center", "Bottom"}
 FLOW_PARENT_ROLES = {"container.vertical", "container.horizontal"}
@@ -124,6 +127,23 @@ def target_widget_basename(spec: dict[str, Any]) -> str | None:
     if isinstance(asset, dict) and isinstance(asset.get("name"), str):
         return asset["name"]
     return None
+
+
+def valid_entry_widget_class(path: Any, mode: Any) -> bool:
+    """Accept safe generated-class identities only within the mode's asset roots."""
+    if not isinstance(path, str):
+        return False
+    roots = ["/Game/UI/UMG"]
+    if mode == "prototype":
+        roots.append("/Game/UI/AIPrototype")
+    return any(
+        re.fullmatch(
+            re.escape(root)
+            + r"/(?:[A-Za-z0-9_]+/)*(?P<asset>[A-Za-z][A-Za-z0-9_]*)\.(?P=asset)_C",
+            path,
+        ) is not None
+        for root in roots
+    )
 
 
 def invalid_text_characters(text: str) -> list[str]:
@@ -274,14 +294,23 @@ def validate_spec(spec: Any, catalog: Any) -> dict[str, Any]:
         name = asset.get("name")
         if not isinstance(folder, str):
             issue(errors, "asset.folder", "$.asset.folder", "Asset folder must be a string.")
-        elif mode == "prototype" and not re.match(r"^/Game/UI/AIPrototype(?:/.*)?$", folder):
+        elif mode == "prototype" and not re.fullmatch(r"/Game/UI/AIPrototype(?:/[A-Za-z0-9_]+)*", folder):
             issue(errors, "asset.folder", "$.asset.folder", "Prototype assets must be created under /Game/UI/AIPrototype.")
         elif mode == "production" and not re.match(r"^/Game/UI/UMG/.+$", folder):
             issue(errors, "asset.folder", "$.asset.folder", "Production assets must be created under /Game/UI/UMG/<SystemFolder>.")
         if not isinstance(name, str) or not NAME_PATTERN.fullmatch(name):
             issue(errors, "asset.name", "$.asset.name", "Asset name must be an Unreal-safe identifier.")
-        elif mode == "prototype" and not re.match(r"^umg_ai_[A-Za-z0-9_]+$", name):
-            issue(errors, "asset.name", "$.asset.name", "Prototype asset name must start with umg_ai_.")
+        elif mode == "prototype":
+            prototype_profile = spec.get("profile")
+            prototype_child = (
+                isinstance(prototype_profile, dict)
+                and prototype_profile.get("assetKind") == "child-widget"
+            )
+            if not (
+                re.fullmatch(r"umg_ai_[A-Za-z0-9_]+", name)
+                or (prototype_child and re.fullmatch(r"uw_ai_[A-Za-z0-9_]+", name))
+            ):
+                issue(errors, "asset.name", "$.asset.name", "Prototype names must start with umg_ai_; only child-widget assets may alternatively use uw_ai_.")
 
     reference_size = spec.get("referenceSize")
     if not (
@@ -296,6 +325,7 @@ def validate_spec(spec: Any, catalog: Any) -> dict[str, Any]:
     list_role: str | None = None
     collection_sizing: str | None = None
     asset_kind: str | None = "prototype"
+    screen_local_container = False
     design_size_mode: str | None = None
     explicit_panel_slots = False
     if not isinstance(profile, dict):
@@ -377,7 +407,7 @@ def validate_spec(spec: Any, catalog: Any) -> dict[str, Any]:
                 errors,
                 "profile.design_size_mode.desired_target",
                 "$.profile.designSizeMode",
-                "Desired is permitted only for a formal uw_* target Widget Blueprint; unknown and legacy target names use FillScreen conservatively.",
+                "Desired is permitted only for the resolved uw_* Widget Blueprint basename; unknown and legacy target names use FillScreen conservatively.",
             )
         if design_size_mode is None:
             issue(
@@ -423,12 +453,20 @@ def validate_spec(spec: Any, catalog: Any) -> dict[str, Any]:
         if mode == "production" and asset_kind not in {"screen", "child-widget"}:
             issue(errors, "profile.production_asset_kind", "$.profile.assetKind", "Production mode requires assetKind screen or child-widget.")
 
-        if list_role is not None and asset_kind != "child-widget":
+        screen_local_container = (
+            list_role == "container"
+            and asset_kind == "screen"
+            and asset_scope == "system"
+            and isinstance(profile.get("system"), str)
+            and re.fullmatch(r"[a-z][a-z0-9]*", profile["system"]) is not None
+            and profile["system"] != "fight"
+        )
+        if list_role is not None and asset_kind != "child-widget" and not screen_local_container:
             issue(
                 errors,
                 "list.asset_kind",
                 "$.profile.assetKind",
-                "A data-driven collection container or entry must be a child-widget asset.",
+                "A data-driven entry or collection module must be a child-widget asset; only an explicit non-fight system screen may own screen-local collections.",
             )
         if list_role == "container" and profile.get("containsRepeatedElements") is not True:
             issue(
@@ -583,6 +621,12 @@ def validate_spec(spec: Any, catalog: Any) -> dict[str, Any]:
             names.add(name)
 
         role = node.get("role")
+        font_size_unit = node.get("fontSizeUnit", "pt")
+        if "fontSizeUnit" in node:
+            if font_size_unit not in ("px", "pt"):
+                issue(errors, "text.font_size_unit.value", f"{path}.fontSizeUnit", "fontSizeUnit must be px or pt.")
+            if role != "text.label":
+                issue(errors, "text.font_size_unit.role", f"{path}.fontSizeUnit", "fontSizeUnit is only valid on text.label.")
         component = component_by_role.get(role)
         if component is None:
             issue(errors, "node.role", f"{path}.role", f"Unknown component role: {role!r}")
@@ -850,6 +894,19 @@ def validate_spec(spec: Any, catalog: Any) -> dict[str, Any]:
             for property_name in unknown:
                 issue(errors, "node.property.unknown", f"{path}.properties.{property_name}", f"Property is not mapped for role {role}.")
             properties = node["properties"]
+            if "buttonBrushes" in properties:
+                brushes = properties["buttonBrushes"]
+                brushes_path = f"{path}.properties.buttonBrushes"
+                if role != "input.button":
+                    issue(errors, "button.brushes.role", brushes_path, "buttonBrushes is only valid on input.button.")
+                if not isinstance(brushes, dict) or not brushes:
+                    issue(errors, "button.brushes.type", brushes_path, "buttonBrushes must be a non-empty object.")
+                else:
+                    for state, draw_type in brushes.items():
+                        if state not in BUTTON_BRUSH_STATES:
+                            issue(errors, "button.brushes.state", f"{brushes_path}.{state}", "Button brush states must be Normal, Hovered, Pressed, or Disabled.")
+                        if not isinstance(draw_type, str) or draw_type not in BUTTON_BRUSH_DRAW_TYPES:
+                            issue(errors, "button.brushes.draw_as", f"{brushes_path}.{state}", "Button brush draw type must be NoDrawType, Box, Border, Image, or RoundedBox.")
             visibility = properties.get("visibility")
             if visibility is not None and visibility not in {
                 "Visible",
@@ -897,7 +954,17 @@ def validate_spec(spec: Any, catalog: Any) -> dict[str, Any]:
                     issue(errors, "text.font", f"{path}.properties.font", "font must be an object.")
                 else:
                     font_size = font.get("size")
-                    if not (
+                    if "fontSizeUnit" in font:
+                        issue(errors, "text.font_size_unit.location", f"{path}.properties.font.fontSizeUnit", "fontSizeUnit is node metadata, not a member of the Unreal font struct.")
+                    if font_size_unit == "px":
+                        if not (
+                            isinstance(font_size, (int, float))
+                            and not isinstance(font_size, bool)
+                            and 0 < font_size <= sys.float_info.max
+                            and math.isfinite(font_size)
+                        ):
+                            issue(errors, "text.font_size.pixels", f"{path}.properties.font.size", "Pixel font size must be a positive finite number; the planner converts it to positive even Slate points.")
+                    elif not (
                         isinstance(font_size, int)
                         and not isinstance(font_size, bool)
                         and font_size > 0
@@ -913,8 +980,8 @@ def validate_spec(spec: Any, catalog: Any) -> dict[str, Any]:
                 justification = properties.get("justification")
                 if justification is None:
                     issue(
-                        warnings,
-                        "text.justification.missing",
+                        errors if font_size_unit == "px" else warnings,
+                        "text.justification.required_for_px" if font_size_unit == "px" else "text.justification.missing",
                         f"{path}.properties.justification",
                         "Choose Left, Center, or Right justification from the stable edge and safe text-growth direction.",
                     )
@@ -933,13 +1000,14 @@ def validate_spec(spec: Any, catalog: Any) -> dict[str, Any]:
                 if wrap_text_at is not None and (
                     not isinstance(wrap_text_at, (int, float))
                     or isinstance(wrap_text_at, bool)
-                    or wrap_text_at <= 0
+                    or wrap_text_at < 0
+                    or (wrap_text_at == 0 and auto_wrap is not False)
                 ):
                     issue(
                         errors,
                         "text.wrap_width.positive",
                         f"{path}.properties.wrapTextAt",
-                        "Wrap Text At must be a concrete positive number.",
+                        "Wrap Text At must be positive, or exactly zero with explicit autoWrap:false to disable wrapping.",
                     )
                 if auto_wrap is True and (
                     not isinstance(wrap_text_at, (int, float))
@@ -1072,7 +1140,7 @@ def validate_spec(spec: Any, catalog: Any) -> dict[str, Any]:
                 "$.nodes",
                 "A collection container must contain a LuaListView or LuaTileView node.",
             )
-        elif len(collection_nodes) > 1:
+        elif len(collection_nodes) > 1 and not screen_local_container:
             issue(
                 errors,
                 "list.container.multiple",
@@ -1088,15 +1156,12 @@ def validate_spec(spec: Any, catalog: Any) -> dict[str, Any]:
                 if isinstance(entry_reference, dict)
                 else entry_reference
             )
-            if not isinstance(entry_path, str) or not re.fullmatch(
-                r"/Game/UI/UMG/.+\.[A-Za-z][A-Za-z0-9_]*_C",
-                entry_path,
-            ):
+            if not valid_entry_widget_class(entry_path, mode):
                 issue(
                     errors,
                     "list.entry_widget_class",
                     f"{node_path}.properties.entryWidgetClass",
-                    "entryWidgetClass must reference the generated class of a project entry Widget Blueprint.",
+                    "entryWidgetClass must name a generated class with matching package/object basenames under /Game/UI/UMG (or /Game/UI/AIPrototype in prototype mode), using safe path segments.",
                 )
             preview_count = properties.get("designerPreviewEntries") if isinstance(properties, dict) else None
             if preview_count is not None and (

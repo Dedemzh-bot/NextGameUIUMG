@@ -33,6 +33,7 @@ from _contract_common import (  # noqa: E402
 )
 from review_view import (  # noqa: E402
     SUPPORTED_REQUIREMENT_SCHEMA_SHA256,
+    SUPPORTED_REQUIREMENT_SCHEMA_SHA256S,
     CanonicalIndex,
     Owner,
     Reference,
@@ -752,7 +753,7 @@ def _build_accepted_build_view_from_value(
     root_ids = _root_canonical_ids(requirement, coverage, index)
 
     fallback_reasons: set[str] = set()
-    if requirement_schema_sha256 != SUPPORTED_REQUIREMENT_SCHEMA_SHA256:
+    if requirement_schema_sha256 not in SUPPORTED_REQUIREMENT_SCHEMA_SHA256S:
         fallback_reasons.add("unknown-requirement-schema")
     if unknown_reference_issues:
         fallback_reasons.add("unknown-reference-shape")

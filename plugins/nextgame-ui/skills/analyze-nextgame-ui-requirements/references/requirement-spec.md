@@ -1,5 +1,7 @@
 # UI Requirement Contracts
 
+`UIRequirementSpec 0.2` adds a structured-design provenance branch. See [the receiver workflow](../../receive-nextgame-design/references/design-contract-workflow.md). Its design content is deterministically adopted from a bound `design-contract/1` (`kind: nextgame-ui-design-contract`, `version: 1`); all semantic and review checks remain shared. The nine-role normalization and workflow described below continue to define raw-analysis `0.1`, and must never be fabricated for a structured source.
+
 ## Contents
 
 1. [Contract ownership](#contract-ownership)

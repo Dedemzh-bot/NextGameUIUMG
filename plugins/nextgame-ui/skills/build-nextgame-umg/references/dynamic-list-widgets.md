@@ -4,7 +4,7 @@ These rules were explicitly supplied by the project owner on 2026-07-26 and grou
 
 Those two designated references remain in the legacy singular `Widget` folder. They may be inspected as historical evidence, but every newly created or migrated child asset uses the canonical plural `Widgets` folder.
 
-Read `component-knowledge.md` for the reusable `LuaListView` component identity, property meanings, input behavior, and verification contract. This file governs how a dynamic-list feature is authored as an asset pair.
+Read `component-knowledge.md` for the reusable `LuaListView` component identity, property meanings, input behavior, and verification contract. This file governs the relationship between a collection owner and its entry asset.
 
 ## When to use a collection
 
@@ -17,19 +17,20 @@ Read `component-knowledge.md` for the reusable `LuaListView` component identity,
 
 ## Asset pair
 
-Create an entry Widget Blueprint for every dynamic list. Create a separate collection-module Widget Blueprint only when the collection has its own reusable frame, controls, placement, or feature identity:
+Create an entry Widget Blueprint for every dynamic list. In a standard non-fight system, keep the collection on the owning screen by default. Extract a separate collection-module Widget Blueprint only for an accepted explicit runtime-template, proven cross-screen reuse, or user-requested reusable boundary; a frame, controls, placement, or feature identity alone is not enough. Fight retains its collection-module integration boundary:
 
 1. Optional collection module: `uw_<system>[_<subsystem>]_<function>` with `profile.listRole: container`.
 2. Entry widget: `uw_<system>[_<subsystem>]_<function>_list` with `profile.listRole: entry`, `profile.secondaryFunction: list`, and `profile.parentClass: /Script/UIFramework.ListViewItem`.
 
-Store both below `/Game/UI/UMG/<SystemFolder>/Widgets`.
+Store formal system entry assets and optional collection modules below `/Game/UI/UMG/<SystemFolder>/Widgets`. Prototype child assets may use `uw_ai_*` names below `/Game/UI/AIPrototype`; preserve the formal destination in `profile.targetAsset` and apply the Designer mode guard to the actual prototype basename.
 
-The collection module is normally a `UserWidget` containing a mapped collection instance such as `ListPrompt`. In a normal non-fight system, a screen-local collection such as `ListTask` may instead live directly in the system screen. The entry asset always represents exactly one row or tile.
+The collection module is normally a `UserWidget` containing exactly one mapped collection instance such as `ListPrompt`. An explicit non-fight system screen uses `profile.listRole: container` when it owns one or several screen-local collections such as `ListTask`. Preserve each independent collection's business boundary and entry binding. The entry asset always represents exactly one row or tile, remains a child widget, and cannot contain another collection endpoint.
 
 ## Required relationship
 
 - Compile the entry asset first.
 - Set the collection's `entryWidgetClass` to the entry asset generated class, for example `/Game/UI/UMG/Fight/Widgets/uw_fight_task_list.uw_fight_task_list_C`.
+- In prototype mode, the generated class may also be under `/Game/UI/AIPrototype`, for example `/Game/UI/AIPrototype/Widgets/uw_ai_task_list.uw_ai_task_list_C`. Production bindings remain under `/Game/UI/UMG`. Both modes require safe path segments and identical package/object basenames; no traversal, sibling-prefix roots, or mismatched class names.
 - Compile the collection module after assigning `entryWidgetClass`.
 - Integrate the collection module or the screen-local list instance. Do not add the entry asset directly to the integration screen.
 - In `umg_fight`, keep the collection module as a direct `uw_fight_*` child of the integration root, following `fight-ui.md`.
@@ -72,6 +73,8 @@ Every collection container spec must declare one overflow contract in `profile.c
 - `fixed-viewport`: the collection keeps a deliberate viewport and uses the product's intended scroll, clip, or paging behavior for overflow.
 
 Choose this from the feature requirement, not from the component default. A dynamic collection can use either contract.
+
+For a screen containing several collections, the same profile contract applies independently to every endpoint. Every list still requires its own valid entry-class binding and variable flag, every TileView its positive cell sizes, and every `show-all` endpoint its own nearest-Canvas growth proof. UILayoutSpec 0.2 does not define per-node overflow overrides.
 
 For `show-all`, enable `Size To Content` on the direct child slot below the nearest `CanvasPanel` ancestor. Verify that ancestor slots also permit growth. If a TileView must preserve a fixed number of columns, do not auto-size it without a width constraint: place it inside a `SizeBox`, set only `Width Override`, leave `Height Override` disabled, let the tile fill the `SizeBox`, and auto-size the wrapper's Canvas slot. This preserves the width while desired height grows with additional rows.
 

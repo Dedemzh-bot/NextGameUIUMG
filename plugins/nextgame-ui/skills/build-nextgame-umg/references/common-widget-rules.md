@@ -33,11 +33,11 @@ Typical decisions:
 
 ## Even font sizes
 
-- Use a positive even integer for every explicit TextBlock font size.
-- Do not use odd font sizes such as 19, 21, or 25.
-- Record `font.size` explicitly for every TextBlock in UILayoutSpec so the validator can enforce the rule.
+- Use positive even integer Slate point sizes on the resulting TextBlocks. New UILayoutSpec text nodes must declare node-level `fontSizeUnit: "px"|"pt"` from the source, with `properties.font.size` retaining that source value. Omission means `pt` only for legacy compatibility; never infer a Figma pixel size is already in points.
+- For `pt`, retain the positive even integer rule unchanged. For `px`, accept a positive finite source number and convert at 96 DPI: `sourcePt = px * 72 / 96`, `targetPt = max(2, ceil(sourcePt / 2) * 2)`, and uniform render scale `sourcePt / targetPt`. For example, `28px` becomes `22pt` with scale `21/22`; the source size and all `rect`/Slot values remain unchanged in the layout.
+- The px planner writes only the converted `font.size`, `renderTransform.scale`, and `renderTransformPivot` in addition to the node's other declared properties. Keep all other font/transform members intact and never send `fontSizeUnit` to Unreal. Require explicit text justification; pivot X is `0` for Left, `0.5` for Center, or `1` for Right, and pivot Y is `0.5`, preserving the horizontal growth edge and vertical center while scaling.
 - When updating an existing TextBlock, read its complete `font` struct, change `font.size` to an even value, and preserve the font object, typeface, outline, material, letter spacing, and other existing members unless the task explicitly changes them.
-- Verify the effective size after compile and save, including inherited or style-provided text whose font size was not authored directly in the layout spec.
+- Verify the point size, compensation scale and pivot after compile/save. The conversion restores nominal size, not identical glyph rasterization; render scaling does not change Desired Size or line breaking, so verify wrapped text and content-driven Slots visually as well.
 
 ## Passive-component hit testing
 

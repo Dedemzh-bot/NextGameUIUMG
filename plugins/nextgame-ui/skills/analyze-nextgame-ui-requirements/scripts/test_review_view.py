@@ -75,7 +75,7 @@ class ReviewViewTests(unittest.TestCase):
             self.assertNotIn("path", view["bindings"])
             self.assertEqual(
                 view["bindings"]["requirementSchemaId"],
-                "https://nextgame.local/schemas/ui-requirement-spec-0.1.json",
+                "https://nextgame.local/schemas/ui-requirement-spec-0.1-0.2.json",
             )
             validation = validate_review_view(
                 view,

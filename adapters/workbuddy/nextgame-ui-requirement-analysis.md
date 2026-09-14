@@ -268,6 +268,11 @@
 
 # NextGame UI requirement analysis
 
+This workflow unit schedules the raw image/text route to UIRequirementSpec 0.1.
+Structured design-contract/1 intake to Requirement 0.2 is a separate plugin
+entry point and is not scheduled by this unit. Its nine Findings stages and
+direct-user gate cannot be omitted to simulate structured intake.
+
 The main WorkBuddy agent is the coordinator. A subagent step may return a small
 receipt matching its `result_schema`, but that receipt is never the requirement
 evidence. The exact JSON file and the NextGame UI validator are authoritative.

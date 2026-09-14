@@ -6,6 +6,14 @@ gates. The portable boundary is deliberately narrow: runtimes may schedule work
 differently, but all of them must produce the same files and run the same plugin
 validators.
 
+These bundled mappings schedule the raw image/text route that produces
+UIRequirementSpec 0.1. Structured design-contract/1 intake to Requirement 0.2 is
+implemented by the plugin's `receive-nextgame-design` skill and compiler, not by
+this adapter DAG. Both routes use the same downstream Requirement, View, Bundle,
+Coverage, layout and actual-readback validators. Adding structured scheduling to
+an adapter requires its own versioned mapping and tests; never fabricate nine
+Findings to make a design contract fit the raw workflow.
+
 The authoritative execution order lives in the repository's vendor-neutral
 orchestration manifest. `adapter-contract.json` records the invariants that a
 runtime mapping may not change: nine roles, three parallel groups, packet-only

@@ -12,6 +12,7 @@ from typing import Any
 from _contract_common import ASSETS_ROOT, issue, load_json, resolve_contract_path, result
 from validate_build_bundle import DEFAULT_SCHEMA as BUNDLE_SCHEMA, validate_build_bundle
 from validate_requirement_spec import DEFAULT_SCHEMA as REQUIREMENT_SCHEMA, build_requirement_index
+from semantic_text import validate_semantic_text_coverage
 
 
 def _rect_matches(left: Any, right: Any, tolerance: float = 0.001) -> bool:
@@ -299,6 +300,8 @@ def validate_requirement_coverage(bundle: Any, requirement: Any, *, bundle_path:
         ):
             errors.append(issue("coverage.state_composition", path, f"State {state_id} requires a composite-state mapping of a composition element, not only its state ID."))
 
+    if bundle_path is not None:
+        errors.extend(validate_semantic_text_coverage(requirement, bundle, nodes_by_asset))
     return result(errors, warnings)
 
 

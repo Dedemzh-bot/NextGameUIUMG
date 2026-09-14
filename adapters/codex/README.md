@@ -4,6 +4,14 @@ This mapping uses Codex collaboration primitives to execute the portable
 NextGame UI requirement-analysis DAG. It is an orchestration guide; the
 NextGame UI skill and its JSON validators remain the semantic authority.
 
+This mapping covers the raw image/text route to UIRequirementSpec 0.1. In Codex,
+use the separate plugin skill `receive-nextgame-design` for a complete structured
+design-contract/1 and its deterministic Requirement 0.2 compilation. The shared
+downstream validators support both, but this portable DAG has no structured
+intake branch. Its two direct-user gates remain the mapping default; project
+design delegation must be explicitly authorized and recorded through the
+plugin's scoped review receipt, never inferred from an adapter completion.
+
 ## Primitive mapping
 
 | Portable operation | Codex primitive | Coordinator rule |

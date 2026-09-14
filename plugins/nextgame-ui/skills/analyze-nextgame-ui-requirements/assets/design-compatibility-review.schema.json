@@ -1,0 +1,105 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "version",
+    "level",
+    "contentSha256",
+    "moduleBindingsSha256",
+    "authorityBindingsSha256",
+    "checks",
+    "review"
+  ],
+  "properties": {
+    "kind": {
+      "const": "nextgame-ui-design-compatibility-review"
+    },
+    "version": {
+      "const": "1"
+    },
+    "level": {
+      "const": "design-contract-compatibility"
+    },
+    "contentSha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "moduleBindingsSha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "authorityBindingsSha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "target",
+          "status",
+          "details"
+        ],
+        "properties": {
+          "target": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "enum": [
+              "passed",
+              "pending",
+              "failed"
+            ]
+          },
+          "details": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "reviewedBy",
+        "reviewedAt",
+        "messagePath",
+        "messageSha256"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "direct-user-message",
+            "delegated-design-review"
+          ]
+        },
+        "reviewedBy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reviewedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "messagePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "messageSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nextgame.local/schemas/design-compatibility-review-1.json",
+  "description": "An explicit design compatibility review, never a substitute for actual Editor execution/readback or post-build acceptance."
+}

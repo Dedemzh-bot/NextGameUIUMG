@@ -1,0 +1,6 @@
+interface:
+  display_name: "Maintain NextGame UI Specifications"
+  short_description: "Version design rules, recipes, mappings and validation together"
+  default_prompt: "Use $maintain-nextgame-ui-spec to update this UI standard at its authoritative layer, preserve locked design decisions, migrate exact references, and verify the affected reading and production paths."
+policy:
+  allow_implicit_invocation: true

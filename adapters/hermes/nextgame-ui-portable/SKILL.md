@@ -5,6 +5,11 @@ description: Orchestrate NextGame UI requirement analysis with isolated Hermes s
 
 # NextGame UI portable orchestration for Hermes
 
+This adapter schedules raw image/text analysis to UIRequirementSpec 0.1. The
+plugin's separate receive-nextgame-design entry supports structured design
+contracts and Requirement 0.2; structured intake scheduling is not implemented
+by this Hermes mapping. Never replace its nine Findings with fabricated files.
+
 Use the installed NextGame UI analysis skill for all semantic instructions,
 schemas, and validator commands. This adapter only maps its file-artifact DAG to
 Hermes. The portable workflow identity is `nextgame-ui-requirements`.

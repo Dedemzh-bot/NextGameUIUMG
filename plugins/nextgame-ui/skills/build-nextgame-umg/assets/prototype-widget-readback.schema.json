@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nextgame.local/contracts/prototype-widget-readback/0.1",
+  "title": "NextGame Prototype Widget Readback 0.1 (not production or document authority)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["artifactType", "mode", "version", "readbackId", "capturedAt", "capturedFrom", "acquisition", "status", "requirementBinding", "bundleBinding", "evidence", "assets"],
+  "properties": {
+    "artifactType": {"const": "nextgame-prototype-widget-readback"},
+    "mode": {"const": "prototype"},
+    "version": {"const": "0.1"},
+    "readbackId": {"$ref": "#/$defs/id"},
+    "capturedAt": {"type": "string", "minLength": 1},
+    "capturedFrom": {"const": "unreal-editor"},
+    "acquisition": {"$ref": "#/$defs/acquisition"},
+    "status": {"const": "verified"},
+    "requirementBinding": {
+      "type": "object", "additionalProperties": false,
+      "required": ["requestId", "revision", "approvedContentSha256", "sha256"],
+      "properties": {"requestId": {"$ref": "#/$defs/id"}, "revision": {"type": "integer", "minimum": 1}, "approvedContentSha256": {"$ref": "#/$defs/sha256"}, "sha256": {"$ref": "#/$defs/sha256"}}
+    },
+    "bundleBinding": {
+      "type": "object", "additionalProperties": false, "required": ["bundleId", "sha256"],
+      "properties": {"bundleId": {"$ref": "#/$defs/id"}, "sha256": {"$ref": "#/$defs/sha256"}}
+    },
+    "evidence": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/evidence"}},
+    "assets": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/asset"}}
+  },
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "nonempty": {"type": "string", "minLength": 1},
+    "assetPath": {"type": "string", "pattern": "^/Game/UI/AIPrototype/[A-Za-z0-9_]+(?:/[A-Za-z0-9_]+)*$"},
+    "visibility": {"enum": ["Visible", "Collapsed", "Hidden", "HitTestInvisible", "SelfHitTestInvisible"]},
+    "acquisition": {
+      "oneOf": [
+        {"type": "object", "additionalProperties": false, "required": ["method"], "properties": {"method": {"const": "official-unreal-mcp"}}},
+        {"type": "object", "additionalProperties": false, "required": ["method", "fallbackReason", "fieldFallbacks"], "properties": {"method": {"const": "nxue-agent"}, "fallbackReason": {"$ref": "#/$defs/nonempty"}, "fieldFallbacks": {"$ref": "#/$defs/fieldFallbacks"}}},
+        {"type": "object", "additionalProperties": false, "required": ["method", "fieldFallbacks"], "properties": {"method": {"const": "mixed"}, "fieldFallbacks": {"$ref": "#/$defs/fieldFallbacks"}}}
+      ]
+    },
+    "fieldFallbacks": {"type": "array", "minItems": 1, "items": {"type": "object", "additionalProperties": false, "required": ["jsonPath", "fallbackReason"], "properties": {"jsonPath": {"$ref": "#/$defs/nonempty"}, "fallbackReason": {"$ref": "#/$defs/nonempty"}}}},
+    "evidence": {
+      "type": "object", "additionalProperties": false, "required": ["id", "path", "sha256", "capturedAt", "method"],
+      "properties": {"id": {"$ref": "#/$defs/id"}, "path": {"$ref": "#/$defs/nonempty"}, "sha256": {"$ref": "#/$defs/sha256"}, "capturedAt": {"$ref": "#/$defs/nonempty"}, "method": {"enum": ["official-unreal-mcp", "nxue-agent", "mixed"]}}
+    },
+    "sourceBinding": {
+      "type": "object", "additionalProperties": false, "required": ["evidenceId", "jsonPointer"],
+      "properties": {"evidenceId": {"$ref": "#/$defs/id"}, "jsonPointer": {"type": "string", "pattern": "^(?:/.*)?$"}}
+    },
+    "slot": {
+      "oneOf": [
+        {"type": "null"},
+        {"type": "object", "additionalProperties": false, "required": ["objectPath", "classPath", "properties"], "properties": {"objectPath": {"$ref": "#/$defs/nonempty"}, "classPath": {"$ref": "#/$defs/nonempty"}, "properties": {"type": "object"}}}
+      ]
+    },
+    "widget": {
+      "type": "object", "additionalProperties": false,
+      "required": ["widgetName", "objectPath", "classPath", "parentWidgetName", "isVariable", "visibility", "entryWidgetClass", "properties", "slot"],
+      "properties": {
+        "widgetName": {"$ref": "#/$defs/nonempty"}, "objectPath": {"$ref": "#/$defs/nonempty"}, "classPath": {"$ref": "#/$defs/nonempty"},
+        "parentWidgetName": {"type": ["string", "null"]}, "isVariable": {"type": "boolean"}, "visibility": {"$ref": "#/$defs/visibility"},
+        "entryWidgetClass": {"type": ["string", "null"]}, "properties": {"type": "object"}, "slot": {"$ref": "#/$defs/slot"}
+      }
+    },
+    "nodeMapping": {
+      "type": "object", "additionalProperties": false, "required": ["nodeMappingId", "layoutNodeId", "widgetName"],
+      "properties": {"nodeMappingId": {"$ref": "#/$defs/id"}, "layoutNodeId": {"$ref": "#/$defs/nonempty"}, "widgetName": {"$ref": "#/$defs/nonempty"}}
+    },
+    "asset": {
+      "type": "object", "additionalProperties": false,
+      "required": ["assetId", "assetPath", "assetObjectPath", "assetClass", "generatedClassPath", "parentClassPath", "cdoObjectPath", "designSizeMode", "status", "widgets", "nodeMappings", "sourceBinding"],
+      "properties": {
+        "assetId": {"$ref": "#/$defs/id"}, "assetPath": {"$ref": "#/$defs/assetPath"}, "assetObjectPath": {"$ref": "#/$defs/nonempty"},
+        "assetClass": {"const": "/Script/UMGEditor.WidgetBlueprint"}, "generatedClassPath": {"$ref": "#/$defs/nonempty"}, "parentClassPath": {"$ref": "#/$defs/nonempty"},
+        "cdoObjectPath": {"$ref": "#/$defs/nonempty"}, "designSizeMode": {"enum": ["FillScreen", "Desired"]}, "status": {"const": "verified"},
+        "widgets": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/widget"}}, "nodeMappings": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/nodeMapping"}}, "sourceBinding": {"$ref": "#/$defs/sourceBinding"}
+      }
+    }
+  }
+}

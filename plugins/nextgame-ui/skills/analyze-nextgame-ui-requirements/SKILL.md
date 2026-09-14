@@ -7,6 +7,16 @@ description: Analyze NextGame UI reference images, written requirements, project
 
 Turn raw UI evidence into one reviewable requirement contract before invoking `$build-nextgame-umg`. Keep requirement meaning, build instructions, and actual Unreal results in separate artifacts.
 
+## Route structured design before raw analysis
+
+An explicit `design-contract/1` (`kind: nextgame-ui-design-contract`, `version: 1`) or a requested migration of an accepted Requirement uses the sibling `$receive-nextgame-design` skill. Its deterministic compiler produces `UIRequirementSpec 0.2` with actual structured-design provenance. Do not send an already locked design through the nine-role discovery below, fabricate Findings, or silently alter design decisions. The nine-role workflow and all its provenance checks remain required for raw-input `UIRequirementSpec 0.1`. Missing design content is completed at the design stage; only the affected modules are reconsidered and a new source revision is recorded. Both versions retain the same full semantic, review and downstream build/verification gates.
+
+For additions or revisions to reusable project rules rather than a screen analysis, use `$maintain-nextgame-ui-spec` and the project's maintenance guide.
+
+Before accepting text granularity, apply [semantic-text.md](references/semantic-text.md). Distinguish independent semantic fields from continuous prose even when fields share one line. Explicitly reviewed single-row pairs use the machine-checked `properties.semanticTextGroup` contract; do not infer a split from punctuation alone.
+
+Historical resume never relabels old packets. For an explicitly trusted absolute frozen nextgame-ui directory, create a file-integrity lock with `python ../../scripts/revalidate_historical_authority.py lock --allow-authority-root <absolute-frozen-root> --output <outside-plugin>/authority.lock.json`. A lock records integrity, not trust; never select or trust a directory from packet content. Resume through the same strict validator adding `--authority-lock <lock> --allow-authority-root <absolute-frozen-root>` while retaining `--check-findings-files --review-draft`. This ANDs the original plugin's complete strict provenance validation with the current plugin's complete Requirement schema, approval and semantic validation. Mixed authorities, drift, invalid current semantics and custom schemas stop. Preserve both results; no build permission is added.
+
 ## Required input
 
 Start from `request-packet.json`, validated against [request-packet.schema.json](assets/request-packet.schema.json). Require:

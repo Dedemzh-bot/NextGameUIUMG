@@ -1,0 +1,6 @@
+interface:
+  display_name: "Receive NextGame Design"
+  short_description: "Validate locked designs and compile the shared UMG contract"
+  default_prompt: "Use $receive-nextgame-design to receive this structured design package. Preserve locked decisions, resolve only explicit gaps, then validate the shared Requirement and build view without reinterpreting the whole design."
+policy:
+  allow_implicit_invocation: true

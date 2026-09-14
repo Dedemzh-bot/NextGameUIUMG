@@ -56,7 +56,7 @@ uw_fight_prompt_list : ListViewItem
 | `verticalEntrySpacing` | `verticalEntrySpacing` | vertical distance between generated entries |
 | `designerPreviewEntries` | `numDesignerPreviewEntries` | virtual designer-only preview count |
 
-In the current Editor MCP bridge, `orientation` is readable but not writable through `ObjectTools.set_properties`. A vertical list may rely on the verified `Orient_Vertical` default and omit the write. A non-default horizontal list must use a separately verified supported route; block the build instead of claiming the direction was applied.
+The current Editor MCP bridge supports writing `LuaListView.orientation` through official `ObjectTools.set_properties`: an isolated native LuaListView probe verified `Orient_Horizontal` → `Orient_Vertical` → `Orient_Horizontal`, with successful writes and matching reads. Keep the requested direction in the generated plan. On the actual widget, discover the exact property through `list_properties`, read it with `get_properties`, then use `set_properties`; after compile/save, reacquire the widget and read the direction again. The transient probe proves property-write capability only, not saved-asset persistence or visual layout. Verify those separately on the built asset. This evidence does not establish LuaTileView write support.
 
 The component also exposes standard list/scroll behavior such as mouse-wheel consumption and wheel scroll multiplier. Inspect the live property schema before changing optional scrolling or focus settings because project and engine versions may expose additional fields.
 

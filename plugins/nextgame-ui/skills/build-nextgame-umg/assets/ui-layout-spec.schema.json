@@ -71,6 +71,7 @@
           "id": {"type": "string", "pattern": "^[a-z][a-z0-9_-]*$"},
           "name": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]*$"},
           "isVariable": {"type": "boolean"},
+          "fontSizeUnit": {"enum": ["px", "pt"], "default": "pt"},
           "role": {"type": "string"},
           "parent": {"type": ["string", "null"]},
           "rect": {
@@ -259,7 +260,13 @@
             }
           },
           "properties": {"type": "object"}
-        }
+        },
+        "allOf": [
+          {
+            "if": {"required": ["fontSizeUnit"]},
+            "then": {"properties": {"role": {"const": "text.label"}}}
+          }
+        ]
       }
     }
   },

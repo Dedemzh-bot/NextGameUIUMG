@@ -451,6 +451,7 @@ def main() -> int:
     values = property_step["arguments"]["values"]
     expected_properties = {
         "entryWidgetClass",
+        "orientation",
         "selectionMode",
         "verticalEntrySpacing",
         "numDesignerPreviewEntries",
@@ -460,11 +461,13 @@ def main() -> int:
             "collection property mapping mismatch: "
             f"expected {sorted(expected_properties)}, got {sorted(values)}"
         )
-    if not any(
+    if values.get("orientation") != "Orient_Vertical":
+        failures.append("planner did not preserve LuaListView.orientation as Orient_Vertical")
+    if any(
         "task-list: orientation is read-only" in warning
         for warning in plan["warnings"]
     ):
-        failures.append("planner did not report the skipped read-only LuaListView.orientation")
+        failures.append("planner still reports LuaListView.orientation as skipped read-only")
 
     variable_step = next(
         (
