@@ -103,7 +103,7 @@ def make_request_packet() -> dict:
                 "kind": "image",
                 "locatorKind": "local-file",
                 "description": "Role UI reference.",
-                "path": "C:/References/role-screen.png",
+                "path": str((SCRIPTS_ROOT / "role-screen.png").resolve()),
                 "mediaType": "image/png",
                 "imageSize": [2048, 1152],
                 "contentSha256": "c" * 64,
@@ -349,7 +349,8 @@ class RequestPacketTests(unittest.TestCase):
 
     def test_valid_packet_uses_canonical_input_digest(self) -> None:
         packet = make_request_packet()
-        self.assertTrue(validate_request_packet(packet, self.schema)["valid"])
+        validation = validate_request_packet(packet, self.schema)
+        self.assertTrue(validation["valid"], validation)
 
     def test_changed_source_digest_invalidates_packet(self) -> None:
         packet = make_request_packet()
@@ -418,7 +419,8 @@ class AgentFindingsTests(unittest.TestCase):
     def test_valid_findings_share_packet_digest(self) -> None:
         packet = make_request_packet()
         findings = make_agent_findings(packet)
-        self.assertTrue(validate_agent_findings(findings, self.schema, packet, self.packet_schema)["valid"])
+        validation = validate_agent_findings(findings, self.schema, packet, self.packet_schema)
+        self.assertTrue(validation["valid"], validation)
 
     def test_stale_findings_digest_is_rejected(self) -> None:
         packet = make_request_packet()
@@ -482,13 +484,15 @@ class AgentFindingsTests(unittest.TestCase):
                 "kind": "image",
                 "locatorKind": "local-file",
                 "description": "Second visual reference.",
-                "path": "C:/References/role-detail.png",
+                "path": str((SCRIPTS_ROOT / "role-detail.png").resolve()),
                 "mediaType": "image/png",
                 "imageSize": [800, 600],
                 "contentSha256": "e" * 64,
             },
         )
         packet["inputDigest"] = compute_request_input_digest(packet)
+        packet_validation = validate_request_packet(packet, self.packet_schema)
+        self.assertTrue(packet_validation["valid"], packet_validation)
         findings = make_agent_findings(packet)
         self.assertIn(
             "findings.role_source_scope",
@@ -503,7 +507,8 @@ class AgentFindingsTests(unittest.TestCase):
         findings["sourceScope"] = []
         findings["findings"] = []
         findings["evidence"] = []
-        self.assertTrue(validate_agent_findings(findings, self.schema, packet, self.packet_schema)["valid"])
+        validation = validate_agent_findings(findings, self.schema, packet, self.packet_schema)
+        self.assertTrue(validation["valid"], validation)
         findings["questionCandidates"] = [
             {
                 "localId": "local-question-no-image",
