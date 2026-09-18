@@ -1,6 +1,6 @@
 {
   "name": "nextgame-ui",
-  "version": "0.1.0+codex.20260914095619",
+  "version": "0.1.0+codex.20260918094522",
   "description": "Receive locked design contracts or analyze raw UI references, compile shared requirements, build and verify Unreal UMG, and maintain versioned design and production standards.",
   "homepage": "https://github.com/Dedemzh-bot/NextGameUIUMG",
   "repository": "https://github.com/Dedemzh-bot/NextGameUIUMG",

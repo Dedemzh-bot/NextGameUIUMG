@@ -5,6 +5,8 @@ description: Receive or prepare a versioned NextGame design-contract/1 from expl
 
 # Receive NextGame Design
 
+Apply [production fidelity checks](../build-nextgame-umg/references/production-fidelity-checks.md) to specific gaps and downstream handoff coverage. Preserve locked values; do not use these checks to reinterpret an accepted structured design.
+
 Design decides intent once; the receiver checks and translates it. Read [the contract workflow](references/design-contract-workflow.md) for commands and provenance. This skill does not connect to Unreal or create assets.
 
 1. Locate the explicitly supplied project design root and its `AI_ENTRY.md`. Restore existing builds through their validated `current-run.json`; never choose a Bundle from its filename or timestamp.

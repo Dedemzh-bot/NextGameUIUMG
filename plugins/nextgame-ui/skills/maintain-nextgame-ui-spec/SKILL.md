@@ -5,6 +5,8 @@ description: Add, revise, version or migrate NextGame UI design and UMG producti
 
 # Maintain NextGame UI Specifications
 
+For the reusable production review policy and its explicitly scoped migration, see [production fidelity checks](../build-nextgame-umg/references/production-fidelity-checks.md) and the [2026-09-18 change record](references/production-review-change-20260918.md). Keep task-specific dimensions and unfinished visual checks out of global defaults.
+
 Locate the project design specification root supplied by the user or current project. Read its `AGENTS.md`, `AI_ENTRY.md` and `spec/07-spec-maintenance.md` when present. Do not hardcode another developer's drive or an installed plugin cache as authority.
 
 ## Choose the owner before editing

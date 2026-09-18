@@ -5,6 +5,8 @@ description: Build or update Unreal Engine UMG Widget Blueprints from an accepte
 
 # Build NextGame UMG
 
+Before planning, execution or verification, read the applicable [production fidelity checks](references/production-fidelity-checks.md). Existing rule packs route the matching duties; keep accepted-property coverage and missing visual evidence explicit.
+
 Create prototype or explicitly authorized formal UMG assets. Treat image interpretation, component selection, layout planning, Editor mutation, and validation as separate stages so project-specific components and standards can evolve without changing the workflow.
 
 ## Required inputs

@@ -27,7 +27,7 @@ DEFAULT_ROUTING = SKILL_ROOT / "references" / "rule-card-routing.json"
 DEFAULT_REFERENCES = SKILL_ROOT / "references"
 PACK_VERSION = "0.1"
 ROUTING_VERSION = "0.1"
-RULE_INDEX_VERSION = "0.16"
+RULE_INDEX_VERSION = "0.16.1"
 EXPECTED_RULE_COUNT = 50
 KNOWN_LAYOUT_VERSION = "0.2"
 KNOWN_MODES = {"prototype", "production"}
@@ -37,9 +37,10 @@ SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 HEADING_PATTERN = re.compile(r"^(#{1,6})\s+\S.*$")
 FENCE_PATTERN = re.compile(r"^ {0,3}(`{3,}|~{3,})(?:[^\r\n]*)$")
 
-# These three documents preserve every workflow gate even when the routing
+# These documents preserve every workflow gate even when the routing
 # configuration itself is missing or corrupt.
 FALLBACK_WORKFLOW_DOCS = (
+    "production-fidelity-checks.md",
     "requirement-build-handoff.md",
     "shared-widget-reuse.md",
     "umg-mcp-workflow.md",
@@ -61,9 +62,13 @@ FALLBACK_WORKFLOW_GUARDS: tuple[dict[str, Any], ...] = (
         "stages": ["build-planning"],
         "severity": "error",
         "summary": "Lower accepted requirements into layouts and the Bundle without reinterpreting rejected or unresolved claims.",
-        "files": ["requirement-build-handoff.md"],
+        "files": ["production-fidelity-checks.md", "requirement-build-handoff.md"],
         "detailRefs": [
             {"file": "requirement-build-handoff.md", "heading": "## Build-planning ownership"},
+            {"file": "production-fidelity-checks.md", "heading": "## Accepted property coverage"},
+            {"file": "production-fidelity-checks.md", "heading": "## Text capacity and stable placement"},
+            {"file": "production-fidelity-checks.md", "heading": "## Resource identity and explicit appearance"},
+            {"file": "production-fidelity-checks.md", "heading": "## Geometry responsibilities and related surfaces"},
         ],
     },
     {
@@ -84,9 +89,13 @@ FALLBACK_WORKFLOW_GUARDS: tuple[dict[str, Any], ...] = (
         "stages": ["build-execution"],
         "severity": "error",
         "summary": "Use the required compile, CDO mode, save, and post-save readback sequence.",
-        "files": ["umg-mcp-workflow.md"],
+        "files": ["production-fidelity-checks.md", "umg-mcp-workflow.md"],
         "detailRefs": [
             {"file": "umg-mcp-workflow.md", "heading": "## Required sequence"},
+            {"file": "production-fidelity-checks.md", "heading": "## Accepted property coverage"},
+            {"file": "production-fidelity-checks.md", "heading": "## Text capacity and stable placement"},
+            {"file": "production-fidelity-checks.md", "heading": "## Resource identity and explicit appearance"},
+            {"file": "production-fidelity-checks.md", "heading": "## Geometry responsibilities and related surfaces"},
         ],
     },
     {
@@ -94,10 +103,12 @@ FALLBACK_WORKFLOW_GUARDS: tuple[dict[str, Any], ...] = (
         "stages": ["build-verification"],
         "severity": "error",
         "summary": "Treat actual post-save Unreal readback as authoritative over plans and expected mappings.",
-        "files": ["umg-mcp-workflow.md", "requirement-build-handoff.md"],
+        "files": ["production-fidelity-checks.md", "umg-mcp-workflow.md", "requirement-build-handoff.md"],
         "detailRefs": [
             {"file": "umg-mcp-workflow.md", "heading": "## Actual readback boundary"},
             {"file": "requirement-build-handoff.md", "heading": "## Result capture"},
+            {"file": "production-fidelity-checks.md", "heading": "## Geometry responsibilities and related surfaces"},
+            {"file": "production-fidelity-checks.md", "heading": "## Independent verification and unchanged replay"},
         ],
     },
     {
