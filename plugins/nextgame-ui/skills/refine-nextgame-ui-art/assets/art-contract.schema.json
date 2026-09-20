@@ -26,6 +26,9 @@
     },
     {
       "$ref": "#/$defs/capture"
+    },
+    {
+      "$ref": "#/$defs/developmentBaselineReview"
     }
   ],
   "$defs": {
@@ -612,6 +615,7 @@
             "enum": [
               "presentation-review/1",
               "development-baseline/1",
+              "development-baseline/2",
               "mapped-source-reference/1",
               "procedural-ui-material/1",
               "procedural-ui-material/2",
@@ -647,7 +651,10 @@
             "properties": {
               "capabilities": {
                 "contains": {
-                  "const": "development-baseline/1"
+                  "enum": [
+                    "development-baseline/1",
+                    "development-baseline/2"
+                  ]
                 }
               }
             },
@@ -801,6 +808,62 @@
               "required": [
                 "delegatedArtChoice"
               ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "capabilities": {
+                "contains": {
+                  "const": "development-baseline/1"
+                }
+              }
+            },
+            "required": [
+              "capabilities"
+            ]
+          },
+          "then": {
+            "properties": {
+              "developmentBaseline": {
+                "$ref": "#/$defs/developmentBaselineV1"
+              },
+              "capabilities": {
+                "not": {
+                  "contains": {
+                    "const": "development-baseline/2"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "capabilities": {
+                "contains": {
+                  "const": "development-baseline/2"
+                }
+              }
+            },
+            "required": [
+              "capabilities"
+            ]
+          },
+          "then": {
+            "properties": {
+              "developmentBaseline": {
+                "$ref": "#/$defs/developmentBaselineV2"
+              },
+              "capabilities": {
+                "not": {
+                  "contains": {
+                    "const": "development-baseline/1"
+                  }
+                }
+              }
             }
           }
         }
@@ -1908,41 +1971,6 @@
             "reason"
           ]
         }
-      ]
-    },
-    "developmentBaseline": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "version": {
-          "const": 1
-        },
-        "structureCompletedAt": {
-          "type": "string",
-          "minLength": 1
-        },
-        "pendingCheckIds": {
-          "type": "array",
-          "minItems": 1,
-          "uniqueItems": true,
-          "items": {
-            "type": "string",
-            "minLength": 1
-          }
-        },
-        "buildEvidence": {
-          "type": "array",
-          "minItems": 2,
-          "items": {
-            "$ref": "#/$defs/developmentBuildEvidence"
-          }
-        }
-      },
-      "required": [
-        "version",
-        "structureCompletedAt",
-        "pendingCheckIds",
-        "buildEvidence"
       ]
     },
     "developmentBuildEvidence": {
@@ -3156,6 +3184,372 @@
         "capturedAt",
         "calls",
         "executionReceipt"
+      ]
+    },
+    "developmentBaselineV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "structureCompletedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pendingCheckIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "buildEvidence": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "$ref": "#/$defs/developmentBuildEvidence"
+          }
+        }
+      },
+      "required": [
+        "version",
+        "structureCompletedAt",
+        "pendingCheckIds",
+        "buildEvidence"
+      ]
+    },
+    "developmentDeferredField": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "assetId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "elementId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "nodeMappingId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "widgetName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourcePointer": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceValue": {
+          "type": "string",
+          "minLength": 1
+        },
+        "nativeProperty": {
+          "enum": [
+            "brush.resourceObject",
+            "brush.drawAs",
+            "brush.mirroring"
+          ]
+        },
+        "actualSnapshotPointer": {
+          "type": "string",
+          "minLength": 1
+        },
+        "actualValue": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "refPath": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "refPath"
+              ]
+            }
+          ]
+        },
+        "expectedNativeValue": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "assetId",
+        "elementId",
+        "nodeMappingId",
+        "widgetName",
+        "sourcePointer",
+        "sourceValue",
+        "nativeProperty",
+        "actualSnapshotPointer",
+        "actualValue",
+        "expectedNativeValue"
+      ]
+    },
+    "developmentDeferredCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "check": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "type": {
+              "const": "key-properties"
+            },
+            "assetId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "requirementRefs": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "claimIds": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "required": [
+            "id",
+            "type",
+            "assetId",
+            "requirementRefs",
+            "claimIds"
+          ]
+        },
+        "reason": {
+          "const": "art-owned-property-closure"
+        },
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/developmentDeferredField"
+          }
+        }
+      },
+      "required": [
+        "check",
+        "reason",
+        "fields"
+      ]
+    },
+    "developmentBaselineV2": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "const": 2
+        },
+        "structureCompletedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pendingCheckIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "buildEvidence": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "$ref": "#/$defs/developmentBuildEvidence"
+          }
+        },
+        "basicPropertyCheckIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "deferredPropertyChecks": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/developmentDeferredCheck"
+          }
+        },
+        "primaryReview": {
+          "$ref": "#/$defs/binding"
+        },
+        "pendingArtJudgments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/developmentPendingArtJudgment"
+          }
+        }
+      },
+      "required": [
+        "version",
+        "structureCompletedAt",
+        "pendingCheckIds",
+        "buildEvidence",
+        "basicPropertyCheckIds",
+        "deferredPropertyChecks",
+        "primaryReview",
+        "pendingArtJudgments"
+      ]
+    },
+    "developmentBaseline": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/developmentBaselineV1"
+        },
+        {
+          "$ref": "#/$defs/developmentBaselineV2"
+        }
+      ]
+    },
+    "developmentBaselineReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "development-baseline-art-deferral-review"
+        },
+        "version": {
+          "const": 1
+        },
+        "status": {
+          "const": "approved"
+        },
+        "reviewedBy": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "role": {
+              "const": "primary-agent"
+            },
+            "id": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "role",
+            "id"
+          ]
+        },
+        "reviewedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requirementSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "bundleSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "readbackSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "snapshotSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "contractSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "reason": {
+          "const": "art-owned-property-closure"
+        },
+        "notResultAcceptance": {
+          "const": true
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1
+        },
+        "confirmedNonArtNativeResponsibilitiesVerified": {
+          "const": true
+        }
+      },
+      "required": [
+        "kind",
+        "version",
+        "status",
+        "reviewedBy",
+        "reviewedAt",
+        "requirementSha256",
+        "bundleSha256",
+        "readbackSha256",
+        "snapshotSha256",
+        "contractSha256",
+        "reason",
+        "confirmedNonArtNativeResponsibilitiesVerified",
+        "notResultAcceptance",
+        "notes"
+      ]
+    },
+    "developmentPendingArtJudgment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "elementId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourcePointer": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceValue": {},
+        "closureCheckIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "elementId",
+        "sourcePointer",
+        "sourceValue",
+        "closureCheckIds"
       ]
     }
   }

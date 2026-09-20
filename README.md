@@ -6,7 +6,9 @@ NextGameUIUMG 把 NextGame 的设计接收、UMG 需求分析、构建验证、�
 
 ## 2026-09-20 更新
 
-本次同步完整权威插件，版本为 [`0.1.0+codex.20260920095437`](plugins/nextgame-ui/.codex-plugin/plugin.json)。这是当前整包的能力说明；历史 `production-review-change-20260918` 记录仍只描述当时的变更范围。
+本次同步完整权威插件，版本为 [`0.1.0+codex.20260920104858`](plugins/nextgame-ui/.codex-plugin/plugin.json)。这是当前整包的能力说明；历史 `production-review-change-20260918` 记录仍只描述当时的变更范围。
+
+后续补充包含显式启用的 `development-baseline/2`：仅允许有完整来源、实际观察和独立主协调器审查的 GameImage Brush 资源、DrawAs、镜像差异延后到美术阶段处理，保留原待完成检查及全部最终验收义务。它不把结构完成改写成视觉通过，也不放宽正式读回、结果接受或文档门禁。版本 1 保持原义；迁移与回归范围见[基线 v2 变更记录](plugins/nextgame-ui/skills/maintain-nextgame-ui-spec/references/development-baseline-v2-change-20260920.md)。
 
 - **可选美术阶段**：新增 [`refine-nextgame-ui-art`](plugins/nextgame-ui/skills/refine-nextgame-ui-art/SKILL.md)，支持 `formal-art`、`upgrade-art` 和 `local-art`，在同一请求下索引资源、形成局部决策、应用可恢复变更并验证实际结果。`developer-only` 保持原构建链；美术不重做已接受的布局、状态和程序绑定。请求了美术时，未完成的资源或验证不能跳过。
 - **最终美术证据链**：完成美术后使用 Bundle 0.4 和 normalized Unreal Readback 0.4，绑定当前 art request、plan、passed verification 和实际读回；旧 0.1–0.3 合同保持原语义。美术、预览、保存结果或绑定文件改变后，必须重新完成当前结果验收。

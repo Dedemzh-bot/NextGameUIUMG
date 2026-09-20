@@ -11,6 +11,7 @@ from art_common import (ArtError, PLUGIN_ROOT, aware_time, bound_path, index_sna
                         load_json, read_bound, sha256, validate)
 
 CAPABILITY = 'development-baseline/1'
+CAPABILITY_V2 = 'development-baseline/2'
 STRUCTURAL = {'compile', 'save', 'widget-tree', 'key-properties'}
 
 
@@ -88,8 +89,8 @@ def _build_evidence(contract, request_path, bundle, bundle_path, completed):
 def validate_development_baseline(request, request_path, paths=None):
     """Strict actual-state validation for the sole explicit unfinished art route."""
     validate(request, 'request')
-    if CAPABILITY not in request.get('capabilities', []) or request['goal'] != 'formal-art':
-        _fail('capability', 'Development baseline requires explicit formal-art capability version 1.')
+    if not {CAPABILITY, CAPABILITY_V2} & set(request.get('capabilities', [])) or request['goal'] != 'formal-art':
+        _fail('capability', 'Development baseline requires explicit formal-art capability version 1 or 2.')
     paths = paths or {key: bound_path(value, request_path) for key, value in request['baseline'].items()}
     docs = str(PLUGIN_ROOT / 'skills/document-nextgame-umg/scripts')
     if docs not in sys.path:
@@ -101,7 +102,7 @@ def validate_development_baseline(request, request_path, paths=None):
     if request['requestId'] != requirement.get('requestId'):
         _fail('request_identity', 'Art request must retain the accepted baseline request identity.')
     if bundle.get('version') not in {'0.1', '0.2', '0.3'}:
-        _fail('bundle_version', 'Development baseline v1 requires a pre-art Bundle 0.1–0.3.')
+        _fail('bundle_version', 'Development baseline requires a pre-art Bundle 0.1–0.3.')
     errors, context = validate_requirement_and_bundle_sources(
         requirement, bundle, requirement_path=paths['requirement'], bundle_path=paths['bundle'],
         check_linked_files=True,
@@ -121,17 +122,23 @@ def validate_development_baseline(request, request_path, paths=None):
     pending = {key for key, c in checks.items() if c['status'] == 'pending'}
     if pending != set(contract['pendingCheckIds']):
         _fail('pending_coverage', 'Declared pending IDs must exactly equal all original pending checks.')
-    if any(c['status'] == 'failed' or (c['status'] != 'passed' and c['type'] != 'preview') for c in checks.values()):
+    deferred = frozenset()
+    if contract['version'] == 2:
+        from art_baseline_v2 import validate_property_deferrals
+        deferred = validate_property_deferrals(request, request_path, paths, requirement, bundle, readback, context)
+    if any(c['status'] == 'failed' or (c['status'] != 'passed' and c['type'] != 'preview' and key not in deferred) for key, c in checks.items()):
         _fail('check_status', 'Only preview checks may remain pending; failures and unfinished structure are rejected.')
+    structural_types = STRUCTURAL | ({'schema'} if contract['version'] == 2 else set())
     for asset in bundle['assets']:
         covered = {c['type'] for c in checks.values() if c.get('assetId') == asset['id'] and c['status'] == 'passed'}
-        if not STRUCTURAL <= covered:
+        if not structural_types <= covered:
             _fail('structural_coverage', 'Every asset needs passed compile, save, widget-tree and key-properties checks.')
     _build_evidence(contract, request_path, bundle, paths['bundle'], completed)
     report = _validate_readback_actual_state(
         readback, load_json(READBACK_SCHEMA), readback_path=paths['readback'], requirement=requirement,
         requirement_path=paths['requirement'], bundle=bundle, bundle_path=paths['bundle'],
         context=context, source_completed_at=contract['structureCompletedAt'],
+        deferred_property_check_ids=deferred,
     )
     if not report['valid']:
         _fail('readback', str(report['errors'][:3]))
@@ -162,7 +169,7 @@ def validate_development_baseline(request, request_path, paths=None):
 
 def validate_baseline_closure(request, request_path, final_bundle):
     """All baseline obligations survive unchanged and pass in the final Bundle."""
-    if CAPABILITY not in request.get('capabilities', []):
+    if not {CAPABILITY, CAPABILITY_V2} & set(request.get('capabilities', [])):
         return
     validate_development_baseline(request, request_path)
     if final_bundle is None:

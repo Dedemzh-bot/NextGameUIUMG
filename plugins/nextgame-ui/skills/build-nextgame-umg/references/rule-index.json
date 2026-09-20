@@ -1,5 +1,5 @@
 {
-  "version": "0.23",
+  "version": "0.24",
   "rules": [
     {"id": "prototype.asset-path", "severity": "error", "when": {"mode": "prototype"}, "summary": "Generate prototype assets only below /Game/UI/AIPrototype.", "validator": "asset_folder"},
     {"id": "prototype.asset-name", "severity": "error", "when": {"mode": "prototype"}, "summary": "Use umg_ai_* for prototype screens; explicit child-widget assets may use uw_ai_* for an analyzed local Designer mode. Legacy umg_ai_* children retain FillScreen.", "validator": "asset_name"},

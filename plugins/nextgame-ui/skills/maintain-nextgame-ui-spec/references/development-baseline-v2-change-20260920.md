@@ -1,0 +1,13 @@
+# Development baseline version 2 change — 2026-09-20
+
+Problem: version 1 permits unfinished previews only. A truthful field-traceability property check remains pending when accepted resources are assigned by the following art phase, preventing that phase from starting. Passing the check early or relabeling it as preview would erase its obligation.
+
+Owner: optional art baseline contract and private actual-state verification. Version 2 is a separately opted-in request capability. Version 1 and public final readback/document gates are unchanged. The accepted Requirement, Bundle and Readback schemas and historical artifacts retain their versions.
+
+The minimum new behavior accepts only explicit GameImage Brush resource, DrawAs and mirroring discrepancies, derived independently from accepted source fields, exact Bundle mappings and actual observations. It requires exhaustive gap coverage, exact original pending check identities, passed per-asset basic checks, real structural execution and a separately authored primary review bound to all current evidence. Unresolved text-effect/nine-slice/procedural-material judgments remain an exhaustive source list with original preview closure checks; they do not become confirmed native values or broader deferrals.
+
+Consumers: art request Schema, job initialization, authority validation, art baseline closure, private readback actual-state verification and workflow routing 0.24. Registration uses the exact heading `## Development baseline property deferral` in `on-demand-art-stage.md`; detailed contract is `## Development baseline resource deferrals` in the art workflow. No new screening CLI or Editor tool is introduced.
+
+Migration: first validate immutable saved actual state and its accepted source coverage. Prepare a new version 2 contract without changing the original checks, manually inspect every deferred resource and pending art judgment, and author the bound primary review. Re-run existing art init/plan authority validation. Complete all original checks in the final Bundle and use the unchanged final readback and result/document gates. Capability acceptance and this development review are not UI result acceptance or production authorization.
+
+Regression coverage includes old version 1 rejection of pending properties, mixed/implicit version rejection, fresh version 2 acceptance, actual/source mismatch rejection, missing basic/schema/build evidence, failed checks, incomplete judgment lists, stale primary review, public final gate rejection and exact final obligation preservation. Test fixtures are synthetic and do not represent Editor execution or actual primary acceptance.

@@ -250,6 +250,7 @@ def validate_readback_verification_checks(
     bundle_path: Path,
     readback_path: Path,
     errors: list[dict[str, str]],
+    deferred_property_check_ids: frozenset[str] = frozenset(),
 ) -> None:
     """Require per-asset passed checks whose artifact is this exact readback file."""
 
@@ -272,6 +273,10 @@ def validate_readback_verification_checks(
             errors.append(issue("verification.check_asset", f"{check_path}.assetId", "Readback verification check must reference a Bundle asset."))
             continue
         check_type = check["type"]
+        if check.get("id") in deferred_property_check_ids:
+            if check_type != "key-properties" or check.get("status") != "pending":
+                errors.append(issue("verification.invalid_deferral", check_path, "Only validated pending art property checks may be deferred."))
+            continue  # Cannot supply required per-asset basic property coverage.
         covered[(asset_id, check_type)] = covered.get((asset_id, check_type), 0) + 1
         if check.get("status") != "passed":
             errors.append(issue("verification.check_status", f"{check_path}.status", f"{check_type} readback check must be passed."))
@@ -330,6 +335,7 @@ def _validate_readback_actual_state(
     bundle_path: Path,
     context: dict[str, Any],
     source_completed_at: Any,
+    deferred_property_check_ids: frozenset[str] = frozenset(),
 ) -> dict[str, Any]:
     errors: list[dict[str, str]] = []
     warnings: list[dict[str, str]] = []
@@ -374,6 +380,7 @@ def _validate_readback_actual_state(
         bundle_path=bundle_path,
         readback_path=readback_path,
         errors=errors,
+        deferred_property_check_ids=deferred_property_check_ids,
     )
 
     indexes = readback_indexes(readback, errors)

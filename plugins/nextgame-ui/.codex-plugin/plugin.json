@@ -1,6 +1,6 @@
 {
   "name": "nextgame-ui",
-  "version": "0.1.0+codex.20260920095437",
+  "version": "0.1.0+codex.20260920104858",
   "description": "Receive design contracts or analyze UI references, build Unreal UMG, optionally refine art from cut assets, and verify the final result before program handoff.",
   "homepage": "https://github.com/Dedemzh-bot/NextGameUIUMG",
   "repository": "https://github.com/Dedemzh-bot/NextGameUIUMG",

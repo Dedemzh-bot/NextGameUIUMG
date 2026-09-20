@@ -327,7 +327,7 @@ def validate_authority(request, request_path):
     baseline = request['baseline']
     paths = {name: bound_path(value, request_path) for name, value in baseline.items()}
     docs = PLUGIN_ROOT / 'skills' / 'document-nextgame-umg' / 'scripts'
-    if 'development-baseline/1' in request.get('capabilities', []):
+    if {'development-baseline/1', 'development-baseline/2'} & set(request.get('capabilities', [])):
         from art_baseline import validate_development_baseline
         validate_development_baseline(request, request_path, paths)
     else:
@@ -356,7 +356,7 @@ def validate_art_stage(stage, *, bundle_path, requirement, requirement_path, rea
         validate_preview_contract(request,request_path)
         plan = validate(load_json(plan_path), 'plan')
         verification = validate(load_json(verification_path), 'verification')
-        if 'development-baseline/1' in request.get('capabilities', []):
+        if {'development-baseline/1', 'development-baseline/2'} & set(request.get('capabilities', [])):
             from art_baseline import validate_baseline_closure
             validate_baseline_closure(request, request_path, final_bundle)
         from art_pipeline import _validated_plan

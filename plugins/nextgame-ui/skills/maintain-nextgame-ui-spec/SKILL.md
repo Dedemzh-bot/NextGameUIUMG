@@ -5,7 +5,7 @@ description: Add, revise, version or migrate NextGame UI design and UMG producti
 
 # Maintain NextGame UI Specifications
 
-For the reusable production review policy and its explicitly scoped migration, see [production fidelity checks](../build-nextgame-umg/references/production-fidelity-checks.md) and the [2026-09-18 change record](references/production-review-change-20260918.md). The [2026-09-20 capability migration](references/execution-capability-change-20260920.md) adds explicit size, bounded text, material and authorization-format capabilities without reclassifying old evidence. Keep task-specific dimensions and unfinished visual checks out of global defaults.
+For the reusable production review policy and its explicitly scoped migration, see [production fidelity checks](../build-nextgame-umg/references/production-fidelity-checks.md) and the [2026-09-18 change record](references/production-review-change-20260918.md). The [2026-09-20 capability migration](references/execution-capability-change-20260920.md) adds explicit size, bounded text, material and authorization-format capabilities without reclassifying old evidence. Keep task-specific dimensions and unfinished visual checks out of global defaults. The [development baseline version 2 change](references/development-baseline-v2-change-20260920.md) adds evidence-bound Brush resource deferrals without changing final gates.
 
 Locate the project design specification root supplied by the user or current project. Read its `AGENTS.md`, `AI_ENTRY.md` and `spec/07-spec-maintenance.md` when present. Do not hardcode another developer's drive or an installed plugin cache as authority.
 

@@ -27,7 +27,7 @@ DEFAULT_ROUTING = SKILL_ROOT / "references" / "rule-card-routing.json"
 DEFAULT_REFERENCES = SKILL_ROOT / "references"
 PACK_VERSION = "0.1"
 ROUTING_VERSION = "0.1"
-RULE_INDEX_VERSION = "0.23"
+RULE_INDEX_VERSION = "0.24"
 EXPECTED_RULE_COUNT = 56
 KNOWN_LAYOUT_VERSION = "0.2"
 KNOWN_MODES = {"prototype", "production"}
@@ -40,6 +40,7 @@ FENCE_PATTERN = re.compile(r"^ {0,3}(`{3,}|~{3,})(?:[^\r\n]*)$")
 # These documents preserve every workflow gate even when the routing
 # configuration itself is missing or corrupt.
 FALLBACK_WORKFLOW_DOCS = (
+    "on-demand-art-stage.md",
     "production-fidelity-checks.md",
     "requirement-build-handoff.md",
     "shared-widget-reuse.md",
@@ -103,8 +104,9 @@ FALLBACK_WORKFLOW_GUARDS: tuple[dict[str, Any], ...] = (
         "stages": ["build-verification"],
         "severity": "error",
         "summary": "Treat actual post-save Unreal readback as authoritative over plans and expected mappings.",
-        "files": ["production-fidelity-checks.md", "umg-mcp-workflow.md", "visual-presentation-rules.md", "requirement-build-handoff.md"],
+        "files": ["production-fidelity-checks.md", "umg-mcp-workflow.md", "visual-presentation-rules.md", "requirement-build-handoff.md", "on-demand-art-stage.md"],
         "detailRefs": [
+            {"file": "on-demand-art-stage.md", "heading": "## Development baseline property deferral"},
             {"file": "umg-mcp-workflow.md", "heading": "## Actual readback boundary"},
             {"file": "visual-presentation-rules.md", "heading": "## Actual verification and unchanged replay"},
             {"file": "requirement-build-handoff.md", "heading": "## Result capture"},

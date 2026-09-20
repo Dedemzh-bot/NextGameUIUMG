@@ -52,11 +52,16 @@ def initialize_request(job_path, output_path):
             raise ArtError('job.reference_mode', 'Unsupported source-to-capture comparison capability.')
         request['capabilities'].append(CAPABILITY)
     if 'developmentBaseline' in job:
-        request['capabilities'].append('development-baseline/1')
+        version = job['developmentBaseline'].get('version')
+        if version not in (1, 2):
+            raise ArtError('job.baseline_version', 'Explicit development baseline version 1 or 2 is required.')
+        request['capabilities'].append('development-baseline/' + str(version))
         request['developmentBaseline'] = copy.deepcopy(job['developmentBaseline'])
         for record in request['developmentBaseline'].get('buildEvidence', []):
             for key in ('plan', 'checkpoint'):
                 record[key] = binding(resolve(record[key]))
+        if version == 2:
+            request['developmentBaseline']['primaryReview'] = binding(resolve(job['developmentBaseline']['primaryReview']))
     if 'target' in job:
         request['target']={key:binding(resolve(value)) for key,value in job['target'].items()}
     if 'samples' in job: request['samples']=[binding(resolve(p)) for p in job['samples']]
