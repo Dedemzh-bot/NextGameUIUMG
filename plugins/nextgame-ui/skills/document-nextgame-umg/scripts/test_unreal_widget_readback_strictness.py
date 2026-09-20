@@ -7,7 +7,7 @@ import unittest
 from typing import Any
 
 from _document_contract_common import READBACK_SCHEMA, load_json, validate_schema_instance
-from validate_unreal_widget_readback import _validate_design_size_modes
+from validate_unreal_widget_readback import _validate_design_size_modes, _validate_shared_host_initial_properties
 
 
 def error_codes(errors: list[dict[str, str]]) -> list[str]:
@@ -278,6 +278,76 @@ class DesignerSizeModeReadbackTest(unittest.TestCase):
             ],
         }
         self.assertEqual([], validate_schema_instance(fixture, schema))
+
+
+class SharedHostInitialReadbackTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.bundle = {
+            "capabilities": ["shared-node-states/1"],
+            "nodeMappings": [{"id": "mapping.host", "assetId": "screen", "layoutNodeId": "host", "requirementRefs": ["element.host"], "stateRefs": ["state.shown", "state.hidden"], "initialStateRefs": ["state.hidden"]}],
+            "crossAssetOperations": [{"targetAssetId": "screen", "targetLayoutNodeId": "host", "stateHandling": {
+                "strategy": "owning-screen-shared-properties", "stateRefs": ["state.shown", "state.hidden"], "initialStateRefs": ["state.hidden"],
+                "propertyBindings": [
+                    {"stateRef": "state.shown", "elementId": "element.host", "property": "Visibility", "value": "SelfHitTestInvisible"},
+                    {"stateRef": "state.hidden", "elementId": "element.host", "property": "Visibility", "value": "Collapsed"},
+                ],
+            }}],
+        }
+        self.widget = {"widgetName": "PanelModeInfo", "isVariable": True, "visibility": "Collapsed"}
+        self.indexes = {"mappings": {"mapping.host": ("screen", {"layoutNodeId": "host", "widgetName": "PanelModeInfo"})}, "widgets": {("screen", "PanelModeInfo"): self.widget}}
+        self.layouts = {"screen": {"nodes": {"host": {"name": "PanelModeInfo", "isVariable": True}}}}
+
+    def check(self) -> list[dict[str, str]]:
+        errors = []
+        _validate_shared_host_initial_properties(self.bundle, indexes=self.indexes, layouts=self.layouts, errors=errors)
+        return errors
+
+    def test_actual_collapsed_singleton_matches_initial_assignment(self) -> None:
+        self.assertEqual([], self.check())
+
+    def test_shown_initial_assignment_is_not_hardcoded_as_collapsed(self) -> None:
+        self.bundle["nodeMappings"][0]["initialStateRefs"] = ["state.shown"]
+        self.bundle["crossAssetOperations"][0]["stateHandling"]["initialStateRefs"] = ["state.shown"]
+        self.widget["visibility"] = "SelfHitTestInvisible"
+        self.assertEqual([], self.check())
+
+    def test_supported_visible_state_does_not_authorize_wrong_initial_visibility(self) -> None:
+        for visibility in ("Visible", "SelfHitTestInvisible", "Hidden", None):
+            with self.subTest(visibility=visibility):
+                self.widget["visibility"] = visibility
+                self.assertIn("state.shared_visibility_mismatch", error_codes(self.check()))
+
+    def test_actual_and_planned_host_must_be_variable(self) -> None:
+        self.widget["isVariable"] = False
+        self.assertIn("state.shared_actual_variable", error_codes(self.check()))
+        self.widget["isVariable"] = True
+        self.layouts["screen"]["nodes"]["host"]["isVariable"] = False
+        self.assertIn("state.shared_actual_variable", error_codes(self.check()))
+
+    def test_wrong_asset_or_widget_cannot_supply_visibility(self) -> None:
+        self.indexes["mappings"]["mapping.host"] = ("child", {"layoutNodeId": "host", "widgetName": "PanelModeInfo"})
+        self.indexes["widgets"][("child", "PanelModeInfo")] = self.widget
+        self.assertIn("state.shared_host_mapping", error_codes(self.check()))
+        self.indexes["mappings"]["mapping.host"] = ("screen", {"layoutNodeId": "different", "widgetName": "PanelModeInfo"})
+        self.assertIn("state.shared_host_mapping", error_codes(self.check()))
+
+    def test_absent_actual_widget_is_rejected(self) -> None:
+        self.indexes["widgets"].clear()
+        self.assertIn("state.shared_host_mapping", error_codes(self.check()))
+
+    def test_duplicate_host_mapping_is_rejected(self) -> None:
+        self.bundle["nodeMappings"].append(dict(self.bundle["nodeMappings"][0]))
+        self.assertIn("state.shared_host_mapping", error_codes(self.check()))
+
+    def test_ambiguous_or_foreign_initial_binding_is_rejected(self) -> None:
+        bindings = self.bundle["crossAssetOperations"][0]["stateHandling"]["propertyBindings"]
+        bindings[1]["elementId"] = "foreign.element"
+        self.assertIn("state.shared_initial_binding", error_codes(self.check()))
+
+    def test_legacy_bundle_without_capability_keeps_its_existing_gate(self) -> None:
+        self.bundle.pop("capabilities")
+        self.widget["visibility"] = "Visible"
+        self.assertEqual([], self.check())
 
 
 if __name__ == "__main__":

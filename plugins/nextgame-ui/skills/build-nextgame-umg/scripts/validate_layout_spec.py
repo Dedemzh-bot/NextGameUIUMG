@@ -4,15 +4,23 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import math
 import re
 import sys
 import unicodedata
+from datetime import date
 from pathlib import Path
 from typing import Any
 
 SKILL_ROOT = Path(__file__).resolve().parent.parent
+_dependency_spec = importlib.util.spec_from_file_location("_layout_dependencies_v2", SKILL_ROOT / "scripts/layout_dependencies_v2.py")
+_dependency_module = importlib.util.module_from_spec(_dependency_spec)
+_dependency_spec.loader.exec_module(_dependency_module)
+bounded_wrap_capacity = _dependency_module.bounded_wrap_capacity
+dependency_bounds_v2 = _dependency_module.dependency_bounds_v2
+
 DEFAULT_CATALOG = SKILL_ROOT / "references" / "component-catalog.json"
 ID_PATTERN = re.compile(r"^[a-z][a-z0-9_-]*$")
 NAME_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
@@ -111,6 +119,161 @@ def has_measured_content_driven_size(node: dict[str, Any]) -> bool:
     )
 
 
+def _finite_vector(value: Any, length: int, *, positive: bool = False) -> bool:
+    try:
+        return (
+            isinstance(value, list) and len(value) == length
+            and all(isinstance(item, (int, float)) and not isinstance(item, bool)
+                    and math.isfinite(item) and (not positive or item > 0) for item in value)
+        )
+    except (OverflowError, TypeError, ValueError):
+        return False
+
+
+def valid_size_box_constraints(value: Any) -> bool:
+    """The v1 setter contract fixes exact axes and clears every other bound."""
+    if not isinstance(value, dict) or set(value) != {"version", "widthOverride", "heightOverride"}:
+        return False
+    if type(value["version"]) is not int or value["version"] != 1:
+        return False
+    dimensions = [value["widthOverride"], value["heightOverride"]]
+    return any(item is not None for item in dimensions) and all(
+        item is None or _finite_vector([item], 1, positive=True) for item in dimensions
+    )
+
+
+def valid_size_box_slot(value: Any, *, require_fill: bool = False) -> bool:
+    if not isinstance(value, dict) or set(value) != {"padding", "horizontalAlignment", "verticalAlignment"}:
+        return False
+    padding = value["padding"]
+    return (
+        _finite_vector(padding, 4) and all(item >= 0 for item in padding)
+        and value["horizontalAlignment"] in (["Fill"] if require_fill else ["Fill", "Left", "Center", "Right"])
+        and value["verticalAlignment"] in (["Fill"] if require_fill else ["Fill", "Top", "Center", "Bottom"])
+    )
+
+
+def planned_content_size_proof(node: dict[str, Any], node_by_id: dict[str, dict[str, Any]]) -> bool:
+    """Validate a conservative layout lower bound, never an actual measurement.
+
+    Only declared image sources contribute. Overlay max and Auto flow sum
+    propagate their Brush.ImageSize through real padding. Explicit SizeBox v1
+    setter constraints replace only enabled axes; null axes inherit the child
+    lower bound through an explicit zero-padding Fill slot. Text may grow beyond
+    this lower bound; no font measurement is invented. Unsupported containers,
+    cyclic dependencies, collapsed sources and viewport-dependent Canvas sizing
+    cannot establish this proof.
+    """
+    proof = node.get("contentSizeProof")
+    if isinstance(proof, dict) and proof.get("kind") == "layout-dependency/2":
+        return dependency_bounds_v2(node, node_by_id) is not None
+    if not isinstance(proof, dict) or set(proof) != {
+        "kind", "minimumDesiredSize", "sourceNodeIds", "evidenceId"
+    } or proof.get("kind") != "layout-dependency/1":
+        return False
+    expected, source_ids, evidence_id = (
+        proof.get("minimumDesiredSize"), proof.get("sourceNodeIds"), proof.get("evidenceId")
+    )
+    if not _finite_vector(expected, 2, positive=True) or not (
+        isinstance(source_ids, list) and source_ids
+        and all(isinstance(item, str) and ID_PATTERN.fullmatch(item) for item in source_ids)
+        and len(set(source_ids)) == len(source_ids)
+        and isinstance(evidence_id, str) and EVIDENCE_ID_PATTERN.fullmatch(evidence_id)
+    ):
+        return False
+    parent = node_by_id.get(node.get("parent"), {})
+    slot = node.get("slotLayout", {})
+    anchors = slot.get("anchors", {}) if isinstance(slot, dict) else {}
+    if not isinstance(anchors, dict):
+        return False
+    minimum, maximum = anchors.get("minimum"), anchors.get("maximum")
+    if not (
+        parent.get("role") in {"screen.root", "container.canvas"}
+        and isinstance(slot, dict)
+        and slot.get("autoSize") is True
+        and _finite_vector(minimum, 2) and _finite_vector(maximum, 2)
+        and all(abs(a - b) <= 0.000001 for a, b in zip(minimum, maximum))
+    ):
+        return False
+    sources, reached, visiting = set(source_ids), set(), set()
+    children: dict[str, list[dict[str, Any]]] = {}
+    for current in node_by_id.values():
+        children.setdefault(current.get("parent"), []).append(current)
+
+    def measure(current: dict[str, Any]) -> tuple[float, float] | None:
+        current_id = current.get("id")
+        if current_id in visiting:
+            return None
+        properties = current.get("properties", {})
+        if not isinstance(properties, dict):
+            return None
+        if properties.get("visibility") == "Collapsed":
+            return (0.0, 0.0)
+        role = current.get("role")
+        if current_id in sources:
+            size = properties.get("brushImageSize")
+            if role != "visual.image" or not _finite_vector(size, 2, positive=True):
+                return None
+            reached.add(current_id)
+            return (float(size[0]), float(size[1]))
+        if role in {"visual.image", "text.label"}:
+            return (0.0, 0.0)
+        if role == "container.size":
+            constraints = current.get("sizeBoxConstraints")
+            contents = children.get(current_id, [])
+            if set(properties) - {"visibility"} or not valid_size_box_constraints(constraints) or len(contents) != 1:
+                return None
+            child = contents[0]
+            child_slot = child.get("sizeBoxSlot")
+            if not valid_size_box_slot(child_slot, require_fill=True) or any(child_slot["padding"]):
+                return None
+            visiting.add(current_id)
+            value = measure(child)
+            visiting.remove(current_id)
+            if value is None:
+                return None
+            return tuple(float(constraints[key]) if constraints[key] is not None else value[axis]
+                         for axis, key in enumerate(("widthOverride", "heightOverride")))
+        if role not in {"container.overlay", "container.vertical", "container.horizontal"}:
+            return None
+        visiting.add(current_id)
+        values = []
+        for child in children.get(current_id, []):
+            child_properties = child.get("properties", {})
+            if not isinstance(child_properties, dict):
+                return None
+            if child_properties.get("visibility") == "Collapsed":
+                continue
+            child_slot = child.get("overlaySlot" if role == "container.overlay" else "flowSlot")
+            if not isinstance(child_slot, dict):
+                return None
+            padding = child_slot.get("padding", [0, 0, 0, 0])
+            if not _finite_vector(padding, 4):
+                return None
+            if role != "container.overlay":
+                size = child_slot.get("size")
+                if not isinstance(size, dict) or size.get("rule") != "Auto":
+                    return None
+            value = measure(child)
+            if value is None:
+                return None
+            values.append((max(0.0, value[0] + padding[0] + padding[2]),
+                           max(0.0, value[1] + padding[1] + padding[3])))
+        visiting.remove(current_id)
+        if not values:
+            return (0.0, 0.0)
+        return (
+            sum(value[0] for value in values) if role == "container.horizontal" else max(value[0] for value in values),
+            sum(value[1] for value in values) if role == "container.vertical" else max(value[1] for value in values),
+        )
+
+    actual_lower_bound = measure(node)
+    return actual_lower_bound is not None and reached == sources and all(
+        math.isfinite(actual) and abs(actual - declared) <= 0.000001
+        for actual, declared in zip(actual_lower_bound, expected)
+    )
+
+
 def load_json(path: Path) -> Any:
     with path.open("r", encoding="utf-8") as handle:
         return json.load(handle)
@@ -159,7 +322,7 @@ def invalid_text_characters(text: str) -> list[str]:
     return invalid
 
 
-def validate_spec(spec: Any, catalog: Any) -> dict[str, Any]:
+def validate_spec(spec: Any, catalog: Any, *, spec_path: Path | None = None) -> dict[str, Any]:
     errors: list[dict[str, str]] = []
     warnings: list[dict[str, str]] = []
 
@@ -497,6 +660,36 @@ def validate_spec(spec: Any, catalog: Any) -> dict[str, Any]:
             if value is not None and (not isinstance(value, str) or not token_pattern.fullmatch(value)):
                 issue(errors, "profile.naming_token", f"$.profile.{key}", f"{key} must be a lower-case naming token.")
 
+        instance_declared = "systemFolderInstance" in profile
+        instance_suffix: str | None = None
+        if instance_declared:
+            instance = profile["systemFolderInstance"]
+            instance_path = "$.profile.systemFolderInstance"
+            if asset_scope != "system" or asset_kind not in {"screen", "child-widget"}:
+                issue(errors, "profile.system_folder_instance.scope", instance_path, "systemFolderInstance is valid only for system-scoped project-target screens and child widgets.")
+            if not isinstance(instance, dict):
+                issue(errors, "profile.system_folder_instance.type", instance_path, "systemFolderInstance must be a closed object containing version, date, and number.")
+            else:
+                if set(instance) != {"version", "date", "number"}:
+                    issue(errors, "profile.system_folder_instance.fields", instance_path, "systemFolderInstance requires exactly version, date, and number.")
+                if type(instance.get("version")) is not int or instance["version"] != 1:
+                    issue(errors, "profile.system_folder_instance.version", f"{instance_path}.version", "Only systemFolderInstance version 1 is supported.")
+                instance_date = instance.get("date")
+                valid_date = isinstance(instance_date, str) and re.fullmatch(r"[0-9]{8}", instance_date) is not None
+                if valid_date:
+                    try:
+                        date(int(instance_date[:4]), int(instance_date[4:6]), int(instance_date[6:]))
+                    except ValueError:
+                        valid_date = False
+                if not valid_date:
+                    issue(errors, "profile.system_folder_instance.date", f"{instance_path}.date", "date must be a real Gregorian calendar date in eight-digit YYYYMMDD form.")
+                instance_number = instance.get("number")
+                valid_number = type(instance_number) is int and 1 <= instance_number <= 99
+                if not valid_number:
+                    issue(errors, "profile.system_folder_instance.number", f"{instance_path}.number", "number must be an integer from 1 through 99.")
+                if valid_date and valid_number:
+                    instance_suffix = f"_{instance_date}_{instance_number:02d}"
+
         if asset_kind in {"screen", "child-widget"}:
             system = profile.get("system")
             system_folder = profile.get("systemFolder")
@@ -516,12 +709,19 @@ def validate_spec(spec: Any, catalog: Any) -> dict[str, Any]:
                 )
             if not isinstance(system_folder, str) or not re.fullmatch(r"^[A-Za-z][A-Za-z0-9_]*$", system_folder):
                 issue(errors, "profile.system_folder.required", "$.profile.systemFolder", "systemFolder is required for project-target assets.")
-            elif isinstance(system, str) and token_pattern.fullmatch(system) and system_folder.casefold() != system.casefold():
+            elif isinstance(system, str) and token_pattern.fullmatch(system) and (
+                (not instance_declared and system_folder.casefold() != system.casefold())
+                or (instance_declared and instance_suffix is not None and system_folder.casefold() != f"{system}{instance_suffix}".casefold())
+            ):
                 issue(
                     errors,
                     "profile.system_folder.system_mismatch",
                     "$.profile.systemFolder",
-                    "systemFolder must identify the same system as profile.system and may differ only by letter case.",
+                    (
+                        f"With systemFolderInstance, systemFolder must be the same system token (case-insensitive) followed exactly by {instance_suffix}."
+                        if instance_declared
+                        else "systemFolder must identify the same system as profile.system and may differ only by letter case."
+                    ),
                 )
             if not isinstance(target_asset, dict):
                 issue(errors, "profile.target_asset.required", "$.profile.targetAsset", "targetAsset is required for project-target assets.")
@@ -881,6 +1081,13 @@ def validate_spec(spec: Any, catalog: Any) -> dict[str, Any]:
                     issue(errors, "layout.adaptive_intent.reason", f"{path}.adaptiveLayout.reason", "adaptiveLayout must include a concise non-empty reason.")
 
         overlay_purpose = node.get("overlayPurpose")
+        if "sizeBoxConstraints" in node:
+            if role != "container.size":
+                issue(errors, "size_box.constraints.role", f"{path}.sizeBoxConstraints", "sizeBoxConstraints requires container.size.")
+            if not valid_size_box_constraints(node["sizeBoxConstraints"]):
+                issue(errors, "size_box.constraints", f"{path}.sizeBoxConstraints", "SizeBox v1 requires exactly version 1, widthOverride and heightOverride; each axis is null (clear) or a positive finite number (enable), with at least one enabled axis.")
+        if "sizeBoxSlot" in node and not valid_size_box_slot(node["sizeBoxSlot"]):
+            issue(errors, "size_box.slot", f"{path}.sizeBoxSlot", "SizeBoxSlot requires exactly nonnegative finite padding and explicit horizontal/vertical alignment.")
         if overlay_purpose is not None:
             if role != "container.overlay":
                 issue(errors, "structure.overlay_purpose.role", f"{path}.overlayPurpose", "overlayPurpose is only valid on an Overlay node.")
@@ -894,6 +1101,15 @@ def validate_spec(spec: Any, catalog: Any) -> dict[str, Any]:
             for property_name in unknown:
                 issue(errors, "node.property.unknown", f"{path}.properties.{property_name}", f"Property is not mapped for role {role}.")
             properties = node["properties"]
+            if "brushImageSize" in properties and not _finite_vector(properties["brushImageSize"], 2, positive=True):
+                issue(errors, "image.brush_image_size", f"{path}.properties.brushImageSize", "brushImageSize must contain exactly two positive finite numbers.")
+            scale_values = {
+                "stretch": {"None", "Fill", "ScaleToFit", "ScaleToFitX", "ScaleToFitY", "ScaleToFill", "ScaleBySafeZone"},
+                "stretchDirection": {"Both", "DownOnly", "UpOnly"},
+            }
+            for scale_key, allowed in scale_values.items():
+                if scale_key in properties and (not isinstance(properties[scale_key], str) or properties[scale_key] not in allowed):
+                    issue(errors, "scale.property", f"{path}.properties.{scale_key}", f"{scale_key} must be one of {', '.join(sorted(allowed))}.")
             if "buttonBrushes" in properties:
                 brushes = properties["buttonBrushes"]
                 brushes_path = f"{path}.properties.buttonBrushes"
@@ -1279,6 +1495,14 @@ def validate_spec(spec: Any, catalog: Any) -> dict[str, Any]:
         if root.get("rect") != [0, 0, 1, 1]:
             issue(errors, "tree.root.rect", "$.nodes", "The root node rect must be [0, 0, 1, 1].")
 
+    for node in node_by_id.values():
+        if "textCapacity" in node and not bounded_wrap_capacity(node, node_by_id.get(node.get("parent"), {}), spec.get("referenceSize")):
+            issue(errors, "text.capacity.invalid", f"$.nodes[{node_index_by_id[node['id']]}].textCapacity",
+                  "bounded-wrap/1 requires positive fixed Canvas text capacity, stable point anchors, exact fixed Slot dimensions, matching normalized rect, positive WrapTextAt no greater than width, and explicit evidence; maxLines does not prove rendered fit.")
+        if "contentSizeProof" in node and not planned_content_size_proof(node, node_by_id):
+            issue(errors, "content_size_proof.invalid", f"$.nodes[{node_index_by_id[node['id']]}].contentSizeProof",
+                  "contentSizeProof must satisfy its explicit layout-dependency/1 or /2 lower-bound contract, with reachable visible image sources and a valid Canvas host. /2 requires actual fixed-width SizeBox authority for horizontal Fill text. It is not measured Desired Size.")
+
     if design_size_mode == "Desired":
         root_id = roots[0] if len(roots) == 1 else None
         direct_children = [
@@ -1289,6 +1513,8 @@ def validate_spec(spec: Any, catalog: Any) -> dict[str, Any]:
 
         def has_nonzero_desired_size_evidence(node: dict[str, Any]) -> bool:
             if has_measured_content_driven_size(node):
+                return True
+            if planned_content_size_proof(node, node_by_id):
                 return True
             slot = node.get("slotLayout")
             if not isinstance(slot, dict):
@@ -1325,7 +1551,7 @@ def validate_spec(spec: Any, catalog: Any) -> dict[str, Any]:
                 errors,
                 "profile.design_size_mode.desired_root_size",
                 "$.profile.designSizeMode",
-                "Desired requires at least one root-direct child with a point-anchored Canvas slot whose autoSize is false and right/bottom size is positive, or verified contentDrivenSize with positive measuredDesiredSize and a valid evidenceId. Empty roots, auto-sized fixed slots, verified-only claims, and zero-offset full-stretch content cannot establish non-zero Desired Size.",
+                "Desired requires a root-direct fixed Canvas Slot, verified positive measured contentDrivenSize, or a validated contentSizeProof layout dependency. Planned dependency proof does not establish actual measured size; empty roots, arbitrary auto-sized fixed slots and zero-offset full stretch remain invalid.",
             )
 
     child_counts: dict[str, int] = {}
@@ -1337,7 +1563,14 @@ def validate_spec(spec: Any, catalog: Any) -> dict[str, Any]:
         has_scroll_slot = "scrollSlot" in node
         flow_slot = node.get("flowSlot")
         scroll_slot = node.get("scrollSlot")
+        size_box_parent = node_by_id.get(parent_id, {})
+        if "sizeBoxSlot" in node and size_box_parent.get("role") != "container.size":
+            issue(errors, "size_box.slot.relationship", f"{node_path}.sizeBoxSlot", "sizeBoxSlot requires a direct container.size parent.")
+        if "sizeBoxConstraints" in size_box_parent and "sizeBoxSlot" not in node:
+            issue(errors, "size_box.slot.missing", f"{node_path}.sizeBoxSlot", "A constrained SizeBox child requires its explicit SizeBoxSlot.")
         if parent_id is None:
+            if "buttonSlot" in node:
+                issue(errors, "button_slot.relationship", f"{node_path}.buttonSlot", "buttonSlot requires a direct input.button parent.")
             if has_flow_slot:
                 issue(
                     errors,
@@ -1455,26 +1688,16 @@ def validate_spec(spec: Any, catalog: Any) -> dict[str, Any]:
                     errors,
                     "button.direct_canvas.slot.missing",
                     f"{node_path}.buttonSlot",
-                    "A direct Button -> CanvasPanel content host must declare a ButtonSlot with zero padding and Fill alignment.",
+                    "A direct Button -> CanvasPanel content host must declare its ButtonSlot padding and Fill alignment.",
                 )
             else:
                 padding = button_slot.get("padding")
-                padding_is_zero = (
-                    isinstance(padding, list)
-                    and len(padding) == 4
-                    and all(
-                        isinstance(value, (int, float))
-                        and not isinstance(value, bool)
-                        and value == 0
-                        for value in padding
-                    )
-                )
-                if not padding_is_zero:
+                if not _finite_vector(padding, 4):
                     issue(
                         errors,
                         "button.direct_canvas.slot.padding",
                         f"{node_path}.buttonSlot.padding",
-                        "A direct Button -> CanvasPanel content host must use ButtonSlot padding [0, 0, 0, 0].",
+                        "ButtonSlot padding must contain four finite numbers; explicit content insets are preserved.",
                     )
                 for alignment_name in ("horizontalAlignment", "verticalAlignment"):
                     if button_slot.get(alignment_name) != BUTTON_SLOT_FILL:
@@ -1482,15 +1705,28 @@ def validate_spec(spec: Any, catalog: Any) -> dict[str, Any]:
                             errors,
                             "button.direct_canvas.slot.alignment",
                             f"{node_path}.buttonSlot.{alignment_name}",
-                            "A direct Button -> CanvasPanel content host must use Fill horizontal and vertical ButtonSlot alignment.",
+                            "The current ButtonSlot contract supports Fill alignment only; independent alignment is unsupported.",
                         )
-        elif button_slot is not None:
+        elif "buttonSlot" in node and parent.get("role") == "input.button":
+            if not isinstance(button_slot, dict):
+                issue(errors, "button_slot.type", f"{node_path}.buttonSlot", "buttonSlot must be an object.")
+            else:
+                if not _finite_vector(button_slot.get("padding"), 4):
+                    issue(errors, "button_slot.padding", f"{node_path}.buttonSlot.padding", "ButtonSlot padding must contain four finite numbers.")
+                for alignment_name in ("horizontalAlignment", "verticalAlignment"):
+                    if button_slot.get(alignment_name) != BUTTON_SLOT_FILL:
+                        issue(errors, "button_slot.alignment", f"{node_path}.buttonSlot.{alignment_name}", "The current ButtonSlot contract supports Fill alignment only; independent alignment is unsupported.")
+        elif "buttonSlot" in node:
             issue(
                 errors,
                 "button_slot.relationship",
                 f"{node_path}.buttonSlot",
-                "buttonSlot is only valid on a CanvasPanel that is the direct child of an input.button.",
+                "buttonSlot is only valid on a direct child of an input.button.",
             )
+        if isinstance(button_slot, dict):
+            unknown_fields = set(button_slot) - {"padding", "horizontalAlignment", "verticalAlignment"}
+            if unknown_fields:
+                issue(errors, "button_slot.fields", f"{node_path}.buttonSlot", f"Unknown ButtonSlot fields: {sorted(unknown_fields)}.")
         overlay_slot = node.get("overlaySlot")
         is_direct_overlay_child = parent.get("role") == "container.overlay"
         if is_direct_overlay_child:
@@ -1502,6 +1738,11 @@ def validate_spec(spec: Any, catalog: Any) -> dict[str, Any]:
                     "Every direct Overlay child must declare horizontal and vertical OverlaySlot alignment.",
                 )
             else:
+                extra_fields = set(overlay_slot) - {"horizontalAlignment", "verticalAlignment", "padding"}
+                if extra_fields:
+                    issue(errors, "overlay.slot.fields", f"{node_path}.overlaySlot", "OverlaySlot contains unsupported fields: " + ", ".join(sorted(extra_fields)))
+                if "padding" in overlay_slot and not _finite_vector(overlay_slot["padding"], 4):
+                    issue(errors, "overlay.slot.padding", f"{node_path}.overlaySlot.padding", "OverlaySlot padding must contain exactly four finite numbers in left, top, right, bottom order.")
                 horizontal_alignment = overlay_slot.get("horizontalAlignment")
                 vertical_alignment = overlay_slot.get("verticalAlignment")
                 if horizontal_alignment not in OVERLAY_HORIZONTAL_ALIGNMENTS:
@@ -1518,14 +1759,29 @@ def validate_spec(spec: Any, catalog: Any) -> dict[str, Any]:
                         f"{node_path}.overlaySlot.verticalAlignment",
                         "OverlaySlot verticalAlignment must be Fill, Top, Center, or Bottom.",
                     )
-                if normalized_rects_equal(node.get("rect"), parent.get("rect")) and (
-                    horizontal_alignment != "Fill" or vertical_alignment != "Fill"
+                constraints = node.get("sizeBoxConstraints")
+                constrained_size_box = (
+                    node.get("role") == "container.size"
+                    and valid_size_box_constraints(constraints)
+                )
+                # Equal nominal rectangles do not imply full coverage on an axis
+                # explicitly fixed by a SizeBox and independently aligned there.
+                horizontal_covers = horizontal_alignment == "Fill" or (
+                    constrained_size_box and constraints["widthOverride"] is not None
+                    and horizontal_alignment in {"Left", "Center", "Right"}
+                )
+                vertical_covers = vertical_alignment == "Fill" or (
+                    constrained_size_box and constraints["heightOverride"] is not None
+                    and vertical_alignment in {"Top", "Center", "Bottom"}
+                )
+                if normalized_rects_equal(node.get("rect"), parent.get("rect")) and not (
+                    horizontal_covers and vertical_covers
                 ):
                     issue(
                         errors,
                         "overlay.slot.full_region_fill",
                         f"{node_path}.overlaySlot",
-                        "A child covering the complete Overlay rectangle must use Fill alignment on both axes.",
+                        "A child covering the complete Overlay rectangle must use Fill alignment on each axis, unless that axis is explicitly fixed by a SizeBox and independently aligned.",
                     )
         elif overlay_slot is not None:
             issue(
@@ -1550,7 +1806,7 @@ def validate_spec(spec: Any, catalog: Any) -> dict[str, Any]:
                     f"{node_path}.slotLayout",
                     "A wrapping TextBlock under CanvasPanel must define an adaptive slotLayout.",
                 )
-            elif slot_layout.get("autoSize") is not True:
+            elif slot_layout.get("autoSize") is not True and not bounded_wrap_capacity(node, parent, spec.get("referenceSize")):
                 issue(
                     errors,
                     "text.adaptive_slot.auto_size",
@@ -1605,6 +1861,10 @@ def validate_spec(spec: Any, catalog: Any) -> dict[str, Any]:
         if isinstance(maximum, int) and count > maximum:
             parent_path = f"$.nodes[{node_index_by_id[parent_id]}]"
             issue(errors, "tree.children.max", parent_path, f"Node has {count} children but allows at most {maximum}.")
+
+    for node_id, node in node_by_id.items():
+        if "sizeBoxConstraints" in node and child_counts.get(node_id, 0) != 1:
+            issue(errors, "size_box.child", f"$.nodes[{node_index_by_id[node_id]}]", "A constrained SizeBox must own exactly one child.")
 
     # Compound text semantics are metadata, not Widget property writes. A ratio
     # group is deliberately explicit so gameplay code can update its current and
@@ -1714,7 +1974,7 @@ def validate_spec(spec: Any, catalog: Any) -> dict[str, Any]:
     # values after reparenting into a nested region.
     ref_w, ref_h = reference_size if isinstance(reference_size, list) else (None, None)
     if isinstance(ref_w, (int, float)) and isinstance(ref_h, (int, float)):
-        tolerance = 1.0
+        tolerance = 0.001 if "coordinateBinding" in spec else 1.0
         for node_id, node in node_by_id.items():
             slot = node.get("slotLayout")
             parent_id = node.get("parent")
@@ -1725,7 +1985,7 @@ def validate_spec(spec: Any, catalog: Any) -> dict[str, Any]:
                 continue
             # Root Canvas coordinates are the screen frame; nested Canvas children
             # are the regression boundary where global offsets are most dangerous.
-            if parent_id == (roots[0] if roots else None):
+            if parent_id == (roots[0] if roots else None) and "coordinateBinding" not in spec:
                 continue
             anchors = slot.get("anchors", {})
             offsets = slot.get("offsets", {})
@@ -1992,6 +2252,13 @@ def validate_spec(spec: Any, catalog: Any) -> dict[str, Any]:
                     "Non-global content must be inside a declared region container.",
                 )
 
+    if isinstance(spec, dict) and "coordinateBinding" in spec:
+        analysis_scripts = SKILL_ROOT.parent / "analyze-nextgame-ui-requirements" / "scripts"
+        if str(analysis_scripts) not in sys.path:
+            sys.path.insert(0, str(analysis_scripts))
+        from _coordinate_spaces import validate_layout_binding
+        errors.extend(validate_layout_binding(spec, spec_path=spec_path))
+
     return {
         "valid": not errors,
         "errors": errors,
@@ -2006,7 +2273,7 @@ def main() -> int:
     parser.add_argument("--catalog", type=Path, default=DEFAULT_CATALOG)
     args = parser.parse_args()
     try:
-        report = validate_spec(load_json(args.spec), load_json(args.catalog))
+        report = validate_spec(load_json(args.spec), load_json(args.catalog), spec_path=args.spec)
     except (OSError, json.JSONDecodeError) as exc:
         report = {"valid": False, "errors": [{"code": "input.read", "path": "$", "message": str(exc)}], "warnings": []}
     print(json.dumps(report, indent=2, ensure_ascii=False))

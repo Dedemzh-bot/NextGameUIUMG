@@ -58,6 +58,8 @@ uw_fight_prompt_list : ListViewItem
 
 The current Editor MCP bridge supports writing `LuaListView.orientation` through official `ObjectTools.set_properties`: an isolated native LuaListView probe verified `Orient_Horizontal` → `Orient_Vertical` → `Orient_Horizontal`, with successful writes and matching reads. Keep the requested direction in the generated plan. On the actual widget, discover the exact property through `list_properties`, read it with `get_properties`, then use `set_properties`; after compile/save, reacquire the widget and read the direction again. The transient probe proves property-write capability only, not saved-asset persistence or visual layout. Verify those separately on the built asset. This evidence does not establish LuaTileView write support.
 
+The planner lowers canonical `Horizontal` / `Vertical` to native `Orient_Horizontal` / `Orient_Vertical`, preserves already-native values unchanged, and rejects unknown directions before execution; this does not remove any collection's existing write-capability restriction.
+
 The component also exposes standard list/scroll behavior such as mouse-wheel consumption and wheel scroll multiplier. Inspect the live property schema before changing optional scrolling or focus settings because project and engine versions may expose additional fields.
 
 ### Designer preview and runtime data
@@ -130,6 +132,10 @@ When the grid only communicates status and owns no direct interaction, use `sele
 - display-only grids do not consume mouse-wheel or hit-test input.
 
 ## GameImage
+
+For source/frame identity, full-chain aspect, source-derived nine-slice cuts and explicit family comparisons, use [visual presentation rules](visual-presentation-rules.md#image-aspect-and-source-identity). Brush dimensions alone do not prove visible aspect or seam alignment.
+
+When a local layout depends on intrinsic image dimensions, declare positive finite `properties.brushImageSize: [width, height]` during the development baseline. The planner merges only `brush.imageSize.{x,y}` and preserves the resource and all other Brush fields. It discovers and reads the live schema before the write and reads the dimensions again after save. This size mapping does not assert a final art resource match or a measured Desired Size.
 
 ### Identity and naming
 
@@ -221,6 +227,7 @@ When the grid only communicates status and owns no direct interaction, use `sele
 
 ### Configuration rules
 
+- The executable versioned exact-axis contract and planned lower-bound proof are defined in [Exact-axis SizeBox execution and planned dependency](common-widget-rules.md#exact-axis-sizebox-execution-and-planned-dependency). Keep this contract distinct from actual Desired Size measurements.
 - Activate only the required constraints. In Unreal Python use `set_width_override`, `set_height_override`, `set_min_desired_width`, `set_min_desired_height`, `set_max_desired_width`, and `set_max_desired_height`.
 - Clear unused constraints with the corresponding `clear_*` method. Do not assume that assigning a raw numeric property enables or disables its hidden override state.
 - When desired size must propagate through a CanvasPanel, enable `Size To Content` on the SizeBox's `CanvasPanelSlot`; Size To Content is a Slot rule, not a SizeBox override.
@@ -264,6 +271,8 @@ One child inside an Overlay is acceptable only when the Overlay deliberately sup
 - A one-child Overlay directly between Button and CanvasPanel is a structural error even if it is labeled with a generic purpose; CanvasPanel already owns the internal layering, so promote it to be the Button's direct child.
 
 ### Slot and hit-testing rules
+
+Preserve accepted `overlaySlot.padding: [left, top, right, bottom]` alongside both alignments. Each value must be a finite number. The planner maps the four values to the native OverlaySlot `padding` struct after schema discovery and current-value read, then reads it again after save. Omitting this optional field keeps historical 0.2 behavior; an accepted nonzero inset must never be dropped merely because alignment is Fill.
 
 - Configure each `OverlaySlot` with explicit horizontal and vertical alignment appropriate to its layer.
 - Use `HAlign_Fill` and `VAlign_Fill` for every child that must cover the complete Overlay region, including full-size backgrounds, masks, state layers, or shared-bound Canvas content.

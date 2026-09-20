@@ -1,0 +1,3162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nextgame.local/schemas/art-contract-1.json",
+  "title": "NextGame UI optional art phase contracts",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/snapshot"
+    },
+    {
+      "$ref": "#/$defs/request"
+    },
+    {
+      "$ref": "#/$defs/decisions"
+    },
+    {
+      "$ref": "#/$defs/plan"
+    },
+    {
+      "$ref": "#/$defs/visualReview"
+    },
+    {
+      "$ref": "#/$defs/verification"
+    },
+    {
+      "$ref": "#/$defs/execution"
+    },
+    {
+      "$ref": "#/$defs/capture"
+    }
+  ],
+  "$defs": {
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ]
+    },
+    "issue": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "assetPath": {
+          "type": "string",
+          "pattern": "^/Game/UI/(?:UMG|AIPrototype)/[^.]+$"
+        },
+        "widgetName": {
+          "type": "string",
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ]
+    },
+    "size": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "integer",
+        "minimum": 1
+      }
+    },
+    "bounds": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "slot": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "classPath": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "properties": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "classPath",
+        "properties"
+      ]
+    },
+    "widget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "widgetName": {
+          "type": "string",
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+        },
+        "classPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "parentWidgetName": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "isVariable": {
+          "type": "boolean"
+        },
+        "properties": {
+          "type": "object"
+        },
+        "slot": {
+          "$ref": "#/$defs/slot"
+        }
+      },
+      "required": [
+        "widgetName",
+        "classPath",
+        "parentWidgetName",
+        "isVariable",
+        "properties",
+        "slot"
+      ]
+    },
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "assetPath": {
+          "type": "string",
+          "pattern": "^/Game/UI/(?:UMG|AIPrototype)/[^.]+$"
+        },
+        "parentClassPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "designSizeMode": {
+          "enum": [
+            "FillScreen",
+            "Desired",
+            null
+          ]
+        },
+        "protectedReferences": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+          },
+          "minItems": 0
+        },
+        "referencesDigest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "referencesComplete": {
+          "type": "boolean"
+        },
+        "widgets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/widget"
+          },
+          "minItems": 0
+        },
+        "uncertainties": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        }
+      },
+      "required": [
+        "assetPath",
+        "parentClassPath",
+        "designSizeMode",
+        "protectedReferences",
+        "referencesDigest",
+        "referencesComplete",
+        "widgets"
+      ]
+    },
+    "snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "nextgame-ui-art-snapshot"
+        },
+        "version": {
+          "const": 1
+        },
+        "capturedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "acquisition": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "method": {
+              "enum": [
+                "official-unreal-mcp",
+                "nxue-agent",
+                "mixed",
+                "fixture"
+              ]
+            },
+            "fallbackReason": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "method"
+          ]
+        },
+        "assets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/asset"
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "kind",
+        "version",
+        "capturedAt",
+        "acquisition",
+        "assets"
+      ]
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "size": {
+          "$ref": "#/$defs/size"
+        },
+        "dpiScale": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "locale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dataId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "stateId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "fontSetDigest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "background": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      },
+      "required": [
+        "size",
+        "dpiScale",
+        "locale",
+        "dataId",
+        "stateId",
+        "fontSetDigest",
+        "background"
+      ]
+    },
+    "capture": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "nextgame-ui-art-capture"
+        },
+        "version": {
+          "const": 1
+        },
+        "assetPath": {
+          "type": "string",
+          "pattern": "^/Game/UI/(?:UMG|AIPrototype)/[^.]+$"
+        },
+        "context": {
+          "$ref": "#/$defs/context"
+        },
+        "snapshotSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "image": {
+          "$ref": "#/$defs/binding"
+        },
+        "capturedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "acquisition": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "method": {
+              "enum": [
+                "official-unreal-mcp",
+                "nxue-agent",
+                "mixed"
+              ]
+            },
+            "fallbackReason": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "method"
+          ]
+        },
+        "canonical": {
+          "const": true
+        }
+      },
+      "required": [
+        "kind",
+        "version",
+        "assetPath",
+        "context",
+        "snapshotSha256",
+        "image",
+        "capturedAt",
+        "acquisition",
+        "canonical"
+      ]
+    },
+    "region": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "bounds": {
+          "$ref": "#/$defs/bounds"
+        },
+        "widgetNames": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+          },
+          "minItems": 1
+        },
+        "captureBounds": {
+          "$ref": "#/$defs/bounds"
+        }
+      },
+      "required": [
+        "id",
+        "bounds",
+        "widgetNames"
+      ]
+    },
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "assetPath": {
+          "type": "string",
+          "pattern": "^/Game/UI/(?:UMG|AIPrototype)/[^.]+$"
+        },
+        "image": {
+          "$ref": "#/$defs/binding"
+        },
+        "context": {
+          "$ref": "#/$defs/context"
+        },
+        "regions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/region"
+          },
+          "minItems": 1
+        },
+        "sourceSize": {
+          "$ref": "#/$defs/size"
+        }
+      },
+      "required": [
+        "id",
+        "assetPath",
+        "image",
+        "context",
+        "regions"
+      ]
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "assetPath": {
+          "type": "string",
+          "pattern": "^/Game/UI/(?:UMG|AIPrototype)/[^.]+$"
+        },
+        "widgetNames": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+          },
+          "minItems": 0
+        }
+      },
+      "required": [
+        "assetPath"
+      ]
+    },
+    "baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requirement": {
+          "$ref": "#/$defs/binding"
+        },
+        "bundle": {
+          "$ref": "#/$defs/binding"
+        },
+        "readback": {
+          "$ref": "#/$defs/binding"
+        },
+        "snapshot": {
+          "$ref": "#/$defs/binding"
+        }
+      },
+      "required": [
+        "requirement",
+        "bundle",
+        "readback",
+        "snapshot"
+      ]
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requirement": {
+          "$ref": "#/$defs/binding"
+        },
+        "bundle": {
+          "$ref": "#/$defs/binding"
+        }
+      },
+      "required": [
+        "requirement",
+        "bundle"
+      ]
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "nextgame-ui-art-request"
+        },
+        "version": {
+          "const": 1
+        },
+        "requestId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "goal": {
+          "enum": [
+            "formal-art",
+            "upgrade-art",
+            "local-art"
+          ]
+        },
+        "originalText": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scope": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/scope"
+          },
+          "minItems": 1
+        },
+        "baseline": {
+          "$ref": "#/$defs/baseline"
+        },
+        "target": {
+          "$ref": "#/$defs/target"
+        },
+        "references": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/reference"
+          },
+          "minItems": 1
+        },
+        "resourceDir": {
+          "type": "string",
+          "minLength": 1
+        },
+        "samples": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/binding"
+          },
+          "minItems": 0
+        },
+        "resourceCatalog": {
+          "$ref": "#/$defs/binding"
+        },
+        "productionAuthorized": {
+          "type": "boolean"
+        },
+        "budget": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "maxCorrectionRounds": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2
+            },
+            "maxModelCalls": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "tokenLimits": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "inputTokens": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "cachedInputTokens": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "outputTokens": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "reasoningTokens": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "visionTokens": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "required": []
+            }
+          },
+          "required": [
+            "maxCorrectionRounds",
+            "maxModelCalls",
+            "tokenLimits"
+          ]
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "presentation-review/1",
+              "development-baseline/1",
+              "mapped-source-reference/1",
+              "procedural-ui-material/1",
+              "procedural-ui-material/2",
+              "delegated-art-choice/1"
+            ]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "developmentBaseline": {
+          "$ref": "#/$defs/developmentBaseline"
+        },
+        "delegatedArtChoice": {
+          "$ref": "#/$defs/binding"
+        }
+      },
+      "required": [
+        "kind",
+        "version",
+        "requestId",
+        "goal",
+        "originalText",
+        "scope",
+        "baseline",
+        "references",
+        "resourceDir",
+        "productionAuthorized",
+        "budget"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "capabilities": {
+                "contains": {
+                  "const": "development-baseline/1"
+                }
+              }
+            },
+            "required": [
+              "capabilities"
+            ]
+          },
+          "then": {
+            "required": [
+              "developmentBaseline"
+            ],
+            "properties": {
+              "goal": {
+                "const": "formal-art"
+              }
+            }
+          },
+          "else": {
+            "not": {
+              "required": [
+                "developmentBaseline"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "capabilities": {
+                "contains": {
+                  "const": "mapped-source-reference/1"
+                }
+              }
+            },
+            "required": [
+              "capabilities"
+            ]
+          },
+          "then": {
+            "properties": {
+              "references": {
+                "items": {
+                  "required": [
+                    "sourceSize"
+                  ],
+                  "properties": {
+                    "regions": {
+                      "items": {
+                        "required": [
+                          "captureBounds"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "references": {
+                "items": {
+                  "not": {
+                    "required": [
+                      "sourceSize"
+                    ]
+                  },
+                  "properties": {
+                    "regions": {
+                      "items": {
+                        "not": {
+                          "required": [
+                            "captureBounds"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "capabilities": {
+                "contains": {
+                  "enum": [
+                    "procedural-ui-material/1",
+                    "procedural-ui-material/2"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "capabilities"
+            ]
+          },
+          "then": {
+            "properties": {
+              "capabilities": {
+                "contains": {
+                  "const": "presentation-review/1"
+                },
+                "not": {
+                  "allOf": [
+                    {
+                      "contains": {
+                        "const": "procedural-ui-material/1"
+                      }
+                    },
+                    {
+                      "contains": {
+                        "const": "procedural-ui-material/2"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "capabilities": {
+                "contains": {
+                  "const": "delegated-art-choice/1"
+                }
+              }
+            },
+            "required": [
+              "capabilities"
+            ]
+          },
+          "then": {
+            "required": [
+              "delegatedArtChoice"
+            ],
+            "properties": {
+              "capabilities": {
+                "contains": {
+                  "const": "presentation-review/1"
+                }
+              }
+            }
+          },
+          "else": {
+            "not": {
+              "required": [
+                "delegatedArtChoice"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "operation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": [
+            "set-property",
+            "set-slot",
+            "add-widget",
+            "remove-widget",
+            "reparent-widget",
+            "import-resource"
+          ]
+        },
+        "assetPath": {
+          "type": "string",
+          "pattern": "^/Game/UI/(?:UMG|AIPrototype)/[^.]+$"
+        },
+        "widgetName": {
+          "type": "string",
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+        },
+        "property": {
+          "type": "string",
+          "minLength": 1
+        },
+        "before": {},
+        "after": {},
+        "sourceElementId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "resourceId": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "assetPath",
+        "widgetName",
+        "before",
+        "after",
+        "sourceElementId"
+      ]
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "$ref": "#/$defs/operation"
+        },
+        "evidence": {
+          "type": "string",
+          "minLength": 1
+        },
+        "resolution": {
+          "enum": [
+            "unambiguous",
+            "confirmed",
+            "unresolved"
+          ]
+        },
+        "confirmation": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "operation",
+        "evidence",
+        "resolution"
+      ]
+    },
+    "decisions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "nextgame-ui-art-decisions"
+        },
+        "version": {
+          "const": 1
+        },
+        "requestSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "decisions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/decision"
+          },
+          "minItems": 0
+        },
+        "presentationReview": {
+          "$ref": "#/$defs/presentationReview"
+        }
+      },
+      "required": [
+        "kind",
+        "version",
+        "requestSha256",
+        "decisions"
+      ]
+    },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "nextgame-ui-art-plan"
+        },
+        "version": {
+          "const": 1
+        },
+        "request": {
+          "$ref": "#/$defs/binding"
+        },
+        "decisions": {
+          "$ref": "#/$defs/binding"
+        },
+        "baselineStateSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "expectedStateSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "operations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/operation"
+          },
+          "minItems": 0
+        },
+        "status": {
+          "enum": [
+            "ready",
+            "needs-review",
+            "blocked"
+          ]
+        },
+        "issues": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/issue"
+          },
+          "minItems": 0
+        },
+        "round": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "previousVerification": {
+          "$ref": "#/$defs/binding"
+        }
+      },
+      "required": [
+        "kind",
+        "version",
+        "request",
+        "decisions",
+        "baselineStateSha256",
+        "expectedStateSha256",
+        "operations",
+        "status",
+        "issues",
+        "round"
+      ]
+    },
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "enum": [
+            "passed",
+            "failed",
+            "pending"
+          ]
+        },
+        "details": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "id",
+        "status",
+        "details"
+      ]
+    },
+    "reviewer": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "actorType": {
+          "enum": [
+            "user",
+            "agent"
+          ]
+        },
+        "confirmationSource": {
+          "enum": [
+            "direct-user-message",
+            "visual-inspection"
+          ]
+        }
+      },
+      "required": [
+        "actorType",
+        "confirmationSource"
+      ]
+    },
+    "visualReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "nextgame-ui-art-visual-review"
+        },
+        "version": {
+          "const": 1
+        },
+        "status": {
+          "enum": [
+            "passed",
+            "needs-review"
+          ]
+        },
+        "snapshotSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "comparisons": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/binding"
+          },
+          "minItems": 1
+        },
+        "reviewedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reviewer": {
+          "$ref": "#/$defs/reviewer"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "inspectedRegions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "unresolved": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/issue"
+          },
+          "minItems": 0
+        }
+      },
+      "required": [
+        "kind",
+        "version",
+        "status",
+        "snapshotSha256",
+        "comparisons",
+        "reviewedAt",
+        "reviewer",
+        "message",
+        "inspectedRegions",
+        "unresolved"
+      ]
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "nextgame-ui-art-verification"
+        },
+        "version": {
+          "const": 1
+        },
+        "plan": {
+          "$ref": "#/$defs/binding"
+        },
+        "snapshot": {
+          "$ref": "#/$defs/binding"
+        },
+        "execution": {
+          "$ref": "#/$defs/binding"
+        },
+        "visualReview": {
+          "$ref": "#/$defs/binding"
+        },
+        "comparisons": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/binding"
+          },
+          "minItems": 1
+        },
+        "status": {
+          "enum": [
+            "passed",
+            "needs-review",
+            "failed"
+          ]
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/check"
+          },
+          "minItems": 1
+        },
+        "verifiedAt": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "kind",
+        "version",
+        "plan",
+        "snapshot",
+        "execution",
+        "visualReview",
+        "comparisons",
+        "status",
+        "checks",
+        "verifiedAt"
+      ]
+    },
+    "stage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "goal": {
+          "enum": [
+            "formal-art",
+            "upgrade-art",
+            "local-art"
+          ]
+        },
+        "request": {
+          "$ref": "#/$defs/binding"
+        },
+        "plan": {
+          "$ref": "#/$defs/binding"
+        },
+        "verification": {
+          "$ref": "#/$defs/binding"
+        }
+      },
+      "required": [
+        "goal",
+        "request",
+        "plan",
+        "verification"
+      ]
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "nextgame-ui-art-execution"
+        },
+        "version": {
+          "const": 1
+        },
+        "planSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "status": {
+          "enum": [
+            "running",
+            "failed",
+            "completed",
+            "manual-recovery"
+          ]
+        },
+        "completedIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "currentOperation": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "expectedStateSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "startedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "updatedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "readback": {
+          "$ref": "#/$defs/binding"
+        },
+        "failure": {
+          "type": "string",
+          "minLength": 1
+        },
+        "currentBatch": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/setBatchIntent"
+            }
+          ]
+        },
+        "batchReceipts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/binding"
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "version",
+        "planSha256",
+        "status",
+        "completedIds",
+        "currentOperation",
+        "expectedStateSha256",
+        "startedAt",
+        "updatedAt"
+      ]
+    },
+    "presentationWidget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "assetPath": {
+          "type": "string",
+          "pattern": "^/Game/UI/(?:UMG|AIPrototype)/[^.]+$"
+        },
+        "widgetName": {
+          "type": "string",
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+        }
+      },
+      "required": [
+        "assetPath",
+        "widgetName"
+      ]
+    },
+    "presentationReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "referenceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "regionId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "bounds": {
+          "$ref": "#/$defs/bounds"
+        }
+      },
+      "required": [
+        "referenceId",
+        "regionId",
+        "bounds"
+      ]
+    },
+    "presentationConfirmation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "scope": {
+          "enum": [
+            "effect-type",
+            "appearance-parameters"
+          ]
+        },
+        "source": {
+          "const": "direct-user-message"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "scope",
+        "source",
+        "text"
+      ]
+    },
+    "presentationSource": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "resource"
+            },
+            "catalogResourceId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "image": {
+              "$ref": "#/$defs/binding"
+            },
+            "frameSize": {
+              "$ref": "#/$defs/size"
+            },
+            "alphaBounds": {
+              "$ref": "#/$defs/bounds"
+            }
+          },
+          "required": [
+            "kind",
+            "catalogResourceId",
+            "image",
+            "frameSize",
+            "alphaBounds"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "procedural"
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "kind",
+            "reason"
+          ]
+        },
+        {
+          "$ref": "#/$defs/presentationMaterialSource"
+        }
+      ]
+    },
+    "presentationNineSlice": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cutPixels": {
+          "$ref": "#/$defs/bounds"
+        },
+        "stretchAxes": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "x",
+              "y"
+            ]
+          },
+          "uniqueItems": true,
+          "minItems": 1,
+          "maxItems": 2
+        },
+        "basisScale": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "protectedRegions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "bounds": {
+                "$ref": "#/$defs/bounds"
+              },
+              "purpose": {
+                "type": "string",
+                "minLength": 1
+              },
+              "preserveAxes": {
+                "type": "array",
+                "items": {
+                  "enum": [
+                    "x",
+                    "y"
+                  ]
+                },
+                "uniqueItems": true,
+                "minItems": 1,
+                "maxItems": 2
+              }
+            },
+            "required": [
+              "id",
+              "bounds",
+              "purpose",
+              "preserveAxes"
+            ]
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "cutPixels",
+        "stretchAxes",
+        "basisScale",
+        "protectedRegions"
+      ]
+    },
+    "presentationImage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "assetPath": {
+          "type": "string",
+          "pattern": "^/Game/UI/(?:UMG|AIPrototype)/[^.]+$"
+        },
+        "widgetName": {
+          "type": "string",
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+        },
+        "reference": {
+          "$ref": "#/$defs/presentationReference"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "resolution": {
+          "enum": [
+            "unambiguous",
+            "confirmed",
+            "unresolved"
+          ]
+        },
+        "source": {
+          "$ref": "#/$defs/presentationSource"
+        },
+        "aspectMode": {
+          "enum": [
+            "preserve",
+            "stretch",
+            "nine-slice",
+            "no-draw"
+          ]
+        },
+        "familyId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "nineSlice": {
+          "$ref": "#/$defs/presentationNineSlice"
+        },
+        "confirmation": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "scope": {
+              "const": "appearance-parameters"
+            },
+            "source": {
+              "const": "direct-user-message"
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "scope",
+            "source",
+            "text"
+          ]
+        }
+      },
+      "required": [
+        "assetPath",
+        "widgetName",
+        "reference",
+        "reason",
+        "resolution",
+        "source",
+        "aspectMode",
+        "familyId"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "source": {
+                "properties": {
+                  "kind": {
+                    "const": "material"
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            },
+            "required": [
+              "source"
+            ]
+          },
+          "then": {
+            "properties": {
+              "aspectMode": {
+                "const": "preserve"
+              }
+            },
+            "not": {
+              "required": [
+                "nineSlice"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "presentationText": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "assetPath": {
+          "type": "string",
+          "pattern": "^/Game/UI/(?:UMG|AIPrototype)/[^.]+$"
+        },
+        "widgetName": {
+          "type": "string",
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+        },
+        "reference": {
+          "$ref": "#/$defs/presentationReference"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "resolution": {
+          "enum": [
+            "unambiguous",
+            "confirmed",
+            "unresolved",
+            "delegated"
+          ]
+        },
+        "effect": {
+          "enum": [
+            "none",
+            "outline",
+            "shadow",
+            "outline-and-shadow",
+            "unknown"
+          ]
+        },
+        "effectTypeConfidence": {
+          "enum": [
+            "high",
+            "medium",
+            "low",
+            "unknown"
+          ]
+        },
+        "parameterConfidence": {
+          "enum": [
+            "high",
+            "medium",
+            "low",
+            "unknown"
+          ]
+        },
+        "confirmations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/presentationConfirmation"
+          },
+          "minItems": 0
+        },
+        "outline": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "size": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "color": {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "minItems": 4,
+              "maxItems": 4
+            }
+          },
+          "required": [
+            "size",
+            "color"
+          ]
+        },
+        "shadow": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "offset": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "color": {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "minItems": 4,
+              "maxItems": 4
+            }
+          },
+          "required": [
+            "offset",
+            "color"
+          ]
+        }
+      },
+      "required": [
+        "assetPath",
+        "widgetName",
+        "reference",
+        "reason",
+        "resolution",
+        "effect",
+        "effectTypeConfidence",
+        "parameterConfidence",
+        "confirmations",
+        "outline",
+        "shadow"
+      ]
+    },
+    "presentationFamily": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "members": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/presentationWidget"
+          },
+          "minItems": 2
+        },
+        "comparisons": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "brush-size",
+              "slot-size",
+              "source-scale",
+              "brush-width",
+              "brush-height",
+              "slot-width",
+              "slot-height",
+              "source-scale-x",
+              "source-scale-y",
+              "aspect-mode"
+            ]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "exceptions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/presentationFamilyException"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "members",
+        "comparisons",
+        "reason",
+        "exceptions"
+      ]
+    },
+    "presentationReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "images": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/presentationImage"
+          },
+          "minItems": 0
+        },
+        "texts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/presentationText"
+          },
+          "minItems": 0
+        },
+        "families": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/presentationFamily"
+          },
+          "minItems": 0
+        }
+      },
+      "required": [
+        "version",
+        "images",
+        "texts",
+        "families"
+      ]
+    },
+    "presentationFamilyException": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "assetPath": {
+              "type": "string",
+              "pattern": "^/Game/UI/(?:UMG|AIPrototype)/[^.]+$"
+            },
+            "widgetName": {
+              "type": "string",
+              "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+            },
+            "comparison": {
+              "enum": [
+                "brush-size",
+                "slot-size",
+                "source-scale"
+              ]
+            },
+            "expectedValue": {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "assetPath",
+            "widgetName",
+            "comparison",
+            "expectedValue",
+            "reason"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "assetPath": {
+              "type": "string",
+              "pattern": "^/Game/UI/(?:UMG|AIPrototype)/[^.]+$"
+            },
+            "widgetName": {
+              "type": "string",
+              "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+            },
+            "comparison": {
+              "enum": [
+                "brush-width",
+                "brush-height",
+                "slot-width",
+                "slot-height",
+                "source-scale-x",
+                "source-scale-y"
+              ]
+            },
+            "expectedValue": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "assetPath",
+            "widgetName",
+            "comparison",
+            "expectedValue",
+            "reason"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "assetPath": {
+              "type": "string",
+              "pattern": "^/Game/UI/(?:UMG|AIPrototype)/[^.]+$"
+            },
+            "widgetName": {
+              "type": "string",
+              "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+            },
+            "comparison": {
+              "enum": [
+                "aspect-mode"
+              ]
+            },
+            "expectedValue": {
+              "enum": [
+                "preserve",
+                "stretch",
+                "nine-slice",
+                "no-draw"
+              ]
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "assetPath",
+            "widgetName",
+            "comparison",
+            "expectedValue",
+            "reason"
+          ]
+        }
+      ]
+    },
+    "developmentBaseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "structureCompletedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pendingCheckIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "buildEvidence": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "$ref": "#/$defs/developmentBuildEvidence"
+          }
+        }
+      },
+      "required": [
+        "version",
+        "structureCompletedAt",
+        "pendingCheckIds",
+        "buildEvidence"
+      ]
+    },
+    "developmentBuildEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "checkId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "stepId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "plan": {
+          "$ref": "#/$defs/binding"
+        },
+        "checkpoint": {
+          "$ref": "#/$defs/binding"
+        }
+      },
+      "required": [
+        "checkId",
+        "stepId",
+        "plan",
+        "checkpoint"
+      ]
+    },
+    "presentationMaterialSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "material"
+        },
+        "materialPath": {
+          "type": "string",
+          "pattern": "^/Game/(?:[A-Za-z0-9_]+/)*[A-Za-z0-9_]+$"
+        },
+        "evaluationSize": {
+          "$ref": "#/$defs/size"
+        },
+        "evidence": {
+          "$ref": "#/$defs/binding"
+        }
+      },
+      "required": [
+        "kind",
+        "materialPath",
+        "evaluationSize",
+        "evidence"
+      ]
+    },
+    "proceduralMaterialCall": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "toolset": {
+              "const": "editor_toolset.toolsets.material.MaterialTools"
+            },
+            "tool": {
+              "const": "recompile"
+            },
+            "arguments": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "material_or_function": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "refPath": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "refPath"
+                  ]
+                }
+              },
+              "required": [
+                "material_or_function"
+              ]
+            },
+            "result": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {},
+                  "required": []
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "returnValue": {
+                      "type": "null"
+                    }
+                  },
+                  "required": [
+                    "returnValue"
+                  ]
+                }
+              ]
+            },
+            "startedAt": {
+              "type": "string",
+              "minLength": 1
+            },
+            "completedAt": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "toolset",
+            "tool",
+            "arguments",
+            "result",
+            "startedAt",
+            "completedAt"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "toolset": {
+              "const": "editor_toolset.toolsets.asset.AssetTools"
+            },
+            "tool": {
+              "const": "save_assets"
+            },
+            "arguments": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "asset_paths": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^/Game/(?:[A-Za-z0-9_]+/)*[A-Za-z0-9_]+$"
+                  },
+                  "minItems": 1,
+                  "maxItems": 1
+                }
+              },
+              "required": [
+                "asset_paths"
+              ]
+            },
+            "result": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "returnValue": {
+                  "const": true
+                }
+              },
+              "required": [
+                "returnValue"
+              ]
+            },
+            "startedAt": {
+              "type": "string",
+              "minLength": 1
+            },
+            "completedAt": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "toolset",
+            "tool",
+            "arguments",
+            "result",
+            "startedAt",
+            "completedAt"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "toolset": {
+              "const": "editor_toolset.toolsets.asset.AssetTools"
+            },
+            "tool": {
+              "const": "load_asset"
+            },
+            "arguments": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "asset_path": {
+                  "type": "string",
+                  "pattern": "^/Game/(?:[A-Za-z0-9_]+/)*[A-Za-z0-9_]+$"
+                }
+              },
+              "required": [
+                "asset_path"
+              ]
+            },
+            "result": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "returnValue": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "refPath": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "refPath"
+                  ]
+                }
+              },
+              "required": [
+                "returnValue"
+              ]
+            },
+            "startedAt": {
+              "type": "string",
+              "minLength": 1
+            },
+            "completedAt": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "toolset",
+            "tool",
+            "arguments",
+            "result",
+            "startedAt",
+            "completedAt"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "toolset": {
+              "const": "editor_toolset.toolsets.asset.AssetTools"
+            },
+            "tool": {
+              "const": "is_dirty"
+            },
+            "arguments": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "asset_path": {
+                  "type": "string",
+                  "pattern": "^/Game/(?:[A-Za-z0-9_]+/)*[A-Za-z0-9_]+$"
+                }
+              },
+              "required": [
+                "asset_path"
+              ]
+            },
+            "result": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "returnValue": {
+                  "const": false
+                }
+              },
+              "required": [
+                "returnValue"
+              ]
+            },
+            "startedAt": {
+              "type": "string",
+              "minLength": 1
+            },
+            "completedAt": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "toolset",
+            "tool",
+            "arguments",
+            "result",
+            "startedAt",
+            "completedAt"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "toolset": {
+              "const": "editor_toolset.toolsets.object.ObjectTools"
+            },
+            "tool": {
+              "const": "get_class"
+            },
+            "arguments": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "instance": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "refPath": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "refPath"
+                  ]
+                }
+              },
+              "required": [
+                "instance"
+              ]
+            },
+            "result": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "returnValue": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "refPath": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "refPath"
+                  ]
+                }
+              },
+              "required": [
+                "returnValue"
+              ]
+            },
+            "startedAt": {
+              "type": "string",
+              "minLength": 1
+            },
+            "completedAt": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "toolset",
+            "tool",
+            "arguments",
+            "result",
+            "startedAt",
+            "completedAt"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "toolset": {
+              "const": "editor_toolset.toolsets.object.ObjectTools"
+            },
+            "tool": {
+              "const": "get_properties"
+            },
+            "arguments": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "instance": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "refPath": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "refPath"
+                  ]
+                },
+                "properties": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "minItems": 1,
+                  "uniqueItems": true
+                }
+              },
+              "required": [
+                "instance",
+                "properties"
+              ]
+            },
+            "result": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "returnValue": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "returnValue"
+              ]
+            },
+            "startedAt": {
+              "type": "string",
+              "minLength": 1
+            },
+            "completedAt": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "toolset",
+            "tool",
+            "arguments",
+            "result",
+            "startedAt",
+            "completedAt"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "toolset": {
+              "const": "editor_toolset.toolsets.material.MaterialTools"
+            },
+            "tool": {
+              "const": "get_expressions"
+            },
+            "arguments": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "material_or_function": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "refPath": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "refPath"
+                  ]
+                }
+              },
+              "required": [
+                "material_or_function"
+              ]
+            },
+            "result": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "returnValue": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "refPath": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "refPath"
+                    ]
+                  },
+                  "minItems": 3,
+                  "maxItems": 3,
+                  "uniqueItems": true
+                }
+              },
+              "required": [
+                "returnValue"
+              ]
+            },
+            "startedAt": {
+              "type": "string",
+              "minLength": 1
+            },
+            "completedAt": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "toolset",
+            "tool",
+            "arguments",
+            "result",
+            "startedAt",
+            "completedAt"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "toolset": {
+              "const": "editor_toolset.toolsets.material.MaterialTools"
+            },
+            "tool": {
+              "const": "get_expression_inputs"
+            },
+            "arguments": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "material_or_function": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "refPath": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "refPath"
+                  ]
+                },
+                "expression": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "refPath": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "refPath"
+                  ]
+                }
+              },
+              "required": [
+                "material_or_function",
+                "expression"
+              ]
+            },
+            "result": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "returnValue": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "output_name": {
+                        "type": "string"
+                      },
+                      "expression": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "refPath": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        },
+                        "required": [
+                          "refPath"
+                        ]
+                      },
+                      "input_name": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "output_name",
+                      "expression",
+                      "input_name"
+                    ]
+                  },
+                  "maxItems": 1
+                }
+              },
+              "required": [
+                "returnValue"
+              ]
+            },
+            "startedAt": {
+              "type": "string",
+              "minLength": 1
+            },
+            "completedAt": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "toolset",
+            "tool",
+            "arguments",
+            "result",
+            "startedAt",
+            "completedAt"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "toolset": {
+              "const": "editor_toolset.toolsets.material.MaterialTools"
+            },
+            "tool": {
+              "const": "get_expression_output_names"
+            },
+            "arguments": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "expression": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "refPath": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "refPath"
+                  ]
+                }
+              },
+              "required": [
+                "expression"
+              ]
+            },
+            "result": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "returnValue": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 1,
+                  "uniqueItems": true
+                }
+              },
+              "required": [
+                "returnValue"
+              ]
+            },
+            "startedAt": {
+              "type": "string",
+              "minLength": 1
+            },
+            "completedAt": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "toolset",
+            "tool",
+            "arguments",
+            "result",
+            "startedAt",
+            "completedAt"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "toolset": {
+              "const": "editor_toolset.toolsets.material.MaterialTools"
+            },
+            "tool": {
+              "const": "get_property_input"
+            },
+            "arguments": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "material": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "refPath": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "refPath"
+                  ]
+                },
+                "material_property": {
+                  "enum": [
+                    "MP_Opacity",
+                    "MP_EmissiveColor"
+                  ]
+                }
+              },
+              "required": [
+                "material",
+                "material_property"
+              ]
+            },
+            "result": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "returnValue": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "output_name": {
+                      "type": "string"
+                    },
+                    "expression": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "refPath": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "refPath"
+                      ]
+                    },
+                    "input_name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "output_name",
+                    "expression",
+                    "input_name"
+                  ]
+                }
+              },
+              "required": [
+                "returnValue"
+              ]
+            },
+            "startedAt": {
+              "type": "string",
+              "minLength": 1
+            },
+            "completedAt": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "toolset",
+            "tool",
+            "arguments",
+            "result",
+            "startedAt",
+            "completedAt"
+          ]
+        }
+      ]
+    },
+    "proceduralMaterialReadback": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "nextgame-ui-procedural-material-readback"
+        },
+        "version": {
+          "const": 1
+        },
+        "acquisition": {
+          "const": "official-unreal-mcp"
+        },
+        "materialPath": {
+          "type": "string",
+          "pattern": "^/Game/(?:[A-Za-z0-9_]+/)*[A-Za-z0-9_]+$"
+        },
+        "projectFile": {
+          "$ref": "#/$defs/binding"
+        },
+        "savedFile": {
+          "$ref": "#/$defs/binding"
+        },
+        "capturedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "calls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/proceduralMaterialCall"
+          },
+          "minItems": 21,
+          "maxItems": 21
+        },
+        "executionReceipt": {
+          "$ref": "#/$defs/binding"
+        }
+      },
+      "required": [
+        "kind",
+        "version",
+        "acquisition",
+        "materialPath",
+        "projectFile",
+        "savedFile",
+        "capturedAt",
+        "calls",
+        "executionReceipt"
+      ]
+    },
+    "delegatedTextChoice": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "assetPath": {
+          "type": "string",
+          "pattern": "^/Game/UI/(?:UMG|AIPrototype)/[^.]+$"
+        },
+        "widgetName": {
+          "type": "string",
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+        },
+        "reference": {
+          "$ref": "#/$defs/presentationReference"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "effect": {
+          "enum": [
+            "none",
+            "outline",
+            "shadow",
+            "outline-and-shadow",
+            "unknown"
+          ]
+        },
+        "effectTypeConfidence": {
+          "enum": [
+            "high",
+            "medium",
+            "low",
+            "unknown"
+          ]
+        },
+        "parameterConfidence": {
+          "enum": [
+            "high",
+            "medium",
+            "low",
+            "unknown"
+          ]
+        },
+        "outline": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "size": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "color": {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "minItems": 4,
+              "maxItems": 4
+            }
+          },
+          "required": [
+            "size",
+            "color"
+          ]
+        },
+        "shadow": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "offset": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "color": {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "minItems": 4,
+              "maxItems": 4
+            }
+          },
+          "required": [
+            "offset",
+            "color"
+          ]
+        }
+      },
+      "required": [
+        "assetPath",
+        "widgetName",
+        "reference",
+        "reason",
+        "effect",
+        "effectTypeConfidence",
+        "parameterConfidence",
+        "outline",
+        "shadow"
+      ]
+    },
+    "delegatedArtChoice": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "request-scoped-art-choice"
+        },
+        "version": {
+          "const": 1
+        },
+        "requestId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reviewer": {
+          "const": "primary-coordinator"
+        },
+        "scope": {
+          "const": "appearance-choices-only"
+        },
+        "sourcePacket": {
+          "$ref": "#/$defs/binding"
+        },
+        "authorizationFile": {
+          "$ref": "#/$defs/binding"
+        },
+        "sourceKey": {
+          "type": "string",
+          "minLength": 1
+        },
+        "messageSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "explicitGrantQuote": {
+          "enum": [
+            "我授权你这一次测试自动进行下去",
+            "我授权本次测试按插件现有支持的委托审核流程自动推进；委托审核不能替代真实验证或伪造通过。"
+          ]
+        },
+        "sourceConfidencePreserved": {
+          "const": true
+        },
+        "actualVisualAcceptanceRequired": {
+          "const": true
+        },
+        "assetPaths": {
+          "type": "array",
+          "uniqueItems": true,
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "pattern": "^/Game/UI/UMG/[^.]+$"
+          }
+        },
+        "texts": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/delegatedTextChoice"
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "version",
+        "requestId",
+        "reviewer",
+        "scope",
+        "sourcePacket",
+        "authorizationFile",
+        "sourceKey",
+        "messageSha256",
+        "explicitGrantQuote",
+        "sourceConfidencePreserved",
+        "actualVisualAcceptanceRequired",
+        "assetPaths",
+        "texts"
+      ]
+    },
+    "setBatchIntent": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "capability": {
+          "const": "official-set-batch/1"
+        },
+        "version": {
+          "type": "integer",
+          "const": 1
+        },
+        "operationIds": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "operationsSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "beforeStateSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "beforeSnapshot": {
+          "$ref": "#/$defs/binding"
+        },
+        "startedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "result": {
+          "$ref": "#/$defs/binding"
+        },
+        "resultPath": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "capability",
+        "version",
+        "operationIds",
+        "operationsSha256",
+        "beforeStateSha256",
+        "beforeSnapshot",
+        "startedAt",
+        "resultPath"
+      ]
+    },
+    "setBatchReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "nextgame-ui-art-set-batch-receipt"
+        },
+        "version": {
+          "type": "integer",
+          "const": 1
+        },
+        "planSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "operationIds": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "completedIds": {
+          "type": "array",
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "mode": {
+          "enum": [
+            "official-result",
+            "actual-prefix-recovery"
+          ]
+        },
+        "beforeSnapshot": {
+          "$ref": "#/$defs/binding"
+        },
+        "afterSnapshot": {
+          "$ref": "#/$defs/binding"
+        },
+        "completedStateSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "result": {
+          "$ref": "#/$defs/binding"
+        },
+        "recordedAt": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "kind",
+        "version",
+        "planSha256",
+        "operationIds",
+        "completedIds",
+        "mode",
+        "beforeSnapshot",
+        "afterSnapshot",
+        "completedStateSha256",
+        "recordedAt"
+      ]
+    },
+    "proceduralMaterialReadbackV2": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "nextgame-ui-procedural-material-readback"
+        },
+        "version": {
+          "const": 2
+        },
+        "acquisition": {
+          "const": "official-unreal-mcp"
+        },
+        "materialPath": {
+          "type": "string",
+          "pattern": "^/Game/(?:[A-Za-z0-9_]+/)*[A-Za-z0-9_]+$"
+        },
+        "projectFile": {
+          "$ref": "#/$defs/binding"
+        },
+        "savedFile": {
+          "$ref": "#/$defs/binding"
+        },
+        "capturedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "calls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/proceduralMaterialCall"
+          },
+          "minItems": 21,
+          "maxItems": 21
+        },
+        "executionReceipt": {
+          "$ref": "#/$defs/binding"
+        }
+      },
+      "required": [
+        "kind",
+        "version",
+        "acquisition",
+        "materialPath",
+        "projectFile",
+        "savedFile",
+        "capturedAt",
+        "calls",
+        "executionReceipt"
+      ]
+    }
+  }
+}

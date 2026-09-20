@@ -1,85 +1,695 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "NextGame UI Build Acceptance",
-  "type": "object",
-  "required": [
-    "version",
-    "acceptanceId",
-    "phase",
-    "status",
-    "reviewer",
-    "reviewedAt",
-    "requirementBinding",
-    "bundleBinding",
-    "readbackBinding",
-    "reviewedAssetIds",
-    "reviewedAssetPaths"
-  ],
-  "additionalProperties": false,
-  "properties": {
-    "version": {"const": "0.1"},
-    "acceptanceId": {"$ref": "#/$defs/id"},
-    "phase": {"const": "post-build-ui-review"},
-    "status": {"enum": ["pending", "accepted", "rejected"]},
-    "reviewer": {"$ref": "#/$defs/reviewer"},
-    "reviewedAt": {"type": "string", "minLength": 1},
-    "requirementBinding": {"$ref": "#/$defs/requirementBinding"},
-    "bundleBinding": {"$ref": "#/$defs/bundleBinding"},
-    "readbackBinding": {"$ref": "#/$defs/readbackBinding"},
-    "reviewedAssetIds": {
-      "type": "array",
-      "minItems": 1,
-      "uniqueItems": true,
-      "items": {"$ref": "#/$defs/id"}
-    },
-    "reviewedAssetPaths": {
-      "type": "array",
-      "minItems": 1,
-      "uniqueItems": true,
-      "items": {"$ref": "#/$defs/assetPath"}
-    }
-  },
   "$defs": {
-    "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"},
-    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
-    "assetPath": {"type": "string", "pattern": "^/Game/UI/UMG/[A-Za-z0-9_]+(?:/[A-Za-z0-9_]+)+$"},
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "assetPath": {
+      "type": "string",
+      "pattern": "^/Game/UI/UMG/[A-Za-z0-9_]+(?:/[A-Za-z0-9_]+)+$"
+    },
     "reviewer": {
       "type": "object",
-      "required": ["actorType", "confirmationSource"],
+      "required": [
+        "actorType",
+        "confirmationSource"
+      ],
       "additionalProperties": false,
       "properties": {
-        "actorType": {"const": "user"},
-        "confirmationSource": {"const": "direct-user-message"}
+        "actorType": {
+          "const": "user"
+        },
+        "confirmationSource": {
+          "const": "direct-user-message"
+        }
       }
     },
     "requirementBinding": {
       "type": "object",
-      "required": ["requestId", "revision", "approvedContentSha256", "sha256"],
+      "required": [
+        "requestId",
+        "revision",
+        "approvedContentSha256",
+        "sha256"
+      ],
       "additionalProperties": false,
       "properties": {
-        "requestId": {"type": "string", "minLength": 1},
-        "revision": {"type": "integer", "minimum": 1},
-        "approvedContentSha256": {"$ref": "#/$defs/sha256"},
-        "sha256": {"$ref": "#/$defs/sha256"}
+        "requestId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "approvedContentSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
       }
     },
     "bundleBinding": {
       "type": "object",
-      "required": ["bundleId", "sha256"],
+      "required": [
+        "bundleId",
+        "sha256"
+      ],
       "additionalProperties": false,
       "properties": {
-        "bundleId": {"type": "string", "minLength": 1},
-        "sha256": {"$ref": "#/$defs/sha256"}
+        "bundleId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
       }
     },
     "readbackBinding": {
       "type": "object",
-      "required": ["readbackId", "sha256"],
+      "required": [
+        "readbackId",
+        "sha256"
+      ],
       "additionalProperties": false,
       "properties": {
-        "readbackId": {"type": "string", "minLength": 1},
-        "sha256": {"$ref": "#/$defs/sha256"}
+        "readbackId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "fileBinding": {
+      "type": "object",
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "reviewEvidence": {
+      "type": "object",
+      "required": [
+        "path",
+        "sha256",
+        "capturedAt"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "capturedAt": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "delegatedReviewer": {
+      "type": "object",
+      "required": [
+        "actorType",
+        "role",
+        "confirmationSource"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "actorType": {
+          "const": "agent"
+        },
+        "role": {
+          "const": "primary-coordinator"
+        },
+        "confirmationSource": {
+          "const": "delegated-user-authorization"
+        }
+      }
+    },
+    "grant": {
+      "type": "object",
+      "required": [
+        "kind",
+        "version",
+        "grantId",
+        "status",
+        "recordedAt",
+        "requestId",
+        "authorizedBy",
+        "capability",
+        "useLimit",
+        "systemAssetRoot",
+        "assetPaths",
+        "statementFormat",
+        "explicitGrantQuote",
+        "resultReviewQuote",
+        "documentationQuote",
+        "sourcePacket",
+        "sourceKey",
+        "messagePointer",
+        "messageSha256",
+        "authorizationFile"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "request-scoped-user-authorization"
+        },
+        "version": {
+          "const": 1,
+          "type": "integer"
+        },
+        "grantId": {
+          "$ref": "#/$defs/id"
+        },
+        "status": {
+          "enum": [
+            "active",
+            "revoked"
+          ]
+        },
+        "recordedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requestId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "authorizedBy": {
+          "type": "object",
+          "required": [
+            "actorType",
+            "source"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "actorType": {
+              "const": "user"
+            },
+            "source": {
+              "const": "direct-user-message"
+            }
+          }
+        },
+        "capability": {
+          "const": "final-result-review-and-document-handoff"
+        },
+        "useLimit": {
+          "const": 1,
+          "type": "integer"
+        },
+        "systemAssetRoot": {
+          "type": "string",
+          "pattern": "^/Game/UI/UMG/[A-Za-z0-9_]+$"
+        },
+        "assetPaths": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/assetPath"
+          }
+        },
+        "statementFormat": {
+          "enum": [
+            "zh-one-test-automation/1",
+            "zh-one-test-delegated-review/1",
+            "en-one-request-result-review/1"
+          ]
+        },
+        "explicitGrantQuote": {
+          "type": "string",
+          "minLength": 1
+        },
+        "resultReviewQuote": {
+          "type": "string",
+          "minLength": 1
+        },
+        "documentationQuote": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourcePacket": {
+          "$ref": "#/$defs/fileBinding"
+        },
+        "sourceKey": {
+          "type": "string",
+          "minLength": 1
+        },
+        "messagePointer": {
+          "type": "string",
+          "pattern": "^/sources/(0|[1-9][0-9]*)/content$"
+        },
+        "messageSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "authorizationFile": {
+          "$ref": "#/$defs/fileBinding"
+        }
+      }
+    },
+    "resultReview": {
+      "type": "object",
+      "required": [
+        "kind",
+        "version",
+        "grantId",
+        "acceptanceId",
+        "requestId",
+        "reviewer",
+        "reviewedAt",
+        "status",
+        "userHasReviewedResult",
+        "unresolvedIssues",
+        "requirementBinding",
+        "bundleBinding",
+        "readbackBinding",
+        "sourceFiles",
+        "presentation",
+        "conversationAuthorityCheck",
+        "assetReviews",
+        "checkReviews"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "delegated-result-review"
+        },
+        "version": {
+          "const": 1,
+          "type": "integer"
+        },
+        "grantId": {
+          "$ref": "#/$defs/id"
+        },
+        "acceptanceId": {
+          "$ref": "#/$defs/id"
+        },
+        "requestId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reviewer": {
+          "$ref": "#/$defs/delegatedReviewer"
+        },
+        "reviewedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "const": "passed"
+        },
+        "userHasReviewedResult": {
+          "const": false,
+          "type": "boolean"
+        },
+        "unresolvedIssues": {
+          "type": "array",
+          "maxItems": 0
+        },
+        "requirementBinding": {
+          "$ref": "#/$defs/requirementBinding"
+        },
+        "bundleBinding": {
+          "$ref": "#/$defs/bundleBinding"
+        },
+        "readbackBinding": {
+          "$ref": "#/$defs/readbackBinding"
+        },
+        "sourceFiles": {
+          "type": "object",
+          "required": [
+            "requirement",
+            "bundle",
+            "readback"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "requirement": {
+              "$ref": "#/$defs/fileBinding"
+            },
+            "bundle": {
+              "$ref": "#/$defs/fileBinding"
+            },
+            "readback": {
+              "$ref": "#/$defs/fileBinding"
+            }
+          }
+        },
+        "presentation": {
+          "type": "object",
+          "required": [
+            "path",
+            "sha256",
+            "presentedAt"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "sha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "presentedAt": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "conversationAuthorityCheck": {
+          "type": "object",
+          "required": [
+            "checkedAt",
+            "source",
+            "delegationRevokedOrNarrowed"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "checkedAt": {
+              "type": "string",
+              "minLength": 1
+            },
+            "source": {
+              "const": "current-direct-user-conversation"
+            },
+            "delegationRevokedOrNarrowed": {
+              "const": false,
+              "type": "boolean"
+            }
+          }
+        },
+        "assetReviews": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "required": [
+              "assetId",
+              "assetPath",
+              "renderImages",
+              "geometryEvidence",
+              "stateMatrixEvidence",
+              "observations"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "assetId": {
+                "$ref": "#/$defs/id"
+              },
+              "assetPath": {
+                "$ref": "#/$defs/assetPath"
+              },
+              "renderImages": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "$ref": "#/$defs/reviewEvidence"
+                }
+              },
+              "geometryEvidence": {
+                "$ref": "#/$defs/reviewEvidence"
+              },
+              "stateMatrixEvidence": {
+                "$ref": "#/$defs/reviewEvidence"
+              },
+              "observations": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "checkReviews": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "required": [
+              "checkId",
+              "result",
+              "observations",
+              "evidence"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "checkId": {
+                "$ref": "#/$defs/id"
+              },
+              "result": {
+                "const": "passed"
+              },
+              "observations": {
+                "type": "string",
+                "minLength": 1
+              },
+              "evidence": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "$ref": "#/$defs/reviewEvidence"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "consumption": {
+      "type": "object",
+      "required": [
+        "kind",
+        "version",
+        "grantId",
+        "grantSha256",
+        "requestId",
+        "acceptanceId",
+        "resultFingerprint",
+        "consumedAt",
+        "useNumber"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "request-authorization-consumption"
+        },
+        "version": {
+          "const": 1,
+          "type": "integer"
+        },
+        "grantId": {
+          "$ref": "#/$defs/id"
+        },
+        "grantSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "requestId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "acceptanceId": {
+          "$ref": "#/$defs/id"
+        },
+        "resultFingerprint": {
+          "$ref": "#/$defs/sha256"
+        },
+        "consumedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "useNumber": {
+          "const": 1,
+          "type": "integer"
+        }
+      }
+    },
+    "directAcceptance": {
+      "type": "object",
+      "required": [
+        "version",
+        "acceptanceId",
+        "phase",
+        "status",
+        "reviewer",
+        "reviewedAt",
+        "requirementBinding",
+        "bundleBinding",
+        "readbackBinding",
+        "reviewedAssetIds",
+        "reviewedAssetPaths"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "const": "0.1"
+        },
+        "acceptanceId": {
+          "$ref": "#/$defs/id"
+        },
+        "phase": {
+          "const": "post-build-ui-review"
+        },
+        "status": {
+          "enum": [
+            "pending",
+            "accepted",
+            "rejected"
+          ]
+        },
+        "reviewer": {
+          "$ref": "#/$defs/reviewer"
+        },
+        "reviewedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requirementBinding": {
+          "$ref": "#/$defs/requirementBinding"
+        },
+        "bundleBinding": {
+          "$ref": "#/$defs/bundleBinding"
+        },
+        "readbackBinding": {
+          "$ref": "#/$defs/readbackBinding"
+        },
+        "reviewedAssetIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "reviewedAssetPaths": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/assetPath"
+          }
+        }
+      }
+    },
+    "delegatedAcceptance": {
+      "type": "object",
+      "required": [
+        "version",
+        "acceptanceId",
+        "phase",
+        "status",
+        "reviewer",
+        "reviewedAt",
+        "requirementBinding",
+        "bundleBinding",
+        "readbackBinding",
+        "reviewedAssetIds",
+        "reviewedAssetPaths",
+        "authorizationMode",
+        "authorizationBinding",
+        "resultReviewBinding",
+        "consumptionBinding"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "const": "0.2"
+        },
+        "acceptanceId": {
+          "$ref": "#/$defs/id"
+        },
+        "phase": {
+          "const": "post-build-ui-review"
+        },
+        "status": {
+          "enum": [
+            "pending",
+            "accepted",
+            "rejected"
+          ]
+        },
+        "reviewer": {
+          "$ref": "#/$defs/delegatedReviewer"
+        },
+        "reviewedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requirementBinding": {
+          "$ref": "#/$defs/requirementBinding"
+        },
+        "bundleBinding": {
+          "$ref": "#/$defs/bundleBinding"
+        },
+        "readbackBinding": {
+          "$ref": "#/$defs/readbackBinding"
+        },
+        "reviewedAssetIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "reviewedAssetPaths": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/assetPath"
+          }
+        },
+        "authorizationMode": {
+          "const": "delegated-user-authorization"
+        },
+        "authorizationBinding": {
+          "$ref": "#/$defs/fileBinding"
+        },
+        "resultReviewBinding": {
+          "$ref": "#/$defs/fileBinding"
+        },
+        "consumptionBinding": {
+          "$ref": "#/$defs/fileBinding"
+        }
       }
     }
-  }
+  },
+  "description": "0.1 retains direct-user post-result review.0.2 is explicit one-request delegated coordinator review with closed grant/review/consumption dependencies; never implicit automation consent.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/directAcceptance"
+    },
+    {
+      "$ref": "#/$defs/delegatedAcceptance"
+    }
+  ]
 }

@@ -5,7 +5,7 @@ description: Add, revise, version or migrate NextGame UI design and UMG producti
 
 # Maintain NextGame UI Specifications
 
-For the reusable production review policy and its explicitly scoped migration, see [production fidelity checks](../build-nextgame-umg/references/production-fidelity-checks.md) and the [2026-09-18 change record](references/production-review-change-20260918.md). Keep task-specific dimensions and unfinished visual checks out of global defaults.
+For the reusable production review policy and its explicitly scoped migration, see [production fidelity checks](../build-nextgame-umg/references/production-fidelity-checks.md) and the [2026-09-18 change record](references/production-review-change-20260918.md). The [2026-09-20 capability migration](references/execution-capability-change-20260920.md) adds explicit size, bounded text, material and authorization-format capabilities without reclassifying old evidence. Keep task-specific dimensions and unfinished visual checks out of global defaults.
 
 Locate the project design specification root supplied by the user or current project. Read its `AGENTS.md`, `AI_ENTRY.md` and `spec/07-spec-maintenance.md` when present. Do not hardcode another developer's drive or an installed plugin cache as authority.
 
@@ -21,6 +21,12 @@ Locate the project design specification root supplied by the user or current pro
 | Acceptance conditions and actual-state validators | Matching analysis/build/document contract and tests |
 
 A single screen correction is not automatically a global rule. Establish its general scope with evidence. Do not put fixed dimensions into both Markdown and JSON, turn preview fixtures into business limits, or modify gameplay/state transitions merely to fix a UI standard.
+
+## Art-stage ownership
+
+The optional sibling `$refine-nextgame-ui-art` stage owns art resource mappings, presentation evidence, and scoped example records; it shares the existing design authority and coordinator. A confirmed example is scoped project data, not automatically a global recipe or parameter default. Keep fixed layout/state/collection decisions in their original versioned design source. Any art change to those decisions requires an explicit source revision and new acceptance before application.
+
+Bundle/normalized Readback 0.4 add an opt-in art completion contract without relaxing 0.1–0.3. Do not relabel old accepted runs or change Requirement schema hashes merely because an art sidecar was added. Update art, Bundle, actual-state, and document gate regression tests together when changing the art handoff. See [on-demand-art-stage.md](../build-nextgame-umg/references/on-demand-art-stage.md).
 
 ## Make a compatible, reviewable change
 

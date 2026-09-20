@@ -17,8 +17,8 @@ Apply these rules before creating the Widget Blueprint asset:
 ## System folder
 
 - Store every production Widget Blueprint below `/Game/UI/UMG`.
-- Create one folder per system at `/Game/UI/UMG/<SystemFolder>`.
-- Name `<SystemFolder>` after the same system represented by the lower-case `system` asset-name token. They may differ in letter case for Content Browser presentation, but must not identify different systems.
+- By default, create one folder per system at `/Game/UI/UMG/<SystemFolder>`.
+- Without `profile.systemFolderInstance`, name `<SystemFolder>` after the same system represented by the lower-case `system` asset-name token; only letter case may differ. A date or other suffix without the explicit declaration is invalid.
 - Preserve the project's existing canonical folder spelling when the system folder already exists. Do not create a second folder that differs only in case.
 - When introducing a new system, create its system folder before creating the first Widget Blueprint.
 - Do not create a subsystem folder unless the project owner later supplies a separate folder rule. A subsystem remains an asset-name segment.
@@ -27,6 +27,15 @@ Examples:
 
 - `system: map`, `systemFolder: Map` → `/Game/UI/UMG/Map`
 - `system: fight`, `systemFolder: Fight` → `/Game/UI/UMG/Fight`
+
+### Explicit dated system-folder instance
+
+- For a separately authorized dated build destination, opt in with `profile.systemFolderInstance: {"version": 1, "date": "20260917", "number": 1}`. This closed object requires exactly those three fields; `date` must be a real Gregorian date in eight-digit `YYYYMMDD` form (years 0001–9999), and `number` must be an integer from 1 through 99.
+- With this declaration, `systemFolder` must be exactly `<SystemFolder>_<date>_<number padded to two digits>`. The prefix must identify `profile.system` and may differ from that token only by letter case. Preserve the chosen prefix spelling exactly in every target path. An arbitrary folder, mismatched date/number, or missing suffix is invalid.
+- This extension is versioned independently as `systemFolderInstance` version 1 within UILayoutSpec 0.2. It applies only to system-scoped `screen` and `child-widget` project targets, including collection entries. It is forbidden for `assetScope: project-common` and `assetKind: prototype`.
+- The logical `profile.system` and Blueprint basename are unchanged. For example, `system: onlinesea`, `systemFolder: OnlineSea_20260917_01` and the declaration above yield `/Game/UI/UMG/OnlineSea_20260917_01/umg_onlinesea`; a child or entry belongs under `/Game/UI/UMG/OnlineSea_20260917_01/Widgets` and retains the `uw_onlinesea_*` basename.
+- Target folders still match `systemFolder` exactly, including case; production `asset` still matches `profile.targetAsset` exactly. This opt-in changes no naming segments, collection relationships, system-specific integration destinations, save/verification rules, or authorization gates.
+- Existing layouts without the declaration retain their original meaning. Do not relabel old accepted evidence or migrate old destinations implicitly. No canonical-ID reference is introduced, and Requirement/Accepted Build View dependency projection remains unchanged; rebuild layouts and content-addressed rule-card packs against the current rule authority when using the extension.
 
 ## System-screen Widget Blueprint
 
@@ -64,7 +73,7 @@ Do not invent placeholder segments for omitted parts. Preserve the project-appro
 ## Project-common functional child Widget Blueprint
 
 - Use `profile.assetScope: project-common` to declare a cross-system child widget explicitly. Omitting `assetScope` preserves the system-scoped rules above.
-- Project-common scope is valid only for `assetKind: child-widget` and requires `system: common`. Keep `systemFolder` as the canonical spelling of that same token, normally `Common`; the ordinary system/system-folder identity check still applies.
+- Project-common scope is valid only for `assetKind: child-widget` and requires `system: common`. Keep `systemFolder` as the canonical spelling of that same token, normally `Common`; the ordinary system/system-folder identity check still applies, and `systemFolderInstance` is forbidden.
 - Project-common assets do not use a subsystem segment. Derive the name as `uw_common_<function>[_<secondary_function>]`.
 - Store the asset directly in the project shared-widget folder:
   - folder: `/Game/UI/UMG/Widgets`

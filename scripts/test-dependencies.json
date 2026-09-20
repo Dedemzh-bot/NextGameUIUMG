@@ -1,0 +1,11 @@
+{
+  "format": "nextgame-test-dependency/1",
+  "repository": "https://github.com/Dedemzh-bot/NextGameUIResource.git",
+  "commit": "8bb688fa57b4498f93428d75e0a545342ba9ce28",
+  "purpose": "Synthetic art resource catalog integration; no real project assets",
+  "files": {
+    "import_contract.py": "ac81f48d2ad6c9ce1ec3ace142abdf3df4a2f68dfa731ffb76e7b28030335107",
+    "register_icons.py": "cac8ff33f036bcbc4e796328b92bd90759b886de42dd5c6bf9d8d3f7a147a25b",
+    "resource_ids.py": "3afa9214c2010056db5dbac66de3ac691d94ebafcf1e4c0eaf4b3e6508ae4f71"
+  }
+}

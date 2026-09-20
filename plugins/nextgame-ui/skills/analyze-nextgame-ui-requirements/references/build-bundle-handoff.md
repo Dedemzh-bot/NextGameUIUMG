@@ -11,6 +11,8 @@
 7. [Verification and deviation records](#verification-and-deviation-records)
 8. [Documentation handoff](#documentation-handoff)
 
+For on-demand formal art, see [on-demand-art-stage.md](../../build-nextgame-umg/references/on-demand-art-stage.md). Bundle 0.4 preserves the 0.3 asset/reuse semantics, permits an empty reuse array for art-only assets, and requires bound art-stage evidence before completion.
+
 ## Handoff boundary
 
 The analysis skill owns:
@@ -70,7 +72,7 @@ The complete Requirement first passes its closed Schema, approval, canonical-ref
 
 | Field | Meaning |
 | --- | --- |
-| `version` | Select `0.1`, `0.2`, or `0.3` only through the closed routing rules below. |
+| `version` | Select `0.1`, `0.2`, `0.3`, or `0.4` only through the closed routing rules below. |
 | `bundleId` | Stable bundle-local ID. |
 | `requirement` | `path`, file `sha256`, `requestId`, `revision`, `reviewStatus`, and `approvedContentSha256` for the accepted requirement. |
 | `assets` | One record per in-scope plan: bundle ID, `assetPlanId`, path/kind/size, layout path/hash, translated dependencies, order, and status. |
@@ -85,7 +87,9 @@ Version routing is closed:
 
 - `0.1` is the original non-reuse multi-asset contract. It has no `reuseRelations` field.
 - `0.2` is the archived single-`SlotContent` reuse contract. It remains readable for historical bundles, but is not a template for new shared-widget work. Its `widget-tree-instance.parameterOverrides` must be empty because UnrealReadback 0.2 cannot prove saved Designer overrides.
-- `0.3` is required for new executable shared reuse. It records the dual inherited layers, Registry-backed activation, current Parent Class child, later host nesting, and any verified Designer parameter overrides.
+- `0.3` is required for new executable shared reuse without an art stage. It records the dual inherited layers, Registry-backed activation, current Parent Class child, later host nesting, and any verified Designer parameter overrides.
+
+- `0.4` is required for the on-demand art stage. It retains the 0.3 closed asset/reuse shapes, allows empty `reuseRelations`, and adds required `artStage` bindings. All 0.3 reuse rules below also apply to 0.4. Final art and normalized readback must pass before result acceptance.
 
 For `0.3`, `shared-prototype-extension.namedSlots` is a closed discriminated union:
 

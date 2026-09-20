@@ -96,6 +96,8 @@ Do not use two complete panels for a simple tint, opacity, or image-resource cha
 
 ## Composite Panel contract
 
+Apply [Local state ownership](../../build-nextgame-umg/references/visual-presentation-rules.md#local-state-ownership): markers belong to their accepted item/branch, shared popups keep their accepted child boundary, and group exclusivity needs explicit evidence separate from per-item branches.
+
 The build planner should realize a confirmed `exclusive-panel-branches` tab state model approximately as:
 
 ```text

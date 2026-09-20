@@ -190,8 +190,47 @@ def tool_step(step_id: str, toolset: str, tool: str, arguments: dict[str, Any], 
     return result
 
 
+def size_box_native_setter_contract(node: dict[str, Any]) -> dict[str, Any]:
+    """Explicit native methods for a runner with the authorized NxUE fallback.
+
+    This is metadata, never a fabricated registered MCP tool. Clearing a bound
+    changes its enable bit; its stored numeric value need not be zero afterward.
+    """
+    constraints = node["sizeBoxConstraints"]
+    calls = []
+    expected = {}
+    for axis in ("width", "height"):
+        key = axis + "Override"
+        value = constraints[key]
+        calls.append({"method": ("clear_" if value is None else "set_") + axis + "_override",
+                      "arguments": [] if value is None else [value]})
+        expected["bOverride_" + axis.title() + "Override"] = value is not None
+        if value is not None:
+            expected[key] = value
+    for method, property_name in (
+        ("min_desired_width", "MinDesiredWidth"), ("min_desired_height", "MinDesiredHeight"),
+        ("max_desired_width", "MaxDesiredWidth"), ("max_desired_height", "MaxDesiredHeight"),
+        ("min_aspect_ratio", "MinAspectRatio"), ("max_aspect_ratio", "MaxAspectRatio"),
+    ):
+        calls.append({"method": "clear_" + method, "arguments": []})
+        expected["bOverride_" + property_name] = False
+    return {
+        "stepId": f"set-size-box-native-constraints-{node['id']}",
+        "operation": "native_setter_fallback",
+        "contract": "size-box-constraints/1",
+        "adapter": "NxUEAgent",
+        "reason": "The registered official ObjectTools/UMG tools expose properties but no native SizeBox setter invocation; setters must enable/clear each bound.",
+        "arguments": {"instance": {"refPath": f"${{node.{node['id']}.returnValue.widget.refPath}}"}},
+        "requiredClass": "/Script/UMG.SizeBox",
+        "nativeCalls": calls,
+        "expectedProperties": expected,
+        "requiresPostSaveReadback": True,
+        "assertion": "The authorized runner must execute these native setters and compare official property readback before compile/save; this is not actual Desired Size measurement.",
+    }
+
+
 def build_plan(spec_path: Path, spec: dict[str, Any], catalog: dict[str, Any], rules: dict[str, Any]) -> dict[str, Any]:
-    validation = validate_spec(spec, catalog)
+    validation = validate_spec(spec, catalog, spec_path=spec_path)
     if not validation["valid"]:
         error_codes = ", ".join(
             str(entry.get("code", "unknown"))
@@ -297,7 +336,22 @@ def build_plan(spec_path: Path, spec: dict[str, Any], catalog: dict[str, Any], r
             # TextBlock is accepted by the generic property tool but leaves
             # the engine's white SlateColor unchanged.  Lower the complete
             # explicit SlateColor shape only for text.
-            if component.get("role") == "text.label" and canonical_name == "color":
+            if component.get("role") == "visual.image" and canonical_name == "brushImageSize":
+                # This is a layout prerequisite, not resource assignment. Preserve
+                # the live Brush's resource, tint, margins and draw type.
+                mapped_values.setdefault(unreal_name, {})["imageSize"] = {"x": value[0], "y": value[1]}
+            elif component.get("role") in {"collection.lua-list", "collection.lua-tile"} and canonical_name == "orientation":
+                # UILayoutSpec accepts semantic direction names and archived
+                # native enum names. ObjectTools requires the exact EOrientation
+                # enumerator; never prefix an already-native value twice.
+                orientations = {
+                    "Horizontal": "Orient_Horizontal", "Vertical": "Orient_Vertical",
+                    "Orient_Horizontal": "Orient_Horizontal", "Orient_Vertical": "Orient_Vertical",
+                }
+                if not isinstance(value, str) or value not in orientations:
+                    raise ValueError(f"{node_id}: orientation must be Horizontal, Vertical, Orient_Horizontal, or Orient_Vertical.")
+                mapped_values[unreal_name] = orientations[value]
+            elif component.get("role") == "text.label" and canonical_name == "color":
                 mapped_values[unreal_name] = {
                     "specifiedColor": value,
                     "colorUseRule": "UseColor_Specified",
@@ -344,6 +398,20 @@ def build_plan(spec_path: Path, spec: dict[str, Any], catalog: dict[str, Any], r
                 {"instance": instance, "values": mapped_values},
                 instruction="Serialize values as a compact JSON string after confirming exact property names.",
                 assertion="returnValue must be true",
+            ))
+
+        if "sizeBoxConstraints" in node:
+            fallback = size_box_native_setter_contract(node)
+            size_instance = fallback["arguments"]["instance"]
+            size_properties = list(fallback["expectedProperties"])
+            steps.append(tool_step(f"list-size-box-properties-{node_id}", "editor_toolset.toolsets.object.ObjectTools", "list_properties", {"instance": size_instance}))
+            steps.append(tool_step(f"get-size-box-properties-before-{node_id}", "editor_toolset.toolsets.object.ObjectTools", "get_properties", {"instance": size_instance, "properties": size_properties}))
+            steps.append(fallback)
+            steps.append(tool_step(
+                f"get-size-box-properties-after-{node_id}", "editor_toolset.toolsets.object.ObjectTools", "get_properties",
+                {"instance": size_instance, "properties": size_properties},
+                expectedProperties=fallback["expectedProperties"],
+                assertion="Compare actual native bound values and every enable bit with expectedProperties before compile/save.",
             ))
 
         parent_id = node.get("parent")
@@ -441,6 +509,12 @@ def build_plan(spec_path: Path, spec: dict[str, Any], catalog: dict[str, Any], r
                     "horizontalAlignment": f"HAlign_{overlay_slot['horizontalAlignment']}",
                     "verticalAlignment": f"VAlign_{overlay_slot['verticalAlignment']}",
                 }
+                # Omitted padding keeps archived 0.2 plans compatible. New
+                # accepted padding is always lowered, including explicit zeros.
+                if "padding" in overlay_slot:
+                    overlay_slot_values["padding"] = dict(zip(
+                        ("left", "top", "right", "bottom"), overlay_slot["padding"]
+                    ))
                 steps.append(tool_step(f"list-overlay-slot-properties-{node_id}", "editor_toolset.toolsets.object.ObjectTools", "list_properties", {"instance": slot_instance}))
                 steps.append(tool_step(f"get-overlay-slot-properties-{node_id}", "editor_toolset.toolsets.object.ObjectTools", "get_properties", {"instance": slot_instance, "properties": list(overlay_slot_values)}))
                 steps.append(tool_step(
@@ -451,9 +525,25 @@ def build_plan(spec_path: Path, spec: dict[str, Any], catalog: dict[str, Any], r
                     instruction="Serialize values as a compact JSON string after confirming exact OverlaySlot property names.",
                     assertion="returnValue must be true",
                 ))
+            elif parent_component["role"] == "container.size" and "sizeBoxSlot" in node:
+                size_slot = node["sizeBoxSlot"]
+                slot_instance = {"refPath": f"${{node.{node_id}.returnValue.slot.refPath}}"}
+                slot_values = {
+                    "padding": dict(zip(("left", "top", "right", "bottom"), size_slot["padding"])),
+                    "horizontalAlignment": "HAlign_" + size_slot["horizontalAlignment"],
+                    "verticalAlignment": "VAlign_" + size_slot["verticalAlignment"],
+                }
+                steps.append(tool_step(f"list-size-box-slot-properties-{node_id}", "editor_toolset.toolsets.object.ObjectTools", "list_properties", {"instance": slot_instance}))
+                steps.append(tool_step(f"get-size-box-slot-properties-{node_id}", "editor_toolset.toolsets.object.ObjectTools", "get_properties", {"instance": slot_instance, "properties": list(slot_values)}))
+                steps.append(tool_step(
+                    f"set-size-box-slot-properties-{node_id}", "editor_toolset.toolsets.object.ObjectTools", "set_properties",
+                    {"instance": slot_instance, "values": slot_values},
+                    instruction="Serialize values as compact JSON after confirming exact SizeBoxSlot property names.",
+                    assertion="returnValue must be true",
+                ))
             elif (
                 parent_component["role"] == "input.button"
-                and node["role"] == "container.canvas"
+                and isinstance(node.get("buttonSlot"), dict)
             ):
                 button_slot = node["buttonSlot"]
                 slot_instance = {"refPath": f"${{node.{node_id}.returnValue.slot.refPath}}"}
@@ -535,13 +625,58 @@ def build_plan(spec_path: Path, spec: dict[str, Any], catalog: dict[str, Any], r
             assertion=f"Saved generated-class CDO designSizeMode must equal {design_size_mode}.",
         ))
     steps.append(tool_step("verify-tree", "UMGToolSet.UMGToolSet", "GetWidgets", {"widgetBlueprint": {"refPath": "${blueprint.returnValue.refPath}"}}))
+    # Retain post-save evidence for layout prerequisites. These are actual
+    # property reads, not a claim that Slate measured the planned Desired Size.
+    for node in nodes:
+        node_id = node["id"]
+        properties = node.get("properties", {})
+        native_names = []
+        if "sizeBoxConstraints" in node:
+            fallback = size_box_native_setter_contract(node)
+            steps.append(tool_step(
+                f"verify-size-box-native-constraints-{node_id}",
+                "editor_toolset.toolsets.object.ObjectTools", "get_properties",
+                {"instance": fallback["arguments"]["instance"], "properties": list(fallback["expectedProperties"])},
+                saveResultAs=f"layoutReadback.sizeConstraints.{node_id}",
+                expectedProperties=fallback["expectedProperties"],
+                assertion="Post-save native SizeBox values and enable bits must equal expectedProperties; do not label planned size as a measured Desired Size.",
+            ))
+        if "sizeBoxSlot" in node:
+            steps.append(tool_step(
+                f"verify-layout-size-box-slot-{node_id}",
+                "editor_toolset.toolsets.object.ObjectTools", "get_properties",
+                {"instance": {"refPath": f"${{node.{node_id}.returnValue.slot.refPath}}"},
+                 "properties": ["padding", "horizontalAlignment", "verticalAlignment"]},
+                saveResultAs=f"layoutReadback.slot.{node_id}",
+                assertion="Post-save SizeBoxSlot padding and alignment must equal the source layout.",
+            ))
+        if "brushImageSize" in properties:
+            native_names.append("brush")
+        native_names.extend(key for key in ("stretch", "stretchDirection") if key in properties)
+        if native_names:
+            steps.append(tool_step(
+                f"verify-layout-widget-properties-{node_id}",
+                "editor_toolset.toolsets.object.ObjectTools", "get_properties",
+                {"instance": {"refPath": f"${{node.{node_id}.returnValue.widget.refPath}}"}, "properties": native_names},
+                saveResultAs=f"layoutReadback.widget.{node_id}",
+                assertion="Post-save values must be compared with the source layout; this is not Desired Size measurement.",
+            ))
+        if "padding" in node.get("overlaySlot", {}):
+            steps.append(tool_step(
+                f"verify-layout-overlay-padding-{node_id}",
+                "editor_toolset.toolsets.object.ObjectTools", "get_properties",
+                {"instance": {"refPath": f"${{node.{node_id}.returnValue.slot.refPath}}"},
+                 "properties": ["padding", "horizontalAlignment", "verticalAlignment"]},
+                saveResultAs=f"layoutReadback.slot.{node_id}",
+                assertion="Post-save Overlay padding and alignment must equal the source layout.",
+            ))
 
     selected_by_source: dict[str, list[str]] = {}
     for rule in selected:
         source_type = str(rule.get("sourceType", "baseline"))
         selected_by_source.setdefault(source_type, []).append(str(rule.get("id")))
 
-    return {
+    plan = {
         "version": "0.2",
         "sourceSpec": str(spec_path),
         "assetPath": package_path,
@@ -567,6 +702,15 @@ def build_plan(spec_path: Path, spec: dict[str, Any], catalog: dict[str, Any], r
         },
         "steps": steps,
     }
+    native_steps = [step["stepId"] for step in steps if step["operation"] == "native_setter_fallback"]
+    if native_steps:
+        plan["executorContract"]["nativeSetterFallbacks"] = {
+            "contract": "size-box-constraints/1", "requiredStepIds": native_steps,
+            "requiresAuthorizedMixedRunner": True,
+            "officialExecutorMaySkip": False,
+            "mustVerifyBeforeCompileAndAfterSave": True,
+        }
+    return plan
 
 
 def main() -> int:
@@ -580,7 +724,7 @@ def main() -> int:
         spec = load_json(args.spec)
         catalog = load_json(args.catalog)
         rules = load_json(args.rules)
-        report = validate_spec(spec, catalog)
+        report = validate_spec(spec, catalog, spec_path=args.spec)
         if not report["valid"]:
             print(json.dumps({"error": "UILayoutSpec validation failed", "validation": report}, indent=2, ensure_ascii=False))
             return 1

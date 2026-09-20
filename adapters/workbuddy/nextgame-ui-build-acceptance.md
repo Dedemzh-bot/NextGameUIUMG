@@ -299,6 +299,12 @@ validators also support structured Requirement 0.2, but the bundled WorkBuddy
 mapping does not schedule that intake or its design-review receipt. Do not
 claim a structured end-to-end WorkBuddy run from this static continuation alone.
 
+The 2026-09-20 plugin's optional art stage, final art Bundle/Readback 0.4, and
+one-request delegated result acceptance 0.2 are not scheduled by this unit.
+Its front matter and two direct-user gates remain unchanged, with acceptance
+0.1 after the concrete result is presented. Do not substitute plugin-level
+delegation for either human gate or claim this mapping implements that route.
+
 This workflow resumes only after the first user gate has produced the exact
 accepted `ui-requirement.json`. It structurally maps the protected continuation;
 it is not a shortcut from raw requirements to Unreal mutation.

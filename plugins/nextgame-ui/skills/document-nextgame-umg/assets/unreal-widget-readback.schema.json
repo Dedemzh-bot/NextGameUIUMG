@@ -1,10 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "NextGame Unreal Widget Readback 0.1, 0.2, and 0.3",
+  "title": "NextGame Unreal Widget Readback 0.1, 0.2, 0.3, and 0.4",
   "oneOf": [
     {"$ref": "#/$defs/readbackV01"},
     {"$ref": "#/$defs/readbackV02"},
-    {"$ref": "#/$defs/readbackV03"}
+    {"$ref": "#/$defs/readbackV03"},
+    {"$ref": "#/$defs/readbackV04"}
   ],
   "$defs": {
     "readbackV01": {
@@ -55,6 +56,63 @@
         "bundleBinding": {"$ref": "#/$defs/bundleBinding"},
         "assets": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/assetV02"}},
         "reuseRelations": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/reuseRelationV03"}}
+      }
+    },
+    "readbackV04": {
+      "type": "object",
+      "required": [
+        "version",
+        "readbackId",
+        "capturedAt",
+        "capturedFrom",
+        "acquisition",
+        "status",
+        "requirementBinding",
+        "bundleBinding",
+        "assets",
+        "reuseRelations"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "const": "0.4"
+        },
+        "readbackId": {
+          "$ref": "#/$defs/id"
+        },
+        "capturedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "capturedFrom": {
+          "const": "unreal-editor"
+        },
+        "acquisition": {
+          "$ref": "#/$defs/acquisition"
+        },
+        "status": {
+          "const": "verified"
+        },
+        "requirementBinding": {
+          "$ref": "#/$defs/requirementBinding"
+        },
+        "bundleBinding": {
+          "$ref": "#/$defs/bundleBinding"
+        },
+        "assets": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/assetV02"
+          }
+        },
+        "reuseRelations": {
+          "type": "array",
+          "minItems": 0,
+          "items": {
+            "$ref": "#/$defs/reuseRelationV03"
+          }
+        }
       }
     },
     "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"},

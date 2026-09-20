@@ -477,6 +477,21 @@ class ReuseReadbackV02ContractsTest(unittest.TestCase):
         self.assertEqual([], validate_schema_instance(readback, self.schema))
         self.assertEqual(set(), self._relation_errors(readback, bundle))
 
+    def test_art_readback_retains_dual_slot_and_parameter_checks(self) -> None:
+        original_bundle = self._v03_bundle()
+        original_readback = self._v03_readback(original_bundle)
+        bundle = load_json_from_value(original_bundle)
+        bundle["version"] = "0.4"
+        readback = load_json_from_value(original_readback)
+        readback["version"] = "0.4"
+        self.assertEqual([], validate_schema_instance(readback, self.schema))
+        self.assertEqual(set(), self._relation_errors(readback, bundle))
+        for value in (original_readback, readback):
+            value["reuseRelations"][2]["parameterOverrides"] = [{"name": "UnexpectedParameter", "value": False}]
+        expected = self._relation_errors(original_readback, original_bundle)
+        self.assertTrue(expected)
+        self.assertEqual(expected, self._relation_errors(readback, bundle))
+
     def test_v03_widget_tree_instance_proves_fixed_flow_and_scroll_slot_shapes(self) -> None:
         host_path = self.bundle["assets"][2]["assetPath"]
         parent_name = "PanelMaterialPopulated"

@@ -11,6 +11,13 @@ also supports deterministic structured intake to Requirement 0.2 through
 validators, but that is a separate entry point. Do not substitute a design
 contract for this DAG's RequestPacket or omit its nine Findings stages.
 
+The 2026-09-20 plugin package also provides an optional art stage, final art
+Bundle/Readback 0.4, and explicit one-request delegated result acceptance 0.2.
+This unchanged DAG does not schedule those capabilities. Its raw Requirement
+0.1 route and two direct-user gates remain mandatory; using a newer plugin does
+not turn either gate into automatic continuation. See the repository README for
+the separate plugin entry points and evidence boundaries.
+
 The contract is deliberately file-first:
 
 - each worker owns one declared output path;

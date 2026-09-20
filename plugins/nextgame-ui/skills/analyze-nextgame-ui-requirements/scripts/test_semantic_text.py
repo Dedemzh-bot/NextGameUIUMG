@@ -49,6 +49,36 @@ class SemanticTextTests(unittest.TestCase):
         self.assertEqual([], self.requirement())
         self.assertEqual([], self.coverage())
 
+    def coordinate_target(self):
+        self.bundle["assets"][0]["assetPlanId"] = "plan.screen"
+        self.spec["assetPlan"] = [{"id": "plan.screen", "referenceSize": [2560, 1440]}]
+        self.spec["coordinateContract"] = {"targets": [{"assetId": "plan.screen", "layoutNodeKey": "Group", "subjectRefs": ["group"], "rectPixels": [1000, 400, 416, 36]}]}
+        self.nodes["asset"]["Group"]["rect"] = [1000/2560, 400/1440, 416/2560, 36/1440]
+
+    def test_coordinate_owner_compares_target_not_raw_source(self):
+        original = deepcopy(self.spec["uiModel"]["elements"][0]["bounds"])
+        self.coordinate_target()
+        self.assertEqual([], self.coverage())
+        self.assertEqual(original, self.spec["uiModel"]["elements"][0]["bounds"])
+
+    def test_coordinate_owner_cannot_revert_to_raw_source_rect(self):
+        self.coordinate_target()
+        self.nodes["asset"]["Group"]["rect"] = self.spec["uiModel"]["elements"][0]["bounds"]
+        self.assertIn("text.semantic.geometry", [e["code"] for e in self.coverage()])
+
+    def test_coordinate_owner_requires_subject_bound_target(self):
+        self.coordinate_target()
+        self.spec["coordinateContract"]["targets"][0]["subjectRefs"] = ["other"]
+        self.assertIn("text.semantic.geometry", [e["code"] for e in self.coverage()])
+
+    def test_coordinate_owner_still_enforces_capacity_and_slot(self):
+        self.coordinate_target()
+        self.spec["uiModel"]["elements"][0]["properties"]["semanticTextGroup"]["availableWidthPx"] = 800
+        self.nodes["asset"]["B"]["flowSlot"]["padding"] = [0, 0, 0, 0]
+        codes = [e["code"] for e in self.coverage()]
+        self.assertIn("text.semantic.available_width", codes)
+        self.assertIn("text.semantic.flow_slot", codes)
+
     def test_continuous_unmarked_prose_is_not_rejected(self):
         spec = {"uiModel": {"elements": [{"kind": "text", "properties": {"text": "进入区域：完成探索 / 返回基地。"}}]}}
         self.assertEqual([], validate_requirement_semantic_text(spec))

@@ -4,10 +4,12 @@ Use the JSON Schema in `../assets/ui-layout-spec.schema.json` as the authoritati
 
 ## Coordinate model
 
+The versioned `contentSizeProof` alternative is an executable **plan dependency**, never an actual measurement. Its closed fields are `kind: "layout-dependency/1"`, `minimumDesiredSize`, `sourceNodeIds`, and `evidenceId`. A root-direct child must use point anchors on both Canvas axes with `autoSize: true`. Every source must be a reachable positive `GameImage` Brush size under supported Overlay/Auto Box layout; padding contributes to the computed lower bound. Reject cycles, collapsed sources, unknown sizing intermediates, Fill allocation on a Box main axis, forged source IDs, duplicate sources and an overstated minimum. Preserve actual `contentDrivenSize.verified/measuredDesiredSize` semantics. Requirement-driven use also requires the explicit Bundle capability `content-driven-child-size/1` and matching accepted size evidence. After execution read back Brush sizes and Slots, and separately measure/test the actual widget and longer content; a plan proof alone never establishes actual UI acceptance.
+
 - Express every `rect` as `[x, y, width, height]` normalized against `referenceSize`.
 - Every explicit Canvas `slotLayout.offsets` value is local to the node's direct parent Panel. After reparenting into a nested CanvasPanel, recompute left/top/right/bottom from the parent's local rectangle; never carry screen-global offsets into the child slot. Point anchors, alignment, and `autoSize` determine which local size terms are meaningful.
 - For every complete project screen (`profile.assetKind: screen`), `referenceSize` is the target project design coordinate space and must be `[2560, 1440]`; it is not the source screenshot size.
-- Resolve the guarded basename from the asset being mutated: prototype uses `asset.name`; production/formal lowering prefers `profile.targetAsset.name` and falls back to `asset.name`. A resolved `umg_*` basename uses `FillScreen`; explicit `Desired` is rejected, while an archived missing value remains readable and resolves to hard-rule `FillScreen`. Only a resolved `uw_*` basename may use analyzed `Desired` or `FillScreen`. Missing/unclear `uw_*` decisions and unknown/legacy basenames conservatively resolve to `FillScreen`. `profile.assetKind` and directory alone do not select the mode. A `uw_*` `Desired` tree must contain at least one root-direct child with either a point-anchored Canvas `slotLayout` whose `autoSize` is false and whose `offsets.right`/`offsets.bottom` are positive, or a `contentDrivenSize` record with `verified: true`, positive two-axis `measuredDesiredSize`, and a valid `evidenceId`. An empty root, auto-sized fixed Slot, verified-only record, or zero-offset full-stretch-only content is rejected. This general proof does not relax the stricter unique first-Panel rule for `listRole: entry`. The mode controls the Widget Blueprint Designer `Screen Size` preview; it neither replaces `referenceSize` nor authorizes `DesignTimeSize` writes.
+- Resolve the guarded basename from the asset being mutated: prototype uses `asset.name`; production/formal lowering prefers `profile.targetAsset.name` and falls back to `asset.name`. A resolved `umg_*` basename uses `FillScreen`; explicit `Desired` is rejected, while an archived missing value remains readable and resolves to hard-rule `FillScreen`. Only a resolved `uw_*` basename may use analyzed `Desired` or `FillScreen`. Missing/unclear `uw_*` decisions and unknown/legacy basenames conservatively resolve to `FillScreen`. `profile.assetKind` and directory alone do not select the mode. Without the versioned plan-dependency alternative described above, a `uw_*` `Desired` tree must contain at least one root-direct child with either a point-anchored Canvas `slotLayout` whose `autoSize` is false and whose `offsets.right`/`offsets.bottom` are positive, or a `contentDrivenSize` record with `verified: true`, positive two-axis `measuredDesiredSize`, and a valid `evidenceId`. An empty root, auto-sized fixed Slot, verified-only record, or zero-offset full-stretch-only content is rejected. This general proof does not relax the stricter unique first-Panel rule for `listRole: entry`. The mode controls the Widget Blueprint Designer `Screen Size` preview; it neither replaces `referenceSize` nor authorizes `DesignTimeSize` writes.
 - Source screenshots may have another size. Normalize their measurements and remap the intended composition to the complete project canvas rather than preserving a smaller fixed inner frame.
 - Child widgets and collection entries keep their own local functional `referenceSize` and are not forced to the full-screen canvas. Their local size never defines their screen-host rectangle: a screen node's accepted `rect` is copied unchanged into the screen UILayoutSpec, then the host chooses Fill/stretch, flow, or a deliberate ScaleBox strategy.
 - Measure `x` and `y` from the image's top-left corner.
@@ -59,6 +61,8 @@ Allowed horizontal values are `left`, `center`, `right`, and `stretch`. Allowed 
 For an Overlay whose necessity is not evident from multiple layers, use `overlayPurpose` with `layering`, `adaptive-bounds`, or `independent-alignment`. Do not use this field on other component roles.
 
 ## Properties
+
+`visual.image` additionally accepts positive finite `brushImageSize: [width, height]`, lowering to `brush.imageSize`. `container.scale` accepts explicit native `stretch` and `stretchDirection` enums; use an accepted `ScaleToFill` policy for aspect-preserving cover, not invented `Cover` enum text. Overlay children may declare finite four-number `overlaySlot.padding`; these are executable layout decisions, not deferred art guesses.
 
 Use canonical property names from the component catalog, not guessed Unreal property names. Examples:
 
@@ -145,6 +149,20 @@ Derived production locations:
 
 Create or reuse the system folder when production mutation is authorized. For system-scoped child widgets, also create or reuse its `Widgets` subfolder. For an explicitly scoped project-common child widget, create or reuse the shared `/Game/UI/UMG/Widgets` folder instead.
 
+## Fixed-width natural-height dependency v2
+
+Opt in with the closed node record `contentSizeProof: {kind: "layout-dependency/2", minimumDesiredSize: [exactWidth, positiveHeightLowerBound], sourceNodeIds: [...], evidenceId: "..."}`. It remains a static lower-bound dependency proof, with no `verified` or `measuredDesiredSize` fields. The released `layout-dependency/1` behavior is unchanged.
+
+Version 2 requires one visible root-direct `container.size` content subtree at zero point anchors, left/top offsets and alignment, with Canvas `autoSize: true`. Its closed `sizeBoxConstraints` must enable exact positive `widthOverride` and leave `heightOverride: null`; its only content uses a zero-padding Fill/Fill `sizeBoxSlot`. The proof width equals `widthOverride` exactly. For requirement-driven child integration, Bundle `content-driven-child-size/2` also requires `fixedWidth == widthOverride == minimumDesiredSize[0]` and the integer local `referenceSize[0] == ceil(fixedWidth)`. The integer reference is a coordinate envelope; never round the actual WidthOverride to that envelope.
+
+Only an actual known-width SizeBox and explicit horizontal Fill Slot alignment carry width authority through Overlay and vertical Box containers. A HorizontalBox may allocate the remaining positive width to positive-weight Fill `text.label` leaves after reserving Auto sibling bounds and all padding. No Fill graphics, Fill containers, vertical Fill allocation, unknown-width ancestry, negative padding/weights, or fixed-height substitutes participate. Auto text requires a positive explicit wrap width; images require positive Brush sizes. The complete subtree must retain a finite width upper bound, and only unique reachable visible graphic sources supply the positive natural-height lower bound. Reject missing/hidden/collapsed sources, cycles, unbounded or unsupported descendants, unrelated Canvas contributions and invented measurements.
+
+## Bounded wrap capacity v1
+
+A fixed Canvas TextBlock may opt into the closed node metadata `textCapacity: {kind: "bounded-wrap/1", capacitySize: [width, height], maxLines: positiveInteger, evidenceId: "..."}`. Only `text.label` directly under `screen.root` or `container.canvas` qualifies. Both capacity dimensions are positive; Canvas `autoSize` remains explicitly false; `offsets.right/bottom` exactly equal the capacity and the normalized rect resolves to that same size. Positive `properties.wrapTextAt` is no greater than the capacity width. Use matching point anchors on each axis at 0, 0.5 or 1, explicit alignment, and local offsets consistent with the rect to preserve placement. Stretch axes, nontext nodes and other parent Slot types cannot use this opt-in.
+
+This metadata declares bounded capacity and does not set any Unreal property or prove that `maxLines` fits. Native Canvas, WrapTextAt and font properties still lower unchanged. Missing opt-in preserves the old rule requiring Canvas wrapping text to use Auto Size; malformed opt-in fails closed. Actual saved properties, representative long strings, line count, clipping and visual checks remain required after execution. Do not change an accepted bounded text Slot to Auto Size merely to pass validation.
+
 ## Text nodes
 
 - Read `text-component-content.md` whenever `profile.hasText` is true.
@@ -176,7 +194,7 @@ Use horizontal or vertical stretch anchors for localization-sensitive text, back
 
 ## Direct Button Canvas content
 
-When an `input.button` directly owns a `container.canvas`, the CanvasPanel is the Button's full content host. Put the following required `buttonSlot` object on that CanvasPanel node:
+When an `input.button` directly owns a `container.canvas`, explicitly declare `buttonSlot` on that CanvasPanel node. For content intended to fill the whole Button, use:
 
 ```json
 "buttonSlot": {
@@ -186,7 +204,9 @@ When an `input.button` directly owns a `container.canvas`, the CanvasPanel is th
 }
 ```
 
-This is separate from `slotLayout`: `buttonSlot` controls the direct ButtonSlot, whereas `slotLayout` applies only to a direct CanvasPanelSlot. The generated plan emits the ButtonSlot property read/write sequence. Do not use a non-zero direct-host inset to compensate for bad source geometry; add an intentional inner layout only when the design actually needs an inset.
+This is separate from `slotLayout`: `buttonSlot` controls the direct ButtonSlot, whereas `slotLayout` applies only to a direct CanvasPanelSlot. Preserve an explicitly accepted content inset as finite four-edge nonzero Padding; do not use it to compensate for incorrectly measured source geometry. The current schema supports Fill/Fill alignments only.
+
+An explicitly declared `buttonSlot` also applies to any other direct Button content child, such as an Overlay with an actual shared-layering responsibility. The generated plan reads and writes that child's returned ButtonSlot, preserving the declared Padding. Historical non-Canvas children without `buttonSlot` remain readable and receive no implicit Slot write. Declaring it on a non-Button child is invalid.
 
 ## Direct Overlay child alignment
 

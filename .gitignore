@@ -39,3 +39,6 @@ orchestration/tests/_runtime*/
 /document-verification.json
 /render-evidence.json
 /dispatch-manifest.json
+
+# Separately versioned source used by synthetic art resource integration tests.
+/Tools/UIResourceImport/

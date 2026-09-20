@@ -341,7 +341,7 @@ class RuleCardRoutingTests(unittest.TestCase):
         self.assertIn("layout-profile-unknown", pack["fallbackReasons"])
         legacy = select_rules(layout, load_json(DEFAULT_RULES))
         self.assertEqual([rule["id"] for rule in legacy], pack["selectedRuleIds"])
-        self.assertEqual(50, len(pack["fallbackAuthorityRuleIds"]))
+        self.assertEqual(56, len(pack["fallbackAuthorityRuleIds"]))
 
     def test_unknown_layout_schema_version_falls_back(self) -> None:
         layout = load_json(EXAMPLE_LAYOUT)
@@ -354,7 +354,7 @@ class RuleCardRoutingTests(unittest.TestCase):
         self.assertIn("layout-schema-version-unknown", pack["fallbackReasons"])
         legacy = select_rules(layout, load_json(DEFAULT_RULES))
         self.assertEqual([rule["id"] for rule in legacy], pack["selectedRuleIds"])
-        self.assertEqual(50, len(pack["fallbackAuthorityRuleIds"]))
+        self.assertEqual(56, len(pack["fallbackAuthorityRuleIds"]))
         source_types = [card["sourceType"] for card in pack["fallbackAuthorityRuleCards"]]
         self.assertEqual(
             source_types,

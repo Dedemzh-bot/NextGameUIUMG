@@ -27,6 +27,8 @@ Connect through the plugin dependency named `unreal-editor` at `http://127.0.0.1
 
 ## Actual readback boundary
 
+Apply [Actual verification and unchanged replay](visual-presentation-rules.md#actual-verification-and-unchanged-replay) to saved parent/Slot/resource/state coverage, representative views and unchanged execution. Preserve user edits in the initial actual baseline. Numeric property checks do not replace measured geometry or complete visual capture.
+
 - Use the official Unreal MCP as the authoritative acquisition route and record `acquisition.method: official-unreal-mcp`. If it is unavailable or does not expose the exact required read, NxUEAgent may fill only that missing read; use `nxue-agent` with a nonempty `fallbackReason`, or `mixed` with a reason and JSONPath for every field-level fallback.
 - Treat `UILayoutSpec`, build plans, Bundle mappings, and mutation inputs as expected state only. Never serialize them as actual Widget values or use them to fill a missing Unreal read.
 - `DesignSizeMode` is editor-only data on the generated `UUserWidget` CDO, not a WidgetTree node and not a property of the WidgetBlueprint asset object. Read it from the CDO after save and serialize only `FillScreen|Desired` as `assets[].designSizeMode`.

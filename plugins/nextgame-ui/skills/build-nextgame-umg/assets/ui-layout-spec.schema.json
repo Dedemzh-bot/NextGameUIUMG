@@ -3,118 +3,387 @@
   "$id": "https://nextgame.local/schemas/ui-layout-spec-0.2.json",
   "title": "NextGame UILayoutSpec",
   "type": "object",
-  "required": ["version", "mode", "asset", "referenceSize", "profile", "nodes"],
+  "required": [
+    "version",
+    "mode",
+    "asset",
+    "referenceSize",
+    "profile",
+    "nodes"
+  ],
   "additionalProperties": false,
   "properties": {
-    "version": {"const": "0.2"},
-    "mode": {"enum": ["prototype", "production"]},
+    "version": {
+      "const": "0.2"
+    },
+    "mode": {
+      "enum": [
+        "prototype",
+        "production"
+      ]
+    },
     "asset": {
       "type": "object",
-      "required": ["folder", "name"],
+      "required": [
+        "folder",
+        "name"
+      ],
       "additionalProperties": false,
       "properties": {
-        "folder": {"type": "string", "pattern": "^/Game/UI/(?:AIPrototype(?:/.*)?|UMG/.+)$"},
-        "name": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]*$"}
+        "folder": {
+          "type": "string",
+          "pattern": "^/Game/UI/(?:AIPrototype(?:/.*)?|UMG/.+)$"
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_]*$"
+        }
       }
     },
     "referenceSize": {
       "type": "array",
-      "prefixItems": [{"type": "integer", "minimum": 1}, {"type": "integer", "minimum": 1}],
+      "prefixItems": [
+        {
+          "type": "integer",
+          "minimum": 1
+        },
+        {
+          "type": "integer",
+          "minimum": 1
+        }
+      ],
       "items": false,
       "minItems": 2,
       "maxItems": 2
     },
     "profile": {
       "type": "object",
-      "required": ["adaptive", "interactive", "hasText", "containsRepeatedElements", "regionGrouping"],
+      "required": [
+        "adaptive",
+        "interactive",
+        "hasText",
+        "containsRepeatedElements",
+        "regionGrouping"
+      ],
       "additionalProperties": true,
       "properties": {
-        "screenType": {"type": "string"},
-        "adaptive": {"type": "boolean"},
-        "interactive": {"type": "boolean"},
-        "hasText": {"type": "boolean"},
-        "containsRepeatedElements": {"type": "boolean"},
-        "regionGrouping": {"type": "boolean"},
-        "explicitPanelSlots": {"type": "boolean"},
-        "designSizeMode": {"enum": ["FillScreen", "Desired"]},
-        "listRole": {"enum": ["container", "entry"]},
-        "collectionSizing": {"enum": ["show-all", "fixed-viewport"]},
-        "parentClass": {"type": "string", "pattern": "^/(?:Script|Game)/.+"},
-        "assetKind": {"enum": ["prototype", "screen", "child-widget"]},
-        "assetScope": {"enum": ["system", "project-common"]},
-        "system": {"type": "string", "pattern": "^[a-z][a-z0-9]*$"},
-        "systemFolder": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]*$"},
-        "subsystem": {"type": ["string", "null"], "pattern": "^[a-z][a-z0-9]*$"},
-        "function": {"type": ["string", "null"], "pattern": "^[a-z][a-z0-9]*$"},
-        "secondaryFunction": {"type": ["string", "null"], "pattern": "^[a-z][a-z0-9]*$"},
-        "targetAsset": {
+        "screenType": {
+          "type": "string"
+        },
+        "adaptive": {
+          "type": "boolean"
+        },
+        "interactive": {
+          "type": "boolean"
+        },
+        "hasText": {
+          "type": "boolean"
+        },
+        "containsRepeatedElements": {
+          "type": "boolean"
+        },
+        "regionGrouping": {
+          "type": "boolean"
+        },
+        "explicitPanelSlots": {
+          "type": "boolean"
+        },
+        "designSizeMode": {
+          "enum": [
+            "FillScreen",
+            "Desired"
+          ]
+        },
+        "listRole": {
+          "enum": [
+            "container",
+            "entry"
+          ]
+        },
+        "collectionSizing": {
+          "enum": [
+            "show-all",
+            "fixed-viewport"
+          ]
+        },
+        "parentClass": {
+          "type": "string",
+          "pattern": "^/(?:Script|Game)/.+"
+        },
+        "assetKind": {
+          "enum": [
+            "prototype",
+            "screen",
+            "child-widget"
+          ]
+        },
+        "assetScope": {
+          "enum": [
+            "system",
+            "project-common"
+          ]
+        },
+        "system": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*$"
+        },
+        "systemFolder": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_]*$"
+        },
+        "systemFolderInstance": {
           "type": "object",
-          "required": ["folder", "name"],
+          "required": [
+            "version",
+            "date",
+            "number"
+          ],
           "additionalProperties": false,
           "properties": {
-            "folder": {"type": "string", "pattern": "^/Game/UI/UMG/.+"},
-            "name": {"type": "string"},
-            "integrationAsset": {"type": "string", "pattern": "^/Game/UI/UMG/.+"}
+            "version": {
+              "type": "integer",
+              "const": 1
+            },
+            "date": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 8,
+              "description": "A real Gregorian calendar date in YYYYMMDD form, years 0001 through 9999.",
+              "pattern": "^(?:(?!0000)[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229)$"
+            },
+            "number": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 99
+            }
+          }
+        },
+        "subsystem": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-z][a-z0-9]*$"
+        },
+        "function": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-z][a-z0-9]*$"
+        },
+        "secondaryFunction": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-z][a-z0-9]*$"
+        },
+        "targetAsset": {
+          "type": "object",
+          "required": [
+            "folder",
+            "name"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "folder": {
+              "type": "string",
+              "pattern": "^/Game/UI/UMG/.+"
+            },
+            "name": {
+              "type": "string"
+            },
+            "integrationAsset": {
+              "type": "string",
+              "pattern": "^/Game/UI/UMG/.+"
+            }
           }
         }
       }
     },
-    "notes": {"type": "array", "items": {"type": "string"}},
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "nodes": {
       "type": "array",
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["id", "name", "role", "parent", "rect", "anchor", "properties"],
+        "required": [
+          "id",
+          "name",
+          "role",
+          "parent",
+          "rect",
+          "anchor",
+          "properties"
+        ],
         "additionalProperties": false,
         "properties": {
-          "id": {"type": "string", "pattern": "^[a-z][a-z0-9_-]*$"},
-          "name": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]*$"},
-          "isVariable": {"type": "boolean"},
-          "fontSizeUnit": {"enum": ["px", "pt"], "default": "pt"},
-          "role": {"type": "string"},
-          "parent": {"type": ["string", "null"]},
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]*$"
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_]*$"
+          },
+          "isVariable": {
+            "type": "boolean"
+          },
+          "fontSizeUnit": {
+            "enum": [
+              "px",
+              "pt"
+            ],
+            "default": "pt"
+          },
+          "role": {
+            "type": "string"
+          },
+          "parent": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "rect": {
             "type": "array",
             "prefixItems": [
-              {"type": "number", "minimum": 0, "maximum": 1},
-              {"type": "number", "minimum": 0, "maximum": 1},
-              {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
-              {"type": "number", "exclusiveMinimum": 0, "maximum": 1}
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 1
+              },
+              {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 1
+              }
             ],
             "items": false,
             "minItems": 4,
             "maxItems": 4
           },
-          "anchor": {"enum": ["auto", "left-top", "center-top", "right-top", "left-center", "center", "right-center", "left-bottom", "center-bottom", "right-bottom"]},
-          "zOrder": {"type": "integer", "default": 0},
-          "confidence": {"type": "number", "minimum": 0, "maximum": 1},
-          "regionPurpose": {"type": "string", "pattern": "^[a-z][a-z0-9-]*$"},
-          "rootLayer": {"enum": ["background", "overlay"]},
+          "anchor": {
+            "enum": [
+              "auto",
+              "left-top",
+              "center-top",
+              "right-top",
+              "left-center",
+              "center",
+              "right-center",
+              "left-bottom",
+              "center-bottom",
+              "right-bottom"
+            ]
+          },
+          "zOrder": {
+            "type": "integer",
+            "default": 0
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "regionPurpose": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "rootLayer": {
+            "enum": [
+              "background",
+              "overlay"
+            ]
+          },
           "adaptiveLayout": {
             "type": "object",
-            "required": ["horizontal", "vertical", "reason"],
+            "required": [
+              "horizontal",
+              "vertical",
+              "reason"
+            ],
             "additionalProperties": false,
             "properties": {
-              "horizontal": {"enum": ["left", "center", "right", "stretch"]},
-              "vertical": {"enum": ["top", "center", "bottom", "stretch"]},
-              "reason": {"type": "string", "minLength": 1}
+              "horizontal": {
+                "enum": [
+                  "left",
+                  "center",
+                  "right",
+                  "stretch"
+                ]
+              },
+              "vertical": {
+                "enum": [
+                  "top",
+                  "center",
+                  "bottom",
+                  "stretch"
+                ]
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
             }
           },
-          "overlayPurpose": {"enum": ["layering", "adaptive-bounds", "independent-alignment"]},
+          "overlayPurpose": {
+            "enum": [
+              "layering",
+              "adaptive-bounds",
+              "independent-alignment"
+            ]
+          },
           "textGroup": {
             "type": "object",
-            "required": ["kind", "alignment", "orderedChildren"],
+            "required": [
+              "kind",
+              "alignment",
+              "orderedChildren"
+            ],
             "additionalProperties": false,
             "properties": {
-              "kind": {"const": "ratio"},
-              "alignment": {"enum": ["Left", "Center", "Right"]},
+              "kind": {
+                "const": "ratio"
+              },
+              "alignment": {
+                "enum": [
+                  "Left",
+                  "Center",
+                  "Right"
+                ]
+              },
               "orderedChildren": {
                 "type": "array",
                 "prefixItems": [
-                  {"type": "string", "pattern": "^[a-z][a-z0-9_-]*$"},
-                  {"type": "string", "pattern": "^[a-z][a-z0-9_-]*$"},
-                  {"type": "string", "pattern": "^[a-z][a-z0-9_-]*$"}
+                  {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_-]*$"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_-]*$"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_-]*$"
+                  }
                 ],
                 "items": false,
                 "minItems": 3,
@@ -122,151 +391,637 @@
               }
             }
           },
-          "fullHeight": {"type": "boolean"},
+          "fullHeight": {
+            "type": "boolean"
+          },
           "contentDrivenSize": {
             "type": "object",
-            "required": ["verified"],
+            "required": [
+              "verified"
+            ],
             "additionalProperties": false,
             "properties": {
-              "verified": {"type": "boolean"},
+              "verified": {
+                "type": "boolean"
+              },
               "measuredDesiredSize": {
                 "type": "array",
                 "prefixItems": [
-                  {"type": "number", "exclusiveMinimum": 0},
-                  {"type": "number", "exclusiveMinimum": 0}
+                  {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
                 ],
                 "items": false,
                 "minItems": 2,
                 "maxItems": 2
               },
-              "evidenceId": {"type": "string", "pattern": "^[a-z][a-z0-9.-]{2,95}$"}
+              "evidenceId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9.-]{2,95}$"
+              }
+            }
+          },
+          "contentSizeProof": {
+            "type": "object",
+            "required": [
+              "kind",
+              "minimumDesiredSize",
+              "sourceNodeIds",
+              "evidenceId"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "enum": [
+                  "layout-dependency/1",
+                  "layout-dependency/2"
+                ]
+              },
+              "minimumDesiredSize": {
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                ],
+                "items": false,
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "sourceNodeIds": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_-]*$"
+                }
+              },
+              "evidenceId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9.-]{2,95}$"
+              }
             }
           },
           "slotLayout": {
             "type": "object",
-            "required": ["anchors", "offsets", "alignment", "autoSize"],
+            "required": [
+              "anchors",
+              "offsets",
+              "alignment",
+              "autoSize"
+            ],
             "additionalProperties": false,
             "properties": {
               "anchors": {
                 "type": "object",
-                "required": ["minimum", "maximum"],
+                "required": [
+                  "minimum",
+                  "maximum"
+                ],
                 "additionalProperties": false,
                 "properties": {
-                  "minimum": {"type": "array", "prefixItems": [{"type": "number", "minimum": 0, "maximum": 1}, {"type": "number", "minimum": 0, "maximum": 1}], "items": false, "minItems": 2, "maxItems": 2},
-                  "maximum": {"type": "array", "prefixItems": [{"type": "number", "minimum": 0, "maximum": 1}, {"type": "number", "minimum": 0, "maximum": 1}], "items": false, "minItems": 2, "maxItems": 2}
+                  "minimum": {
+                    "type": "array",
+                    "prefixItems": [
+                      {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      }
+                    ],
+                    "items": false,
+                    "minItems": 2,
+                    "maxItems": 2
+                  },
+                  "maximum": {
+                    "type": "array",
+                    "prefixItems": [
+                      {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      }
+                    ],
+                    "items": false,
+                    "minItems": 2,
+                    "maxItems": 2
+                  }
                 }
               },
               "offsets": {
                 "type": "object",
-                "required": ["left", "top", "right", "bottom"],
+                "required": [
+                  "left",
+                  "top",
+                  "right",
+                  "bottom"
+                ],
                 "additionalProperties": false,
                 "properties": {
-                  "left": {"type": "number"},
-                  "top": {"type": "number"},
-                  "right": {"type": "number"},
-                  "bottom": {"type": "number"}
+                  "left": {
+                    "type": "number"
+                  },
+                  "top": {
+                    "type": "number"
+                  },
+                  "right": {
+                    "type": "number"
+                  },
+                  "bottom": {
+                    "type": "number"
+                  }
                 }
               },
-              "alignment": {"type": "array", "prefixItems": [{"type": "number", "minimum": 0, "maximum": 1}, {"type": "number", "minimum": 0, "maximum": 1}], "items": false, "minItems": 2, "maxItems": 2},
-              "autoSize": {"type": "boolean"}
+              "alignment": {
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                ],
+                "items": false,
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "autoSize": {
+                "type": "boolean"
+              }
             }
           },
           "buttonSlot": {
             "type": "object",
-            "required": ["padding", "horizontalAlignment", "verticalAlignment"],
+            "required": [
+              "padding",
+              "horizontalAlignment",
+              "verticalAlignment"
+            ],
             "additionalProperties": false,
             "properties": {
               "padding": {
                 "type": "array",
                 "prefixItems": [
-                  {"type": "number"},
-                  {"type": "number"},
-                  {"type": "number"},
-                  {"type": "number"}
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
                 ],
                 "items": false,
                 "minItems": 4,
                 "maxItems": 4
               },
-              "horizontalAlignment": {"const": "Fill"},
-              "verticalAlignment": {"const": "Fill"}
+              "horizontalAlignment": {
+                "const": "Fill"
+              },
+              "verticalAlignment": {
+                "const": "Fill"
+              }
             }
           },
           "overlaySlot": {
             "type": "object",
-            "required": ["horizontalAlignment", "verticalAlignment"],
+            "required": [
+              "horizontalAlignment",
+              "verticalAlignment"
+            ],
             "additionalProperties": false,
             "properties": {
-              "horizontalAlignment": {"enum": ["Fill", "Left", "Center", "Right"]},
-              "verticalAlignment": {"enum": ["Fill", "Top", "Center", "Bottom"]}
+              "padding": {
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "items": false,
+                "minItems": 4,
+                "maxItems": 4
+              },
+              "horizontalAlignment": {
+                "enum": [
+                  "Fill",
+                  "Left",
+                  "Center",
+                  "Right"
+                ]
+              },
+              "verticalAlignment": {
+                "enum": [
+                  "Fill",
+                  "Top",
+                  "Center",
+                  "Bottom"
+                ]
+              }
             }
           },
           "flowSlot": {
             "type": "object",
-            "required": ["size", "padding", "horizontalAlignment", "verticalAlignment"],
+            "required": [
+              "size",
+              "padding",
+              "horizontalAlignment",
+              "verticalAlignment"
+            ],
             "additionalProperties": false,
             "properties": {
               "size": {
                 "type": "object",
-                "required": ["rule"],
+                "required": [
+                  "rule"
+                ],
                 "additionalProperties": false,
                 "properties": {
-                  "rule": {"enum": ["Auto", "Fill"]},
-                  "weight": {"type": "number", "exclusiveMinimum": 0}
+                  "rule": {
+                    "enum": [
+                      "Auto",
+                      "Fill"
+                    ]
+                  },
+                  "weight": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
                 },
                 "allOf": [
                   {
-                    "if": {"properties": {"rule": {"const": "Fill"}}, "required": ["rule"]},
-                    "then": {"required": ["weight"]},
-                    "else": {"not": {"required": ["weight"]}}
+                    "if": {
+                      "properties": {
+                        "rule": {
+                          "const": "Fill"
+                        }
+                      },
+                      "required": [
+                        "rule"
+                      ]
+                    },
+                    "then": {
+                      "required": [
+                        "weight"
+                      ]
+                    },
+                    "else": {
+                      "not": {
+                        "required": [
+                          "weight"
+                        ]
+                      }
+                    }
                   }
                 ]
               },
               "padding": {
                 "type": "array",
                 "prefixItems": [
-                  {"type": "number"},
-                  {"type": "number"},
-                  {"type": "number"},
-                  {"type": "number"}
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
                 ],
                 "items": false,
                 "minItems": 4,
                 "maxItems": 4
               },
-              "horizontalAlignment": {"enum": ["Fill", "Left", "Center", "Right"]},
-              "verticalAlignment": {"enum": ["Fill", "Top", "Center", "Bottom"]}
+              "horizontalAlignment": {
+                "enum": [
+                  "Fill",
+                  "Left",
+                  "Center",
+                  "Right"
+                ]
+              },
+              "verticalAlignment": {
+                "enum": [
+                  "Fill",
+                  "Top",
+                  "Center",
+                  "Bottom"
+                ]
+              }
             }
           },
           "scrollSlot": {
             "type": "object",
-            "required": ["padding", "horizontalAlignment", "verticalAlignment"],
+            "required": [
+              "padding",
+              "horizontalAlignment",
+              "verticalAlignment"
+            ],
             "additionalProperties": false,
             "properties": {
               "padding": {
                 "type": "array",
                 "prefixItems": [
-                  {"type": "number"},
-                  {"type": "number"},
-                  {"type": "number"},
-                  {"type": "number"}
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
                 ],
                 "items": false,
                 "minItems": 4,
                 "maxItems": 4
               },
-              "horizontalAlignment": {"enum": ["Fill", "Left", "Center", "Right"]},
-              "verticalAlignment": {"enum": ["Fill", "Top", "Center", "Bottom"]}
+              "horizontalAlignment": {
+                "enum": [
+                  "Fill",
+                  "Left",
+                  "Center",
+                  "Right"
+                ]
+              },
+              "verticalAlignment": {
+                "enum": [
+                  "Fill",
+                  "Top",
+                  "Center",
+                  "Bottom"
+                ]
+              }
             }
           },
-          "properties": {"type": "object"}
+          "properties": {
+            "type": "object",
+            "properties": {
+              "brushImageSize": {
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                ],
+                "items": false,
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "stretch": {
+                "enum": [
+                  "None",
+                  "Fill",
+                  "ScaleToFit",
+                  "ScaleToFitX",
+                  "ScaleToFitY",
+                  "ScaleToFill",
+                  "ScaleBySafeZone"
+                ]
+              },
+              "stretchDirection": {
+                "enum": [
+                  "Both",
+                  "DownOnly",
+                  "UpOnly"
+                ]
+              }
+            }
+          },
+          "sizeBoxConstraints": {
+            "type": "object",
+            "required": [
+              "version",
+              "widthOverride",
+              "heightOverride"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "version": {
+                "type": "integer",
+                "const": 1
+              },
+              "widthOverride": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "exclusiveMinimum": 0
+              },
+              "heightOverride": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "exclusiveMinimum": 0
+              }
+            },
+            "not": {
+              "properties": {
+                "widthOverride": {
+                  "const": null
+                },
+                "heightOverride": {
+                  "const": null
+                }
+              }
+            }
+          },
+          "sizeBoxSlot": {
+            "type": "object",
+            "required": [
+              "padding",
+              "horizontalAlignment",
+              "verticalAlignment"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "padding": {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "minItems": 4,
+                "maxItems": 4
+              },
+              "horizontalAlignment": {
+                "enum": [
+                  "Fill",
+                  "Left",
+                  "Center",
+                  "Right"
+                ]
+              },
+              "verticalAlignment": {
+                "enum": [
+                  "Fill",
+                  "Top",
+                  "Center",
+                  "Bottom"
+                ]
+              }
+            }
+          },
+          "textCapacity": {
+            "type": "object",
+            "required": [
+              "kind",
+              "capacitySize",
+              "maxLines",
+              "evidenceId"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "bounded-wrap/1"
+              },
+              "capacitySize": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                }
+              },
+              "maxLines": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "evidenceId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9.-]{2,95}$"
+              }
+            }
+          }
         },
         "allOf": [
           {
-            "if": {"required": ["fontSizeUnit"]},
-            "then": {"properties": {"role": {"const": "text.label"}}}
+            "if": {
+              "required": [
+                "fontSizeUnit"
+              ]
+            },
+            "then": {
+              "properties": {
+                "role": {
+                  "const": "text.label"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "required": [
+                "sizeBoxConstraints"
+              ]
+            },
+            "then": {
+              "properties": {
+                "role": {
+                  "const": "container.size"
+                }
+              }
+            }
           }
         ]
+      }
+    },
+    "coordinateBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capability",
+        "version",
+        "contractSha256",
+        "assetId",
+        "requirement"
+      ],
+      "properties": {
+        "capability": {
+          "const": "source-target-coordinates/1"
+        },
+        "version": {
+          "const": 1,
+          "type": "integer"
+        },
+        "contractSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "assetId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requirement": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "path",
+            "sha256"
+          ],
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        }
       }
     }
   },
@@ -275,39 +1030,24 @@
       "if": {
         "properties": {
           "profile": {
-            "required": ["assetKind"],
+            "required": [
+              "assetKind"
+            ],
             "properties": {
-              "assetKind": {"const": "screen"}
+              "assetKind": {
+                "const": "screen"
+              }
             }
           }
         }
       },
       "then": {
         "properties": {
-          "referenceSize": {"const": [2560, 1440]}
-        }
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "profile": {
-            "required": ["assetScope"],
-            "properties": {
-              "assetScope": {"const": "project-common"}
-            }
-          }
-        }
-      },
-      "then": {
-        "properties": {
-          "profile": {
-            "required": ["assetKind", "system", "systemFolder", "function", "targetAsset"],
-            "properties": {
-              "assetKind": {"const": "child-widget"},
-              "system": {"const": "common"},
-              "subsystem": {"const": null}
-            }
+          "referenceSize": {
+            "const": [
+              2560,
+              1440
+            ]
           }
         }
       }
@@ -316,12 +1056,97 @@
       "if": {
         "properties": {
           "profile": {
-            "required": ["targetAsset"],
+            "required": [
+              "assetScope"
+            ],
+            "properties": {
+              "assetScope": {
+                "const": "project-common"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "profile": {
+            "required": [
+              "assetKind",
+              "system",
+              "systemFolder",
+              "function",
+              "targetAsset"
+            ],
+            "properties": {
+              "assetKind": {
+                "const": "child-widget"
+              },
+              "system": {
+                "const": "common"
+              },
+              "systemFolderInstance": false,
+              "subsystem": {
+                "const": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "profile": {
+            "required": [
+              "systemFolderInstance"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "profile": {
+            "required": [
+              "assetKind",
+              "system",
+              "systemFolder",
+              "targetAsset"
+            ],
+            "properties": {
+              "assetKind": {
+                "enum": [
+                  "screen",
+                  "child-widget"
+                ]
+              },
+              "assetScope": {
+                "const": "system"
+              },
+              "systemFolder": {
+                "pattern": "^[A-Za-z][A-Za-z0-9]*_[0-9]{8}_(?:0[1-9]|[1-9][0-9])$"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "profile": {
+            "required": [
+              "targetAsset"
+            ],
             "properties": {
               "targetAsset": {
-                "required": ["name"],
+                "required": [
+                  "name"
+                ],
                 "properties": {
-                  "name": {"type": "string", "pattern": "^umg_"}
+                  "name": {
+                    "type": "string",
+                    "pattern": "^umg_"
+                  }
                 }
               }
             }
@@ -332,7 +1157,9 @@
         "properties": {
           "profile": {
             "properties": {
-              "designSizeMode": {"const": "FillScreen"}
+              "designSizeMode": {
+                "const": "FillScreen"
+              }
             }
           }
         }
@@ -342,9 +1169,14 @@
       "if": {
         "properties": {
           "asset": {
-            "required": ["name"],
+            "required": [
+              "name"
+            ],
             "properties": {
-              "name": {"type": "string", "pattern": "^umg_"}
+              "name": {
+                "type": "string",
+                "pattern": "^umg_"
+              }
             }
           }
         }
@@ -353,7 +1185,9 @@
         "properties": {
           "profile": {
             "properties": {
-              "designSizeMode": {"const": "FillScreen"}
+              "designSizeMode": {
+                "const": "FillScreen"
+              }
             }
           }
         }

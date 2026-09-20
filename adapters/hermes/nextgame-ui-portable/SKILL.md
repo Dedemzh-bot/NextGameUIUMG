@@ -10,6 +10,11 @@ plugin's separate receive-nextgame-design entry supports structured design
 contracts and Requirement 0.2; structured intake scheduling is not implemented
 by this Hermes mapping. Never replace its nine Findings with fabricated files.
 
+The 2026-09-20 plugin's optional art stage, final art Bundle/Readback 0.4, and
+one-request delegated result acceptance 0.2 are also outside this mapping.
+Retain the two direct-user gates and acceptance 0.1 below; installing the newer
+plugin does not authorize automatic continuation or implement new scheduling.
+
 Use the installed NextGame UI analysis skill for all semantic instructions,
 schemas, and validator commands. This adapter only maps its file-artifact DAG to
 Hermes. The portable workflow identity is `nextgame-ui-requirements`.

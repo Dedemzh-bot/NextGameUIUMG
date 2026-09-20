@@ -15,7 +15,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import validate_requirement_coverage as coverage_validator
-from _contract_common import ASSETS_ROOT, load_json, sha256_file
+from _contract_common import ASSETS_ROOT, canonical_sha256, load_json, sha256_file
 from accepted_build_view import build_accepted_build_view
 from validate_build_bundle import DEFAULT_SCHEMA as BUNDLE_SCHEMA, validate_build_bundle
 from validate_requirement_coverage import validate_requirement_coverage
@@ -80,10 +80,32 @@ class AcceptedBuildViewBundleIntegrationTests(unittest.TestCase):
         validation = self.validate(copy.deepcopy(self.bundle))
         self.assertTrue(validation["valid"], validation)
 
-    def test_bundle_schema_source_hash_is_unchanged(self) -> None:
+    def test_pre_art_bundle_schema_semantics_are_unchanged(self) -> None:
+        # Audit the complete original authority, not a replacement file hash:
+        # Remove only registered opt-in additions, then retain the original hash.
+        # This does not relabel or loosen the unopted 0.1--0.3 authority.
+        legacy = copy.deepcopy(self.bundle_schema)
+        legacy["title"] = "NextGame UIBuildBundle 0.1, 0.2, and 0.3"
+        legacy["oneOf"].remove({"$ref": "#/$defs/bundleV04"})
+        for name in ("bundleV04", "artStage", "artArtifactLink"):
+            legacy["$defs"].pop(name)
+        self.assertEqual(len(legacy.pop("allOf")), 2)
+        for name in ("bundleV01", "bundleV02", "bundleV03"):
+            coordinate = legacy["$defs"][name]["properties"].pop("coordinateBinding")
+            self.assertEqual(coordinate["properties"]["capability"], {"const": "source-target-coordinates/1"})
+            self.assertFalse(coordinate["additionalProperties"])
+            self.assertEqual(legacy["$defs"][name]["properties"].pop("capabilities"), {"$ref": "#/$defs/capabilities"})
+        for name in ("capabilities", "fixedWidthContentHeightCompatibility", "hostPropertyBinding"):
+            legacy["$defs"].pop(name)
+        self.assertEqual(legacy["$defs"]["nodeMapping"]["properties"].pop("initialStateRefs"), {"$ref": "#/$defs/idRefs"})
+        legacy["$defs"]["childSizingCompatibility"]["oneOf"].remove({"$ref": "#/$defs/fixedWidthContentHeightCompatibility"})
+        handling = legacy["$defs"]["stateHandling"]["properties"]
+        self.assertEqual(handling.pop("initialStateRefs"), {"$ref": "#/$defs/idRefs"})
+        self.assertEqual(handling.pop("propertyBindings"), {"type": "array", "minItems": 1, "uniqueItems": True, "items": {"$ref": "#/$defs/hostPropertyBinding"}})
+        handling["strategy"]["enum"].remove("owning-screen-shared-properties")
         self.assertEqual(
-            sha256_file(Path(BUNDLE_SCHEMA)),
-            "afe7fd803dd3a36ddaf48d206ef40f1191e016afe48b23b20ad1250642898291",
+            canonical_sha256(legacy),
+            "b745531935a338112e7ab5b10ee8165935c51e8b8558a028dd681fe7d6601273",
         )
 
     def test_view_tampering_is_rejected_by_exact_rebuild(self) -> None:

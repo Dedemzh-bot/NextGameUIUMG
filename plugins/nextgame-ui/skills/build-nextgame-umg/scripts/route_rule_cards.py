@@ -27,8 +27,8 @@ DEFAULT_ROUTING = SKILL_ROOT / "references" / "rule-card-routing.json"
 DEFAULT_REFERENCES = SKILL_ROOT / "references"
 PACK_VERSION = "0.1"
 ROUTING_VERSION = "0.1"
-RULE_INDEX_VERSION = "0.16.1"
-EXPECTED_RULE_COUNT = 50
+RULE_INDEX_VERSION = "0.23"
+EXPECTED_RULE_COUNT = 56
 KNOWN_LAYOUT_VERSION = "0.2"
 KNOWN_MODES = {"prototype", "production"}
 KNOWN_ASSET_KINDS = {"prototype", "screen", "child-widget"}
@@ -103,9 +103,10 @@ FALLBACK_WORKFLOW_GUARDS: tuple[dict[str, Any], ...] = (
         "stages": ["build-verification"],
         "severity": "error",
         "summary": "Treat actual post-save Unreal readback as authoritative over plans and expected mappings.",
-        "files": ["production-fidelity-checks.md", "umg-mcp-workflow.md", "requirement-build-handoff.md"],
+        "files": ["production-fidelity-checks.md", "umg-mcp-workflow.md", "visual-presentation-rules.md", "requirement-build-handoff.md"],
         "detailRefs": [
             {"file": "umg-mcp-workflow.md", "heading": "## Actual readback boundary"},
+            {"file": "visual-presentation-rules.md", "heading": "## Actual verification and unchanged replay"},
             {"file": "requirement-build-handoff.md", "heading": "## Result capture"},
             {"file": "production-fidelity-checks.md", "heading": "## Geometry responsibilities and related surfaces"},
             {"file": "production-fidelity-checks.md", "heading": "## Independent verification and unchanged replay"},
@@ -115,7 +116,7 @@ FALLBACK_WORKFLOW_GUARDS: tuple[dict[str, Any], ...] = (
         "id": "workflow.post-build-acceptance",
         "stages": ["build-verification"],
         "severity": "error",
-        "summary": "Present the verified build and stop; only a later direct user acceptance may open documentation.",
+        "summary": "Present the verified final result, then require either later direct-user acceptance 0.1 or explicitly opted-in request-scoped delegated acceptance 0.2 with actual primary-coordinator result review and unchanged evidence gates before documentation.",
         "files": ["requirement-build-handoff.md"],
         "detailRefs": [
             {"file": "requirement-build-handoff.md", "heading": "## Post-build user acceptance gate"},
@@ -791,7 +792,7 @@ def _build_rule_card_pack(
         fallback_reasons.append("rule-selector-exception")
 
     try:
-        validation = validate_spec(layout, catalog)
+        validation = validate_spec(layout, catalog, spec_path=layout_path)
     except Exception:  # Fail safe around unknown future or malformed schemas.
         validation = {"valid": False, "errors": [{"code": "layout.validator.exception"}]}
         selector_uncertain = True

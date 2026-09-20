@@ -13,6 +13,7 @@ from _contract_common import ASSETS_ROOT, issue, load_json, resolve_contract_pat
 from validate_build_bundle import DEFAULT_SCHEMA as BUNDLE_SCHEMA, validate_build_bundle
 from validate_requirement_spec import DEFAULT_SCHEMA as REQUIREMENT_SCHEMA, build_requirement_index
 from semantic_text import validate_semantic_text_coverage
+from _bundle_capabilities import validate_shared_states
 
 
 def _rect_matches(left: Any, right: Any, tolerance: float = 0.001) -> bool:
@@ -84,12 +85,15 @@ def validate_requirement_coverage(bundle: Any, requirement: Any, *, bundle_path:
         for claim_id, claim in claims.items()
         if claim.get("status") == "accepted" and claim_id in reviewed_claims
     }
+    from _coordinate_spaces import expected_rect, validate_bundle_binding
+    errors.extend(validate_bundle_binding(bundle, requirement, bundle_path=bundle_path))
     nodes_by_asset = _load_layout_nodes(bundle, bundle_path, errors)
     assets_by_id = {
         asset.get("id"): asset
         for asset in bundle.get("assets", [])
         if isinstance(asset, dict) and isinstance(asset.get("id"), str)
     }
+    errors.extend(validate_shared_states(bundle, requirement, assets_by_id, nodes_by_asset if bundle_path is not None else None))
     asset_ids_by_plan_id: dict[str, set[str]] = {}
     for asset_id, asset in assets_by_id.items():
         plan_id = asset.get("assetPlanId")
@@ -120,7 +124,7 @@ def validate_requirement_coverage(bundle: Any, requirement: Any, *, bundle_path:
             continue
         mapped_requirements.update(ref for ref in mapping.get("requirementRefs", []) if isinstance(ref, str))
         mapped_states.update(ref for ref in mapping.get("stateRefs", []) if isinstance(ref, str))
-    if bundle.get("version") in {"0.2", "0.3"}:
+    if bundle.get("version") in {"0.2", "0.3", "0.4"}:
         for relation in bundle.get("reuseRelations", []):
             if isinstance(relation, dict):
                 mapped_requirements.update(ref for ref in relation.get("requirementRefs", []) if isinstance(ref, str))
@@ -263,7 +267,7 @@ def validate_requirement_coverage(bundle: Any, requirement: Any, *, bundle_path:
         if bundle_path is not None and not any(
             _rect_matches(
                 nodes_by_asset.get(mapping.get("assetId"), {}).get(mapping.get("layoutNodeId"), {}).get("rect"),
-                region.get("bounds"),
+                expected_rect(requirement, assets_by_id.get(mapping.get("assetId"), {}).get("assetPlanId", mapping.get("assetId")), mapping.get("layoutNodeId"), region_id, region.get("bounds")),
             )
             for mapping in eligible_mappings
         ):

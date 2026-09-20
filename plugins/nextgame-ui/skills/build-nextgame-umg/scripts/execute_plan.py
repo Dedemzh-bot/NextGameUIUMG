@@ -221,6 +221,8 @@ def execute(
     resume_existing: bool = False,
     resume_log: Path | None = None,
 ) -> dict[str, Any]:
+    if any(step.get("operation", "call_tool") != "call_tool" for step in plan.get("steps", [])):
+        raise RuntimeError("Plan requires native_setter_fallback or another unsupported operation; use an authorized runner that executes and verifies the explicit fallback contract before calling the official-tool executor.")
     saved: dict[str, Any] = {}
     events: list[dict[str, Any]] = []
     resume_prefix = 0

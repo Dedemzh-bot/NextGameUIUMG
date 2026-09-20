@@ -183,7 +183,7 @@ def verified_shared_prototype_paths(bundle: dict[str, Any]) -> set[str]:
     """Return the narrow reuse-Bundle cross-SystemFolder shared-prototype exception."""
 
     bundle_version = bundle.get("version")
-    if bundle_version not in {"0.2", "0.3"}:
+    if bundle_version not in {"0.2", "0.3", "0.4"}:
         return set()
     assets = {
         asset.get("id"): asset
@@ -264,7 +264,7 @@ def validate_system_folder_with_shared_prototypes(
     return expected_system_folder
 
 
-def validate_requirement_and_bundle(
+def validate_requirement_and_bundle_sources(
     requirement: Any,
     bundle: Any,
     *,
@@ -300,7 +300,7 @@ def validate_requirement_and_bundle(
         errors.append(issue("bundle.type", "$", "UIBuildBundle must be an object."))
         return errors, context
     shared_paths = verified_shared_prototype_paths(bundle)
-    if bundle.get("version") in {"0.2", "0.3"}:
+    if bundle.get("version") in {"0.2", "0.3", "0.4"}:
         system_folder = validate_system_folder_with_shared_prototypes(
             target_paths,
             expected_system_folder=target.get("systemFolder"),
@@ -324,21 +324,8 @@ def validate_requirement_and_bundle(
     )
     errors.extend(prefix_issues("bundle", bundle_report["errors"]))
 
-    execution = bundle.get("execution") if isinstance(bundle.get("execution"), dict) else {}
-    verification = bundle.get("verification") if isinstance(bundle.get("verification"), dict) else {}
-    if execution.get("status") != "completed":
-        errors.append(issue("bundle.execution", "$.execution.status", "Bundle execution must be completed."))
-    if verification.get("status") != "passed":
-        errors.append(issue("bundle.verification", "$.verification.status", "Bundle verification must be passed."))
-    for index, asset in enumerate(bundle.get("assets", [])):
-        if not isinstance(asset, dict) or asset.get("status") != "verified":
-            errors.append(issue("bundle.asset_status", f"$.assets[{index}].status", "Every Bundle asset must be verified."))
-    for index, check in enumerate(verification.get("checks", [])):
-        if not isinstance(check, dict) or check.get("status") != "passed":
-            errors.append(issue("bundle.check_status", f"$.verification.checks[{index}].status", "Every Bundle check must be passed."))
-
     bundle_paths = [asset.get("assetPath") for asset in bundle.get("assets", []) if isinstance(asset, dict)]
-    if bundle.get("version") in {"0.2", "0.3"}:
+    if bundle.get("version") in {"0.2", "0.3", "0.4"}:
         bundle_folder = validate_system_folder_with_shared_prototypes(
             bundle_paths,
             expected_system_folder=target.get("systemFolder"),
@@ -360,6 +347,33 @@ def validate_requirement_and_bundle(
             "requirementIndex": build_requirement_index(requirement),
         }
     )
+    return errors, context
+
+
+def validate_requirement_and_bundle(
+    requirement: Any, bundle: Any, *, requirement_path: Path, bundle_path: Path,
+    check_linked_files: bool = True,
+) -> tuple[list[dict[str, str]], dict[str, Any]]:
+    """Final delivery authority; development callers use the source core explicitly."""
+    errors, context = validate_requirement_and_bundle_sources(
+        requirement, bundle, requirement_path=requirement_path, bundle_path=bundle_path,
+        check_linked_files=check_linked_files,
+    )
+    if not isinstance(requirement, dict) or not isinstance(bundle, dict):
+        return errors, context
+    execution = bundle.get("execution") if isinstance(bundle.get("execution"), dict) else {}
+    verification = bundle.get("verification") if isinstance(bundle.get("verification"), dict) else {}
+    if execution.get("status") != "completed":
+        errors.append(issue("bundle.execution", "$.execution.status", "Bundle execution must be completed."))
+    if verification.get("status") != "passed":
+        errors.append(issue("bundle.verification", "$.verification.status", "Bundle verification must be passed."))
+    for index, asset in enumerate(bundle.get("assets", [])):
+        if not isinstance(asset, dict) or asset.get("status") != "verified":
+            errors.append(issue("bundle.asset_status", f"$.assets[{index}].status", "Every Bundle asset must be verified."))
+    for index, check in enumerate(verification.get("checks", [])):
+        if not isinstance(check, dict) or check.get("status") != "passed":
+            errors.append(issue("bundle.check_status", f"$.verification.checks[{index}].status", "Every Bundle check must be passed."))
+
     return errors, context
 
 

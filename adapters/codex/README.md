@@ -12,6 +12,13 @@ intake branch. Its two direct-user gates remain the mapping default; project
 design delegation must be explicitly authorized and recorded through the
 plugin's scoped review receipt, never inferred from an adapter completion.
 
+The optional art stage, final art Bundle/Readback 0.4, and one-request delegated
+result acceptance 0.2 in the 2026-09-20 plugin are separate plugin capabilities.
+This portable mapping does not schedule them and continues to require both
+direct-user gates below, including acceptance 0.1. Use the relevant plugin skill
+and its full evidence contract for a separately authorized nonportable route;
+do not mark a portable gate passed from that route's delegation.
+
 ## Primitive mapping
 
 | Portable operation | Codex primitive | Coordinator rule |

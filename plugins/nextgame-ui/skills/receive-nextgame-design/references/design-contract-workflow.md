@@ -15,6 +15,8 @@ Do not import the old three-module `bridge_poc` as a production contract. Its 0.
 
 ## Completion and gaps
 
+Apply [visual presentation rules](../../build-nextgame-umg/references/visual-presentation-rules.md) as compatibility and evidence requirements during reception. Report a precise gap when semantic ownership, joint text geometry, local/shared state scope or art evidence cannot be established. Existing locked fields remain authoritative; resolve a conflict in a new design-source revision rather than reconstructing the page from its reference image or patching compiled values. The new art presentation capability is adopted explicitly downstream and does not rewrite historical design contracts.
+
 An authored design contract contains normalized design content, not merely a frame image or a list of recipe names. Complete its evidence and canonical model once at design time. All schema, ID/reference, state, collection, geometry, image ownership, asset-boundary and review checks apply to Requirement 0.2 just as to legacy 0.1. Only source provenance differs.
 
 The existing raw analysis remains available for new or incompletely described screens. Once those decisions have been accepted and frozen, subsequent compatible builds read them directly. A gap-only revision retains every unaffected locked decision; it never silently broadens scope or turns placeholder samples into business limits.

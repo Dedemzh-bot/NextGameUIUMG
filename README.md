@@ -1,8 +1,19 @@
 # NextGameUIUMG
 
-NextGameUIUMG 把 NextGame 的设计接收、UMG 需求分析、构建验证和程序交接规范封装成一套文件合同工作流，并为原始图文分析提供 Codex、Hermes、WorkBuddy 三种调度适配。
+NextGameUIUMG 把 NextGame 的设计接收、UMG 需求分析、构建验证、可选美术精修和程序交接规范封装成一套文件合同工作流，并为原始图文分析提供 Codex、Hermes、WorkBuddy 三种调度适配。
 
 现有设计决定通过结构化合同直接采用；缺少设计决定的图文输入经过独立分析。两种来源共用完整校验、Accepted Build View、UMG 构建和实际验收。运行时只负责派发和等待；通过校验的文件才是权威结果。
+
+## 2026-09-20 更新
+
+本次同步完整权威插件，版本为 [`0.1.0+codex.20260920095437`](plugins/nextgame-ui/.codex-plugin/plugin.json)。这是当前整包的能力说明；历史 `production-review-change-20260918` 记录仍只描述当时的变更范围。
+
+- **可选美术阶段**：新增 [`refine-nextgame-ui-art`](plugins/nextgame-ui/skills/refine-nextgame-ui-art/SKILL.md)，支持 `formal-art`、`upgrade-art` 和 `local-art`，在同一请求下索引资源、形成局部决策、应用可恢复变更并验证实际结果。`developer-only` 保持原构建链；美术不重做已接受的布局、状态和程序绑定。请求了美术时，未完成的资源或验证不能跳过。
+- **最终美术证据链**：完成美术后使用 Bundle 0.4 和 normalized Unreal Readback 0.4，绑定当前 art request、plan、passed verification 和实际读回；旧 0.1–0.3 合同保持原语义。美术、预览、保存结果或绑定文件改变后，必须重新完成当前结果验收。
+- **显式启用的坐标、尺寸和布局能力**：试用 `source-target-coordinates/1` 分离原图测量与目标设计坐标；`content-driven-child-size/1|2` 与 `layout-dependency/1|2` 表达内容尺寸依赖，/2 支持固定宽度、自然高度；`bounded-wrap/1` 声明固定文本容量。它们需要各自完整合同及显式新 revision，不自动迁移旧输入，也不把计划证明当作实际测量或文本适配通过。详见[坐标规则](plugins/nextgame-ui/skills/build-nextgame-umg/references/project-layout-rules.md#trial-source-and-target-coordinates)与[布局合同](plugins/nextgame-ui/skills/build-nextgame-umg/references/layout-spec.md)。
+- **两种独立结果验收**：默认 acceptance 0.1 仍等待展示结果后的直接用户确认；显式 acceptance 0.2 仅接受受支持格式的真实原始单次授权，由主协调器在全部最终验证后实际检查每个资产、渲染、几何、状态和 Bundle check，记录 `userHasReviewedResult: false`，并独占消费该次授权、绑定冻结结果。文档 Agent 不能制造或修补授权，泛称“完成全流程”或美术选择授权也不等于结果验收。详见[单次委托结果验收](plugins/nextgame-ui/skills/document-nextgame-umg/references/delegated-result-acceptance.md)。
+
+这些能力属于插件入口；portable DAG 和三个 bundled adapter 仍只调度原始图文 Requirement 0.1，并保留两个直接用户门，尚未实现美术阶段或 acceptance 0.2 调度。默认美术运行时也尚不提供 canonical capture 或测量后的 Widget 几何；必须由实际宿主补齐证据，静态测试、缩略图或 Material 编译不能代替生产结果验证。
 
 ## 两种来源与共同下游
 
@@ -15,7 +26,7 @@ NextGameUIUMG 把 NextGame 的设计接收、UMG 需求分析、构建验证和�
 
 结构化接收保留已锁定值，只对具体缺项或冲突作出补充决定；它不生成虚构的九份 Findings。所有源文件和精确版本都会核对，未决高影响项、未支持映射和生产 Draft 参数仍会阻断。兼容审查只是设计层证据，不能冒充 Unreal 读回或界面验收。
 
-两条路线在审核通过后汇合到同一 Accepted Build View，再运行完整 Requirement、Bundle、Coverage、布局、编译保存、实际读回和预览验证。默认由用户审核具体设计；只有项目已明确委托设计决策时，才可用真实原话和独立 `delegated-design-review` receipt 记录该次具体审核，不能套用为其他项目的自动同意。制作结果展示后的第二次直接用户验收保持独立。
+两条路线在审核通过后汇合到同一 Accepted Build View，再运行完整 Requirement、Bundle、Coverage、布局、编译保存、实际读回和预览验证。默认由用户审核具体设计；只有项目已明确委托设计决策时，才可用真实原话和独立 `delegated-design-review` receipt 记录该次具体审核，不能套用为其他项目的自动同意。制作结果展示后的验收始终独立，采用上述默认 0.1 或显式启用的 0.2 合同；设计审核不能授权结果验收。
 
 结构化接收命令及来源规则见 [`receive-nextgame-design`](plugins/nextgame-ui/skills/receive-nextgame-design/references/design-contract-workflow.md)；新增规范、模块、配方或映射的维护入口见 [`maintain-nextgame-ui-spec`](plugins/nextgame-ui/skills/maintain-nextgame-ui-spec/SKILL.md)。
 
@@ -89,17 +100,22 @@ python orchestration/scripts/portable_workflow.py validate \
 python adapters/validate_adapters.py
 ```
 
-完整回归：
+完整回归（包括 art scripts 的全部 `test_*.py`、构建、读回、委托结果验收及文档测试）：
 
 ```bash
+python scripts/prepare_test_dependencies.py
 python scripts/validate_release.py
 ```
 
-图片覆盖扫描、HTTP MCP 执行、DOCX 模板测试和发布期 JSON Schema 交叉校验需要可选依赖：
+美术资源集成测试依赖独立的 [NextGameUIResource](https://github.com/Dedemzh-bot/NextGameUIResource) 校验器。准备命令首次联网克隆到已忽略的 `Tools/UIResourceImport/`，按 [`scripts/test-dependencies.json`](scripts/test-dependencies.json) 锁定真实提交和三个消费模块的 SHA-256；已有目录不自动覆盖。已有对应源码可用 `--local-source <checkout>` 离线准备，仍须匹配锁定值。后续发布验证只读检查该依赖，使用合成资源，不导入真实 Unreal 资产。依赖独立维护，不在本仓库复制第二份实现。
+
+图片覆盖扫描、美术资源与图像比较、HTTP MCP 执行、DOCX 模板测试和发布期 JSON Schema 交叉校验需要可选依赖；完整发布验证前安装：
 
 ```bash
 python -m pip install -r requirements-optional.txt
 ```
+
+发布验证检查合同和离线测试，不连接真实 Unreal 或认证远端运行时。生产完成仍以当前请求的实际编译保存、渲染、读回和相应结果验收为准。
 
 ## Codex 安装
 
@@ -110,7 +126,19 @@ codex plugin marketplace add .
 codex plugin add nextgame-ui@umg-nextgame
 ```
 
-安装或更新后请开启一个新任务，使 Codex 重新发现 Plugin/Skill。Codex 的具体调度约束见 [`adapters/codex/README.md`](adapters/codex/README.md)。
+已按以上方式注册本地 checkout 的用户，在该仓库目录更新源码、验证后重新安装插件缓存：
+
+```bash
+git pull --ff-only
+python -m pip install -r requirements-optional.txt
+python scripts/prepare_test_dependencies.py
+python scripts/validate_release.py
+codex plugin remove nextgame-ui@umg-nextgame
+codex plugin add nextgame-ui@umg-nextgame
+codex plugin list --marketplace umg-nextgame --json
+```
+
+先确认本地自定义修改已保存并完成验证，再执行移除和安装。检查插件清单/安装结果中的版本与仓库 manifest 一致，随后开启一个新任务，使 Codex 重新发现 Plugin/Skill。以上更新步骤针对 `marketplace add .` 的本地源。Codex 的具体调度约束见 [`adapters/codex/README.md`](adapters/codex/README.md)。
 
 ## Hermes 适配
 

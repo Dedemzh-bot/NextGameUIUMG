@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Validate a NextGame UIBuildBundle 0.1/0.2/0.3 and its linked artifacts."""
+"""Validate a NextGame UIBuildBundle 0.1/0.2/0.3/0.4 and its linked artifacts."""
 
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import sys
 from pathlib import Path
@@ -11,6 +12,7 @@ from typing import Any
 
 from _contract_common import ASSETS_ROOT, issue, load_json, resolve_contract_path, result, sha256_file, validate_schema_instance
 from accepted_build_view import RequirementSnapshot, validate_accepted_build_view as validate_accepted_build_view_contract
+from _bundle_capabilities import CONTENT_HEIGHT, CONTENT_HEIGHT_V2, SHARED_STATES, content_height_capability, content_proof_capability_errors, enabled, initial_refs, planned_size_proofs, validate_content_height, validate_shared_states
 from validate_requirement_spec import (
     DEFAULT_SCHEMA as REQUIREMENT_SCHEMA,
     build_requirement_index,
@@ -43,6 +45,53 @@ DEFAULT_SCHEMA = ASSETS_ROOT / "ui-build-bundle.schema.json"
 AUTHORITATIVE_SHARED_REGISTRY = SHARED_REGISTRY.resolve()
 AUTHORITATIVE_SHARED_REGISTRY_SCHEMA = SHARED_REGISTRY_SCHEMA.resolve()
 RECT_TOLERANCE = 0.001
+
+
+def validate_bundle_art_stage(
+    bundle: dict[str, Any],
+    *,
+    bundle_path: Path,
+    requirement: Any,
+    requirement_path: Path | None,
+    readback: dict[str, Any] | None = None,
+) -> list[dict[str, str]]:
+    """Revalidate current art evidence, with actual identity at document gates.
+
+    Kept lazy so developer-only runs retain their dependencies and old semantics.
+    Completion checks cannot use --skip-linked-files to bypass this authority.
+    The art helper must not call the Bundle validator (that would recurse).
+    """
+    if bundle.get("version") != "0.4":
+        return []
+    if not isinstance(requirement, dict) or requirement_path is None:
+        return [issue("art.requirement", "$.artStage", "Art completion requires the current complete Requirement and its physical path.")]
+    try:
+        helper_path = PLUGIN_ROOT / "skills/refine-nextgame-ui-art/scripts/art_common.py"
+        module_name = "_nextgame_ui_art_completion_contract"
+        spec = importlib.util.spec_from_file_location(module_name, helper_path)
+        if spec is None or spec.loader is None:
+            raise ImportError(f"Cannot load art validation helper: {helper_path}")
+        module = importlib.util.module_from_spec(spec)
+        # Dataclasses and other module introspection require this registration.
+        sys.modules[module_name] = module
+        spec.loader.exec_module(module)
+        errors = module.validate_art_stage(
+            bundle.get("artStage"),
+            bundle_path=bundle_path,
+            requirement=requirement,
+            requirement_path=requirement_path,
+            readback=readback,
+            final_bundle=bundle,
+        )
+        if not isinstance(errors, list) or any(
+            not isinstance(entry, dict)
+            or any(not isinstance(entry.get(key), str) for key in ("code", "path", "message"))
+            for entry in errors
+        ):
+            raise ValueError("Art validator returned an invalid issue list.")
+        return errors
+    except (OSError, ImportError, ValueError, TypeError, KeyError, AttributeError) as error:
+        return [issue("art.validation_failed", "$.artStage", str(error))]
 
 
 def _validate_prototype_readback_checks(bundle, requirement, bundle_path, requirement_path, errors):
@@ -327,6 +376,125 @@ def _image_realization_is_within_owner(
     )
 
 
+def _validate_button_visual_ownership(
+    bundle: dict[str, Any],
+    requirement_spec: dict[str, Any],
+    accepted_claim_ids: set[str],
+    layout_node_records_by_asset: dict[str, dict[str, dict[str, Any]]],
+) -> list[dict[str, Any]]:
+    """Preserve explicit accepted Button ancestry, without inferring visual ownership."""
+
+    if requirement_spec.get("reviewGate", {}).get("status") != "accepted":
+        return []
+    elements = {
+        element["id"]: element
+        for element in requirement_spec.get("uiModel", {}).get("elements", [])
+        if isinstance(element, dict) and isinstance(element.get("id"), str)
+    }
+    mappings = [item for item in bundle.get("nodeMappings", []) if isinstance(item, dict)]
+    relations = [item for item in bundle.get("reuseRelations", []) if isinstance(item, dict)]
+    edges = _asset_containment_edges(bundle, relations, layout_node_records_by_asset)
+
+    def accepted(element: dict[str, Any]) -> bool:
+        claims = element.get("claimIds", [])
+        return element.get("inBuildScope") is True and isinstance(claims, list) and bool(set(claims) & accepted_claim_ids)
+
+    def button_owner(element: dict[str, Any]) -> str | None:
+        current = element.get("parentElementId")
+        seen: set[str] = set()
+        while isinstance(current, str) and current in elements and current not in seen:
+            seen.add(current)
+            parent = elements[current]
+            if not accepted(parent):
+                return None
+            if parent.get("kind") == "button":
+                return current
+            current = parent.get("parentElementId")
+        return None
+
+    def has_owner(
+        asset_id: str,
+        node_id: str | None,
+        owners: set[tuple[str, str]],
+        visited: frozenset[str] = frozenset(),
+    ) -> bool:
+        if asset_id in visited:
+            return False
+        records = layout_node_records_by_asset.get(asset_id, {})
+        seen: set[str] = set()
+        while isinstance(node_id, str) and node_id in records and node_id not in seen:
+            seen.add(node_id)
+            node = records[node_id]
+            if node.get("role") == "input.button":
+                return (asset_id, node_id) in owners
+            node_id = node.get("parent")
+        # Only follow declared routes into assets that realize this accepted owner.
+        # A shared source may also have independent consumers outside this mapping.
+        owner_assets = {owner_asset for owner_asset, _ in owners}
+        hosts = [
+            (host_asset, anchor)
+            for host_asset, anchor in edges.get(asset_id, [])
+            if host_asset in owner_assets or any(
+                _final_containment_anchors(host_asset, owner_asset, edges)
+                for owner_asset in owner_assets
+            )
+        ]
+        return bool(hosts) and all(
+            has_owner(host_asset, anchor, owners, visited | {asset_id})
+            for host_asset, anchor in hosts
+        )
+
+    errors: list[dict[str, Any]] = []
+    for index, mapping in enumerate(bundle.get("nodeMappings", [])):
+        if not isinstance(mapping, dict):
+            continue
+        asset_id, node_id = mapping.get("assetId"), mapping.get("layoutNodeId")
+        node = layout_node_records_by_asset.get(asset_id, {}).get(node_id, {})
+        if node.get("role") not in {"visual.image", "text.label"}:
+            continue
+        refs = mapping.get("requirementRefs", [])
+        for element_id in refs if isinstance(refs, list) else []:
+            element = elements.get(element_id, {})
+            if element.get("kind") not in {"image", "text"} or not accepted(element):
+                continue
+            owner_id = button_owner(element)
+            if owner_id is None:
+                continue
+            owners = {
+                (item.get("assetId"), item.get("layoutNodeId"))
+                for item in mappings
+                if owner_id in item.get("requirementRefs", [])
+                and layout_node_records_by_asset.get(item.get("assetId"), {}).get(item.get("layoutNodeId"), {}).get("role") == "input.button"
+            }
+            # An explicitly bound inherited/shared owner has no local concrete
+            # Button to inspect; its existing reuse gates remain authoritative.
+            if not owners:
+                inherited_owner = any(
+                    relation.get("type") in {"shared-prototype-extension", "class-settings-parent-class", "widget-tree-instance"}
+                    and owner_id in relation.get("requirementRefs", [])
+                    and any(
+                        asset_id == relation_asset or _final_containment_anchors(asset_id, relation_asset, edges)
+                        for relation_asset in (relation.get("sourceAssetId"), relation.get("targetAssetId"))
+                        if isinstance(relation_asset, str)
+                    )
+                    for relation in relations
+                )
+                if not inherited_owner:
+                    errors.append(issue(
+                        "mapping.button_owner_missing",
+                        f"$.nodeMappings[{index}].requirementRefs",
+                        f"Visual element {element_id} requires a concrete input.button mapping or an explicit shared/inherited reuse binding for accepted owner {owner_id}.",
+                    ))
+                continue
+            if not has_owner(asset_id, node_id, owners):
+                errors.append(issue(
+                    "mapping.button_visual_owner",
+                    f"$.nodeMappings[{index}].requirementRefs",
+                    f"Visual element {element_id} must retain its accepted nearest Button owner {owner_id}, including declared child-widget host boundaries.",
+                ))
+    return errors
+
+
 def _relation_slot_from_panel_intent(slot_intent: dict[str, Any], parent_layout_role: Any) -> dict[str, Any]:
     return {
         "containerType": {
@@ -507,8 +675,8 @@ def _root_direct_content_driven_size_proofs(layout: dict[str, Any]) -> list[dict
     ]
 
 
-SUPPORTED_BUNDLE_VERSIONS = {"0.1", "0.2", "0.3"}
-REUSE_BUNDLE_VERSIONS = {"0.2", "0.3"}
+SUPPORTED_BUNDLE_VERSIONS = {"0.1", "0.2", "0.3", "0.4"}
+REUSE_BUNDLE_VERSIONS = {"0.2", "0.3", "0.4"}
 SUPPORTED_SEMANTIC_PANEL_CLASSES = {
     "/Script/UMG.CanvasPanel",
     "/Script/UMG.Overlay",
@@ -571,7 +739,7 @@ def _validate_shared_registry_binding(
         errors.append(issue("reuse.registry_invalid", f"{path}.registryPath", f"Shared registry validation failed: {codes}."))
 
     expected_registry_version = "0.3" if bundle_version == "0.2" else "0.4"
-    declared_version = registry_binding.get("registryVersion") if bundle_version == "0.3" else expected_registry_version
+    declared_version = registry_binding.get("registryVersion") if bundle_version in {"0.3", "0.4"} else expected_registry_version
     for key, actual, declared in (
         ("registryId", registry.get("registryId") if isinstance(registry, dict) else None, registry_binding.get("registryId")),
         ("registryVersion", registry.get("version") if isinstance(registry, dict) else None, declared_version),
@@ -1144,7 +1312,7 @@ def _validate_reuse_relations(
                 and actual_entry.get("status") == "active"
                 and actual_contract.get("status") == "verified"
             )
-            if bundle_version == "0.3" and isinstance(actual_entry, dict):
+            if bundle_version in {"0.3", "0.4"} and isinstance(actual_entry, dict):
                 errors.extend(
                     _validate_named_slots_against_registry_entry(
                         relation.get("namedSlots") if isinstance(relation.get("namedSlots"), dict) else {},
@@ -1154,8 +1322,8 @@ def _validate_reuse_relations(
                 )
             if bootstrap:
                 bootstrap_entry = bootstrap_state.get("entry") if bootstrap_state.get("valid") is True and isinstance(bootstrap_state.get("entry"), dict) else None
-                if bundle_version != "0.3":
-                    errors.append(issue("reuse.bootstrap_version", f"{path}.bootstrapSnapshot", "planned-bootstrap is supported only by Bundle 0.3."))
+                if bundle_version not in {"0.3", "0.4"}:
+                    errors.append(issue("reuse.bootstrap_version", f"{path}.bootstrapSnapshot", "planned-bootstrap is supported only by Bundle 0.3 or 0.4."))
                 if not check_linked_files:
                     errors.append(issue("reuse.bootstrap_binding", f"{path}.bootstrapSnapshot", "planned-bootstrap requires linked-file validation; --skip-linked-files cannot prove its content-addressed snapshot, layout, new-package status, or base Registry guard."))
                 if not isinstance(source, dict) or source.get("representationKind") != "layout-spec":
@@ -1232,7 +1400,7 @@ def _validate_reuse_relations(
                     errors.append(issue("reuse.parent_extension_missing", path, "Parent Class reuse requires an earlier shared-prototype-extension relation for the prototype."))
                 elif any(source.get("buildOrder", -1) >= target.get("buildOrder", -1) for _ in extensions):
                     errors.append(issue("reuse.parent_extension_order", path, "Shared extension must precede child creation in asset build order."))
-            if bundle_version == "0.3":
+            if bundle_version in {"0.3", "0.4"}:
                 inherited_slots = relation.get("inheritedSlots") if isinstance(relation.get("inheritedSlots"), list) else []
                 panel_names: set[str] = set()
                 panel_paths: set[str] = set()
@@ -1286,7 +1454,7 @@ def _validate_reuse_relations(
                         "UIBuildBundle 0.2 cannot carry executable Designer parameter overrides because UnrealReadback 0.2 cannot prove them; use UIBuildBundle 0.3 for parameterized nesting.",
                     )
                 )
-            elif bundle_version == "0.3":
+            elif bundle_version in {"0.3", "0.4"}:
                 parameter_overrides = relation.get("parameterOverrides") if isinstance(relation.get("parameterOverrides"), list) else []
                 parent_relations = parent_relations_by_child.get(str(source_id), [])
                 prototype_extensions = (
@@ -1556,6 +1724,7 @@ def validate_build_bundle(
             warnings,
         )
     errors.extend(validate_schema_instance(bundle, schema))
+    errors.extend(content_proof_capability_errors(bundle, {}, "$.capabilities"))
 
     requirement_link = bundle.get("requirement") if isinstance(bundle.get("requirement"), dict) else {}
     accepted_build_view_requested = accepted_build_view is not None or accepted_build_view_path is not None
@@ -1876,6 +2045,10 @@ def validate_build_bundle(
                 )
             )
 
+    from _coordinate_spaces import expected_rect, validate_bundle_binding
+    if isinstance(requirement_spec, dict):
+        errors.extend(validate_bundle_binding(bundle, requirement_spec, bundle_path=bundle_path if check_linked_files else None))
+
     all_bundle_ids: set[str] = set()
     bundle_id = bundle.get("bundleId")
     if isinstance(bundle_id, str):
@@ -2003,9 +2176,12 @@ def validate_build_bundle(
                             f"found {profile.get('designSizeMode')!r}.",
                         )
                     )
+                errors.extend(content_proof_capability_errors(bundle, layout, f"$.assets[{asset_id}].layoutSpecPath"))
                 if expected_design_size_mode == "Desired":
                     fixed_root_proof = _has_fixed_root_direct_desired_size(layout)
                     content_proofs = _root_direct_content_driven_size_proofs(layout)
+                    if content_height_capability(bundle):
+                        content_proofs += planned_size_proofs(layout, content_height_capability(bundle))
                     decision = plan.get("designSizeModeDecision") if isinstance(plan, dict) else {}
                     decision_evidence_ids = (
                         set(decision.get("evidenceIds", []))
@@ -2166,6 +2342,10 @@ def validate_build_bundle(
             errors.append(issue("mapping.layout_coverage", "$.nodeMappings", f"Asset {asset_id} layout mapping mismatch; missing={sorted(missing)}, extra={sorted(extra)}."))
 
     if check_linked_files:
+        if isinstance(requirement_spec, dict):
+            errors.extend(_validate_button_visual_ownership(
+                bundle, requirement_spec, accepted_claim_ids, layout_node_records_by_asset,
+            ))
         if image_composition_policy:
             mappings = [mapping for mapping in bundle.get("nodeMappings", []) if isinstance(mapping, dict)]
             reuse_relations = [relation for relation in bundle.get("reuseRelations", []) if isinstance(relation, dict)]
@@ -2732,6 +2912,8 @@ def validate_build_bundle(
                     f"{operation_type} must use {expected_strategy}; placeholder/template replacement is not a production integration strategy.",
                 )
             )
+        if operation.get("placementContract", {}).get("childSizingCompatibility", {}).get("mode") == "fixed-width-content-height" and not content_height_capability(bundle):
+            errors.append(issue("capability.required", operation_path, f"Requires exactly one of {CONTENT_HEIGHT} or {CONTENT_HEIGHT_V2}."))
         if operation_type == "child-widget-integration":
             if assets.get(source_id, {}).get("assetKind") != "child-widget":
                 errors.append(issue("operation.child_source_kind", f"{operation_path}.sourceAssetId", "child-widget-integration must source a child-widget asset."))
@@ -2787,6 +2969,9 @@ def validate_build_bundle(
                                 for node in source_records
                             ):
                                 errors.append(issue("operation.child_sizing_flow_axis", f"{operation_path}.placementContract.childSizingCompatibility", f"source-flow-axis requires cited adaptive flow/stretch evidence on the {axis} axis."))
+                    elif compatibility.get("mode") == "fixed-width-content-height":
+                        source_layout = {"nodes": list(source_node_records.values()), "referenceSize": assets.get(source_id, {}).get("referenceSize")}
+                        errors.extend(validate_content_height(bundle, operation, f"{operation_path}.placementContract.childSizingCompatibility", source_layout, target_node or {}))
                     elif compatibility.get("mode") == "explicit-scalebox":
                         if not any("scale" in str(node.get("role", "")).lower() for node in source_records):
                             errors.append(issue("operation.child_sizing_scale", f"{operation_path}.placementContract.childSizingCompatibility", "explicit-scalebox requires a cited ScaleBox layout node."))
@@ -2944,7 +3129,7 @@ def validate_build_bundle(
                 continue
             if mapping.get("mappingKind") not in {"direct", "composite-state"}:
                 continue
-            mapping_states = mapping.get("stateRefs", [])
+            mapping_states = initial_refs(bundle, mapping)
             if not isinstance(mapping_states, list) or set(mapping_states) != expected_states:
                 continue
             assigned_target_refs = [
@@ -2993,8 +3178,10 @@ def validate_build_bundle(
             )
             continue
         handling = handling_operations[0]["stateHandling"]
-        if set(handling.get("stateRefs", [])) != expected_states:
+        if set(initial_refs(bundle, handling)) != expected_states:
             errors.append(issue("state.assignment_refs", "$.crossAssetOperations", f"stateHandling for {element_id} must exactly match its state assignment."))
+
+    errors.extend(validate_shared_states(bundle, requirement_spec or {}, assets, layout_node_records_by_asset if check_linked_files else None))
 
     for operation_index, operation in enumerate(bundle.get("crossAssetOperations", [])):
         if not isinstance(operation, dict):
@@ -3026,7 +3213,7 @@ def validate_build_bundle(
             )
         else:
             assignment_states = set(assignments_by_element[assigned_target_elements[0]][0].get("axisStateIds", []))
-            if assignment_states != target_states:
+            if assignment_states != set(initial_refs(bundle, mapping)):
                 errors.append(issue("state.assignment_reverse_refs", f"{operation_path}.stateHandling", "Target mapping and stateHandling must exactly match the target element stateAssignment."))
         strategy = handling.get("strategy")
         if strategy == "runtime-dependent":
@@ -3193,8 +3380,8 @@ def validate_build_bundle(
                     errors.append(issue("preview.geometry_requirement", f"{comparison_path}.requirementRef", "Geometry comparisons must cite a requirement region."))
                     continue
                 compared_regions.add(requirement_ref)
-                expected_rect = indexed["entity"].get("bounds")
-                if _rect_delta(comparison.get("expectedNormalizedRect"), expected_rect) not in (0.0,):
+                expected_rect_value = expected_rect(requirement_spec, audited_asset.get("assetPlanId", audit_asset_id), comparison.get("layoutNodeId"), requirement_ref, indexed["entity"].get("bounds"))
+                if _rect_delta(comparison.get("expectedNormalizedRect"), expected_rect_value) not in (0.0,):
                     errors.append(issue("preview.geometry_expected", f"{comparison_path}.expectedNormalizedRect", "Preview expectedNormalizedRect must equal the cited requirement region bounds."))
                 actual_delta = _rect_delta(comparison.get("expectedNormalizedRect"), comparison.get("actualNormalizedRect"))
                 if actual_delta is None or actual_delta > comparison.get("maxDelta", -1):
@@ -3324,6 +3511,15 @@ def validate_build_bundle(
 
     if check_linked_files and isinstance(requirement_spec, dict) and requirement_path is not None:
         _validate_prototype_readback_checks(bundle, requirement_spec, bundle_path, requirement_path, errors)
+    if bundle_version == "0.4" and (
+        execution.get("status") == "completed" or verification.get("status") == "passed"
+    ):
+        errors.extend(validate_bundle_art_stage(
+            bundle,
+            bundle_path=bundle_path,
+            requirement=requirement_spec,
+            requirement_path=requirement_path,
+        ))
     return result(errors, warnings)
 
 

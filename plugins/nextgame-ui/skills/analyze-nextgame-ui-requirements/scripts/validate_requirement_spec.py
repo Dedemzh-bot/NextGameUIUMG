@@ -2496,6 +2496,8 @@ def validate_requirement_spec(
         ):
             errors.append(issue("packet.target_hint", "$.target.targetAssetPaths", "Resolved targetAssetPaths must include every RequestPacket target hint."))
 
+    from _coordinate_spaces import validate_contract
+    errors.extend(validate_contract(spec, spec_path=spec_path))
     errors.extend(validate_requirement_semantic_text(spec))
     return result(errors, warnings)
 

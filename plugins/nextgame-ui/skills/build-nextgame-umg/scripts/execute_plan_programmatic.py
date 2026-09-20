@@ -84,6 +84,11 @@ def validate_property_sequences(steps: list[dict[str, Any]]) -> None:
             raise ValueError("set_properties sequence invalid at %d" % (index + 1))
 
 
+def require_official_operations(steps: list[dict[str, Any]]) -> None:
+    if any(step.get("operation", "call_tool") != "call_tool" for step in steps):
+        raise RuntimeError("Plan requires native_setter_fallback or another unsupported operation; an authorized runner must execute and verify that contract outside ProgrammaticToolset.")
+
+
 def chunk_steps(steps: list[dict[str, Any]], max_steps_per_chunk: int) -> list[list[dict[str, Any]]]:
     """Group work at AddWidget boundaries without splitting property triplets."""
     if max_steps_per_chunk <= 0:
@@ -250,6 +255,7 @@ def build_programmatic_script(
     plan: dict[str, Any], steps: list[dict[str, Any]], saved: dict[str, Any]
 ) -> str:
     """Build one restricted script with only the chunk's live saved inputs."""
+    require_official_operations(steps)
     chunk_plan = dict(plan)
     prepared_steps: list[dict[str, Any]] = []
     for index, step in enumerate(steps):
@@ -1152,6 +1158,7 @@ def run_plan(
     resume_after_get_widgets: bool = False,
 ) -> dict[str, Any]:
     """Run pending chunks and return only a compact control-plane summary."""
+    require_official_operations(plan.get("steps", []))
     digest = plan_digest(plan)
     steps = list(plan.get("steps", []))
     artifact_root = artifact_dir.resolve() if artifact_dir is not None else None

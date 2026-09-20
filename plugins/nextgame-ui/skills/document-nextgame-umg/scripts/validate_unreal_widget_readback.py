@@ -29,10 +29,11 @@ from _document_contract_common import (
     validate_requirement_and_bundle,
     validate_schema_instance,
 )
+from validate_build_bundle import validate_bundle_art_stage
 
 
 REQUIRED_READBACK_CHECK_TYPES = ("widget-tree", "key-properties")
-SUPPORTED_READBACK_VERSIONS = {"0.1", "0.2", "0.3"}
+SUPPORTED_READBACK_VERSIONS = {"0.1", "0.2", "0.3", "0.4"}
 PLACEMENT_RECT_TOLERANCE = 0.001
 V03_SLOT_CLASS_PATHS = {
     "CanvasPanel": "/Script/UMG.CanvasPanelSlot",
@@ -294,6 +295,31 @@ def validate_readback_verification_checks(
 
 
 def validate_unreal_widget_readback(
+    readback: Any, schema: dict[str, Any], *, readback_path: Path,
+    requirement: Any, requirement_path: Path, bundle: Any, bundle_path: Path,
+) -> dict[str, Any]:
+    """Final readback gate; never accepts an unfinished development Bundle."""
+    errors, context = validate_requirement_and_bundle(
+        requirement, bundle, requirement_path=requirement_path, bundle_path=bundle_path,
+        check_linked_files=True,
+    )
+    if not isinstance(requirement, dict) or not isinstance(bundle, dict):
+        return result(errors)
+    actual = _validate_readback_actual_state(
+        readback, schema, readback_path=readback_path, requirement=requirement,
+        requirement_path=requirement_path, bundle=bundle, bundle_path=bundle_path,
+        context=context, source_completed_at=bundle.get("execution", {}).get("completedAt"),
+    )
+    errors.extend(actual["errors"])
+    if bundle.get("version") == "0.4":
+        errors.extend(validate_bundle_art_stage(
+            bundle, bundle_path=bundle_path, requirement=requirement,
+            requirement_path=requirement_path, readback=readback,
+        ))
+    return result(errors, actual["warnings"])
+
+
+def _validate_readback_actual_state(
     readback: Any,
     schema: dict[str, Any],
     *,
@@ -302,6 +328,8 @@ def validate_unreal_widget_readback(
     requirement_path: Path,
     bundle: Any,
     bundle_path: Path,
+    context: dict[str, Any],
+    source_completed_at: Any,
 ) -> dict[str, Any]:
     errors: list[dict[str, str]] = []
     warnings: list[dict[str, str]] = []
@@ -312,23 +340,12 @@ def validate_unreal_widget_readback(
         return result([issue("readback.version", "$.version", f"Unsupported UnrealWidgetReadback version: {readback_version!r}.")], warnings)
     errors.extend(validate_schema_instance(readback, schema))
     bundle_version = bundle.get("version") if isinstance(bundle, dict) else None
-    expected_readback_version = {"0.1": "0.1", "0.2": "0.2", "0.3": "0.3"}.get(bundle_version, "0.1")
+    expected_readback_version = {"0.1": "0.1", "0.2": "0.2", "0.3": "0.3", "0.4": "0.4"}.get(bundle_version, "0.1")
     if readback_version != expected_readback_version:
         errors.append(issue("version.bundle_readback", "$.version", f"Bundle {bundle_version!r} requires UnrealWidgetReadback {expected_readback_version}."))
-    upstream_errors, context = validate_requirement_and_bundle(
-        requirement,
-        bundle,
-        requirement_path=requirement_path,
-        bundle_path=bundle_path,
-        check_linked_files=True,
-    )
-    errors.extend(upstream_errors)
-    if not isinstance(readback, dict) or not isinstance(requirement, dict) or not isinstance(bundle, dict):
-        return result(errors, warnings)
-
     captured_at = parse_aware_iso8601(readback.get("capturedAt"), "$.capturedAt", errors)
     execution = bundle.get("execution") if isinstance(bundle.get("execution"), dict) else {}
-    completed_at = parse_aware_iso8601(execution.get("completedAt"), "$.execution.completedAt", errors)
+    completed_at = parse_aware_iso8601(source_completed_at, "$.execution.completedAt", errors)
     if captured_at is not None and completed_at is not None and captured_at < completed_at:
         errors.append(issue("time.readback_before_bundle", "$.capturedAt", "Readback capturedAt must not precede Bundle execution.completedAt."))
     acquisition = readback.get("acquisition") if isinstance(readback.get("acquisition"), dict) else {}
@@ -367,7 +384,7 @@ def validate_unreal_widget_readback(
         actual_asset = indexes["assets"].get(asset_id)
         if isinstance(actual_asset, dict) and actual_asset.get("assetPath") != bundle_asset.get("assetPath"):
             errors.append(issue("identity.asset_path", "$.assets", f"Readback assetPath differs for {asset_id}."))
-        if readback_version in {"0.2", "0.3"} and isinstance(actual_asset, dict):
+        if readback_version in {"0.2", "0.3", "0.4"} and isinstance(actual_asset, dict):
             if actual_asset.get("representationKind") != bundle_asset.get("representationKind"):
                 errors.append(issue("identity.representation_kind", "$.assets", f"Readback representationKind differs for {asset_id}."))
             expected_object_path = f"{bundle_asset.get('assetPath')}.{str(bundle_asset.get('assetPath')).rsplit('/', 1)[-1]}"
@@ -413,7 +430,7 @@ def validate_unreal_widget_readback(
     mappings = list(bundle_mappings.values())
     readback_relation_by_id: dict[str, dict[str, Any]] = {}
     accepted_runtime_fields = runtime_fields(requirement, accepted)
-    if readback_version in {"0.2", "0.3"}:
+    if readback_version in {"0.2", "0.3", "0.4"}:
         readback_relation_by_id = _validate_reuse_readback_relations(
             readback,
             bundle,
@@ -465,6 +482,8 @@ def validate_unreal_widget_readback(
         if expected_entry is not None and actual_entry != expected_entry:
             errors.append(issue("collection.entry_class_mismatch", "$.assets[*].widgets", f"Collection {collection.get('id')} EntryWidgetClass differs from the verified layout."))
 
+    _validate_shared_host_initial_properties(bundle, indexes=indexes, layouts=layouts, errors=errors)
+
     for model in requirement.get("stateModels", []):
         if not isinstance(model, dict) or not is_accepted_in_scope(model, accepted, require_scope=False):
             continue
@@ -495,6 +514,63 @@ def validate_unreal_widget_readback(
                 errors.append(issue("state.visibility_mismatch", "$.assets[*].widgets", f"State branch {state_id} actual Visibility differs from accepted Requirement."))
 
     return result(errors, warnings)
+
+
+def _validate_shared_host_initial_properties(
+    bundle: dict[str, Any],
+    *,
+    indexes: dict[str, Any],
+    layouts: dict[str, Any],
+    errors: list[dict[str, str]],
+) -> None:
+    """Read actual singleton host properties after upstream Bundle validation.
+
+    Initial values are distinct from supported states.  The upstream validator
+    binds each propertyBinding to an accepted override and exact assignment;
+    this gate additionally requires that exact physical Widget to match it.
+    """
+    capabilities = bundle.get("capabilities", [])
+    if not isinstance(capabilities, list) or "shared-node-states/1" not in capabilities:
+        return
+    mappings = [m for m in bundle.get("nodeMappings", []) if isinstance(m, dict)]
+    for operation in bundle.get("crossAssetOperations", []):
+        if not isinstance(operation, dict):
+            continue
+        handling = operation.get("stateHandling")
+        if not isinstance(handling, dict) or handling.get("strategy") != "owning-screen-shared-properties":
+            continue
+        target_asset = operation.get("targetAssetId")
+        target_node = operation.get("targetLayoutNodeId")
+        candidates = [m for m in mappings if m.get("assetId") == target_asset and m.get("layoutNodeId") == target_node]
+        path = "$.assets[*].nodeMappings"
+        if len(candidates) != 1:
+            errors.append(issue("state.shared_host_mapping", path, "Shared host must resolve through exactly one Bundle mapping."))
+            continue
+        mapping = candidates[0]
+        record = indexes.get("mappings", {}).get(mapping.get("id"))
+        layout_node = layouts.get(target_asset, {}).get("nodes", {}).get(target_node)
+        if (not isinstance(record, tuple) or len(record) != 2 or record[0] != target_asset
+                or not isinstance(record[1], dict) or record[1].get("layoutNodeId") != target_node
+                or not isinstance(layout_node, dict) or record[1].get("widgetName") != layout_node.get("name")):
+            errors.append(issue("state.shared_host_mapping", path, "Shared host readback must bind the exact target asset, layout node and Widget name."))
+            continue
+        widget = indexes.get("widgets", {}).get((target_asset, record[1].get("widgetName")))
+        if not isinstance(widget, dict):
+            errors.append(issue("state.shared_host_mapping", path, "Mapped shared host Widget is absent from actual readback."))
+            continue
+        initial = handling.get("initialStateRefs", [])
+        bindings = handling.get("propertyBindings", [])
+        bindings = [b for b in bindings if isinstance(b, dict) and b.get("stateRef") in initial and b.get("property") == "Visibility"] if isinstance(bindings, list) and isinstance(initial, list) else []
+        expected = bindings[0].get("value") if bindings else None
+        if (not bindings or not isinstance(expected, str)
+                or expected not in {"Visible", "Collapsed", "Hidden", "HitTestInvisible", "SelfHitTestInvisible"}
+                or any(b.get("elementId") not in mapping.get("requirementRefs", []) or b.get("value") != expected for b in bindings)):
+            errors.append(issue("state.shared_initial_binding", path, "Shared host requires unambiguous accepted initial Visibility bindings for its own element."))
+            continue
+        if layout_node.get("isVariable") is not True or widget.get("isVariable") is not True:
+            errors.append(issue("state.shared_actual_variable", "$.assets[*].widgets", "Shared host must be variable in both linked layout and actual Unreal readback."))
+        if widget.get("visibility") != expected:
+            errors.append(issue("state.shared_visibility_mismatch", "$.assets[*].widgets", f"Shared host {widget.get('widgetName')} actual Visibility must equal its accepted initial value {expected!r}."))
 
 
 DUAL_SLOT_INTENT_KEYS = (
@@ -710,7 +786,7 @@ def _validate_reuse_readback_relations(
 
         relation_type = actual.get("type")
         if relation_type == "shared-prototype-extension":
-            if bundle_version == "0.3":
+            if bundle_version in {"0.3", "0.4"}:
                 _validate_dual_named_slot_readback(
                     actual.get("namedSlots"),
                     expected.get("namedSlots"),
@@ -728,12 +804,12 @@ def _validate_reuse_readback_relations(
                 errors.append(issue("reuse.parent_class", f"{path}.parentClassPath", "Actual Parent Class differs from Bundle intent."))
             if target_asset.get("parentClassPath") != actual.get("parentClassPath"):
                 errors.append(issue("reuse.parent_class_asset", f"{path}.parentClassPath", "Actual child asset Parent Class identity is inconsistent."))
-            inherited_key = "inheritedSlots" if bundle_version == "0.3" else "inheritedSlot"
+            inherited_key = "inheritedSlots" if bundle_version in {"0.3", "0.4"} else "inheritedSlot"
             if actual.get(inherited_key) != expected.get(inherited_key):
                 errors.append(issue("reuse.inherited_slot", f"{path}.{inherited_key}", "Actual inherited Slot content differs from Bundle intent."))
             inherited_slots = (
                 actual.get("inheritedSlots")
-                if bundle_version == "0.3" and isinstance(actual.get("inheritedSlots"), list)
+                if bundle_version in {"0.3", "0.4"} and isinstance(actual.get("inheritedSlots"), list)
                 else [actual.get("inheritedSlot")]
             )
             declared_panel_names: set[str] = set()
@@ -744,7 +820,7 @@ def _validate_reuse_readback_relations(
                 if isinstance(panel.get("widgetName"), str):
                     declared_panel_names.add(panel["widgetName"])
                 panel_widget = indexes["widgets"].get((actual.get("targetAssetId"), panel.get("widgetName")))
-                panel_path = f"{path}.{inherited_key}{f'[{inherited_index}]' if bundle_version == '0.3' else ''}.panel"
+                panel_path = f"{path}.{inherited_key}{f'[{inherited_index}]' if bundle_version in {'0.3', '0.4'} else ''}.panel"
                 if not isinstance(panel_widget, dict):
                     errors.append(issue("reuse.inherited_panel_missing", f"{panel_path}.widgetName", "Inherited Slot Panel is absent from the actual child WidgetTree."))
                 elif panel_widget.get("classPath") != panel.get("classPath"):
@@ -790,7 +866,7 @@ def _validate_reuse_readback_relations(
                 errors.append(issue("reuse.shared_class", f"{path}.sharedPrototypeClassPath", "Actual shared prototype class differs from Bundle intent."))
             if actual.get("nestedWidgetClassPath") != expected.get("nestedWidgetClassPath"):
                 errors.append(issue("reuse.nested_class", f"{path}.nestedWidgetClassPath", "Actual nested Widget class differs from Bundle intent."))
-            if bundle_version == "0.3" and actual.get("parameterOverrides") != expected.get("parameterOverrides"):
+            if bundle_version in {"0.3", "0.4"} and actual.get("parameterOverrides") != expected.get("parameterOverrides"):
                 errors.append(issue("reuse.parameter_overrides", f"{path}.parameterOverrides", "Actual nested Widget parameter overrides differ from Bundle intent."))
             if host.get("classPath") != actual.get("nestedWidgetClassPath"):
                 errors.append(issue("reuse.host_class", f"{path}.host.classPath", "Host Widget class does not equal nestedWidgetClassPath."))
@@ -810,19 +886,19 @@ def _validate_reuse_readback_relations(
             actual_slot = placement.get("slot") if isinstance(placement.get("slot"), dict) else {}
             expected_slot = expected_placement.get("slot") if isinstance(expected_placement.get("slot"), dict) else {}
             slot_keys = ["containerType", "horizontalAlignment", "verticalAlignment", "padding"]
-            if bundle_version == "0.3":
+            if bundle_version in {"0.3", "0.4"}:
                 slot_keys.append("size")
             for key in slot_keys:
                 if actual_slot.get(key) != expected_slot.get(key):
                     errors.append(issue("reuse.placement_slot", f"{path}.placement.slot.{key}", f"Actual host Slot {key} differs from Bundle intent."))
             expected_slot_class = (
                 V03_SLOT_CLASS_PATHS.get(expected_slot.get("containerType"))
-                if bundle_version == "0.3"
+                if bundle_version in {"0.3", "0.4"}
                 else {"CanvasPanel": "/Script/UMG.CanvasPanelSlot"}.get(expected_slot.get("containerType"))
             )
             if expected_slot_class is not None and actual_slot.get("classPath") != expected_slot_class:
                 errors.append(issue("reuse.placement_slot_class", f"{path}.placement.slot.classPath", f"Actual host Slot class must be {expected_slot_class}."))
-            if bundle_version == "0.3":
+            if bundle_version in {"0.3", "0.4"}:
                 for key in ("parentWidgetName", "parentTreePath"):
                     if key in expected_slot and actual_slot.get(key) != expected_slot.get(key):
                         errors.append(

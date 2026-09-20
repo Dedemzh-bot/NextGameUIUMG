@@ -98,6 +98,7 @@ def validate_release_boundaries() -> None:
 
 
 def main() -> int:
+    run("resource-tool dependency", "scripts/prepare_test_dependencies.py", "--verify-only")
     run(
         "portable workflow contract",
         "orchestration/scripts/portable_workflow.py",
@@ -122,6 +123,7 @@ def main() -> int:
         "test_*.py",
     )
     run_all_script_tests("UMG build tests", PLUGIN / "skills" / "build-nextgame-umg" / "scripts")
+    run_all_script_tests("UI art tests", PLUGIN / "skills" / "refine-nextgame-ui-art" / "scripts")
 
     document_scripts = PLUGIN / "skills" / "document-nextgame-umg" / "scripts"
     document_excludes: set[str] = set()

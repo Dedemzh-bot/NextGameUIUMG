@@ -1017,6 +1017,12 @@ def declared_visuals(
     image_height: int,
 ) -> list[dict[str, Any]]:
     visuals: list[dict[str, Any]] = []
+    if requirement and "coordinateContract" in requirement:
+        if requirement["coordinateContract"].get("sourceSize") != [image_width, image_height]:
+            raise ValueError("Coordinate source coverage must use the bound original source dimensions.")
+        # Raw source coverage is independent of target geometry. Never project
+        # target-normalized Layout rects back onto the original source image.
+        layouts = []
     screen_layouts = [(path, layout) for path, layout in layouts if layout.get("profile", {}).get("assetKind") == "screen"]
     child_layouts = [(path, layout) for path, layout in layouts if layout.get("profile", {}).get("assetKind") != "screen"]
     child_by_name = {str(layout.get("asset", {}).get("name", "")).lower(): (path, layout) for path, layout in child_layouts}

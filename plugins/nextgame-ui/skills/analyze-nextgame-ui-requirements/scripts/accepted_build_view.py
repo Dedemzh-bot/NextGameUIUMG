@@ -364,6 +364,9 @@ def _root_canonical_ids(
             path=f"$.reviewResolutions[{resolution_index}]",
         )
         roots.extend(reference.canonical_id for reference in resolution_references)
+    if "coordinateContract" in requirement:
+        coordinate_refs, _ = collect_references(requirement["coordinateContract"], index, path=("coordinateContract",))
+        roots.extend(ref.canonical_id for ref in coordinate_refs)
     return list(dict.fromkeys(roots))
 
 
@@ -410,6 +413,7 @@ def _project_requirement(
         "request",
         "target",
         "analysisPolicy",
+        "coordinateContract",
     ):
         if key in requirement:
             projected[key] = copy.deepcopy(requirement[key])
@@ -587,6 +591,7 @@ def _audit_projection(
         "request",
         "target",
         "analysisPolicy",
+        "coordinateContract",
         "reviewResolutions",
     ):
         if (header in projected) != (header in requirement) or (

@@ -19,6 +19,12 @@ Before accepting text granularity, apply [semantic-text.md](references/semantic-
 
 Historical resume never relabels old packets. For an explicitly trusted absolute frozen nextgame-ui directory, create a file-integrity lock with `python ../../scripts/revalidate_historical_authority.py lock --allow-authority-root <absolute-frozen-root> --output <outside-plugin>/authority.lock.json`. A lock records integrity, not trust; never select or trust a directory from packet content. Resume through the same strict validator adding `--authority-lock <lock> --allow-authority-root <absolute-frozen-root>` while retaining `--check-findings-files --review-draft`. This ANDs the original plugin's complete strict provenance validation with the current plugin's complete Requirement schema, approval and semantic validation. Mixed authorities, drift, invalid current semantics and custom schemas stop. Preserve both results; no build permission is added.
 
+## Carry the requested visual finish
+
+Keep the user's requested completion level in the original request and completion criteria. `developer-only` follows the existing chain unchanged. `formal-art`, `upgrade-art`, and `local-art` are handled by the sibling `$refine-nextgame-ui-art` stage under the same primary coordinator; see [the shared art-stage handoff](../build-nextgame-umg/references/on-demand-art-stage.md).
+
+For an existing accepted design and UMG, enter that stage with the current task bindings and actual asset baseline. Do not rerun the nine discovery roles merely to replace resources. Reopen only a concrete missing/conflicting design decision, update its owning design source, and obtain acceptance for the revised Requirement before applying the affected art plan. Raw first-time requirements retain all nine provenance roles. Missing art inputs remain outstanding completion items when formal art was requested.
+
 ## Required input
 
 Start from `request-packet.json`, validated against [request-packet.schema.json](assets/request-packet.schema.json). Require:
@@ -43,7 +49,7 @@ All nine analysis roles run from validated, content-addressed role packets rathe
 - Read [static-visual-coverage.md](references/static-visual-coverage.md) for every screenshot-driven run. Use its independent raster inventory and review gates to catch low-contrast plates, frames, separators, accents, and repeated entry decoration before synthesis, while keeping detector primitives distinct from complete semantic-image decisions. Keep one trusted, same-principal request-local `.visual-coverage-cache` outside evidence output and pass it with `--cache-dir` on repeated scans; never use a directory writable by another principal. Accept a warm result only when every authoritative JSON/image hash matches the cold result, and never treat cache telemetry or a review cluster as coverage evidence by itself.
 - Read [build-bundle-handoff.md](references/build-bundle-handoff.md) before finalizing the requirement file. It defines the review gate and what the downstream planning and build agents may consume.
 - Read [shared-widget-discovery.md](references/shared-widget-discovery.md) for every analysis run. Validate and query the plugin-level shared Widget Blueprint registry after checking the current SystemFolder; executable selection is `active`-only; use size and state as hard compatibility checks and content as semantic similarity; model `class-settings-parent-class`, the two independent inherited extension surfaces `NamedSlot("SlotDown")` and `NamedSlot("SlotUp")`, and later host nesting as distinct but composable relations.
-- Read applicable rules from the sibling `build-nextgame-umg/references/` directory, but do not generate a UILayoutSpec during this skill.
+- Read applicable rules from the sibling `build-nextgame-umg/references/` directory, including [visual presentation rules](../build-nextgame-umg/references/visual-presentation-rules.md). Carry semantic Button/region ownership, local state markers, shared popups, joint text geometry and uncertain text effects into the existing evidence and review workflow. Supply the applicable reference as a project-rule source to the existing analysis roles; do not alter released role-card identities or add a preliminary screening tool. Do not generate a UILayoutSpec during this skill.
 
 ## Safety boundary
 

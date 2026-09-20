@@ -14,6 +14,13 @@ Coverage, layout and actual-readback validators. Adding structured scheduling to
 an adapter requires its own versioned mapping and tests; never fabricate nine
 Findings to make a design contract fit the raw workflow.
 
+The 2026-09-20 full plugin package adds optional art refinement, final art
+Bundle/Readback 0.4, and explicit one-request delegated result acceptance 0.2.
+These adapters do not schedule those additions: the contract below still uses
+Requirement 0.1 and two direct-user gates with acceptance 0.1. Plugin-level
+delegation never silently changes an adapter gate; a future mapping needs its
+own versioned contract and tests.
+
 The authoritative execution order lives in the repository's vendor-neutral
 orchestration manifest. `adapter-contract.json` records the invariants that a
 runtime mapping may not change: nine roles, three parallel groups, packet-only

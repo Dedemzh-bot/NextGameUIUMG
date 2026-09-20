@@ -159,9 +159,15 @@ def validate_semantic_text_coverage(spec, bundle, nodes_by_asset):
         if ordered != [paths[1][1]["id"], paths[2][1]["id"]]:
             errors.append(_error("order", owner["id"], "Direct-child order must match the reviewed pair."))
         rect, bounds = parent.get("rect"), owner.get("bounds")
-        if not _rect(rect) or not _rect(bounds) or rect != bounds:
-            errors.append(_error("geometry", owner["id"], "Owner rect must exactly preserve accepted normalized bounds."))
         asset_matches = [a for a in assets if a.get("id") == asset]
+        matches = rect == bounds
+        if "coordinateContract" in spec:
+            from _coordinate_spaces import close, expected_rect
+            plan_id = asset_matches[0].get("assetPlanId", asset) if len(asset_matches) == 1 else None
+            bounds = expected_rect(spec, plan_id, parent["id"], owner["id"], None)
+            matches = _rect(bounds) and close(rect, bounds, 1e-9)
+        if not _rect(rect) or not _rect(bounds) or not matches:
+            errors.append(_error("geometry", owner["id"], "Owner rect must preserve its accepted target geometry (legacy requests use source normalized bounds)."))
         size = asset_matches[0].get("referenceSize") if len(asset_matches) == 1 else None
         if (not _rect(rect) or not isinstance(size, list) or len(size) != 2
                 or not all(_positive(v) for v in size)

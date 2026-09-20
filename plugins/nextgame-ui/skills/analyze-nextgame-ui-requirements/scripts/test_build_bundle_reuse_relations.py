@@ -1147,8 +1147,25 @@ class BuildBundleReuseRelationsTests(unittest.TestCase):
 
     def test_unknown_bundle_version_fails_explicit_route(self) -> None:
         bundle = copy.deepcopy(self.legacy)
-        bundle["version"] = "0.4"
+        bundle["version"] = "0.5"
         self.assertIn("bundle.version", error_codes(self.validate(bundle)))
+
+    def test_art_bundle_keeps_all_dual_slot_reuse_semantics(self) -> None:
+        original = copy.deepcopy(self.bundle_v03)
+        art = copy.deepcopy(original)
+        art["version"] = "0.4"
+        art["artStage"] = {"goal": "formal-art", **{
+            key: {"path": f"art/{key}.json", "sha256": "a" * 64}
+            for key in ("request", "plan", "verification")
+        }}
+        self.assertEqual(validate_schema_instance(original, self.schema), validate_schema_instance(art, self.schema))
+        self.assertEqual(error_codes(self.validate(original)), error_codes(self.validate(art)))
+        # A wrong layer order must be rejected by precisely the same checks.
+        for value in (original, art):
+            value["reuseRelations"][0]["namedSlots"]["slots"].reverse()
+        original_errors = error_codes(self.validate(original))
+        self.assertTrue(original_errors)
+        self.assertEqual(original_errors, error_codes(self.validate(art)))
 
     def test_unknown_relation_field_is_rejected(self) -> None:
         bundle = copy.deepcopy(self.bundle)

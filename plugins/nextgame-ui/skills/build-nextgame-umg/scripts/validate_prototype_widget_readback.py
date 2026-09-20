@@ -151,13 +151,14 @@ def expected_properties(layout_path: Path, layout: dict) -> dict:
     plan = build_plan(layout_path, layout, catalog, load_json(RULES_PATH))
     expected = {n["id"]: {"widget": {}, "slot": {}} for n in layout["nodes"]}
     for step in plan["steps"]:
-        if step.get("toolName") != "set_properties":
+        native_size_box = step.get("operation") == "native_setter_fallback" and step.get("contract") == "size-box-constraints/1"
+        if step.get("toolName") != "set_properties" and not native_size_box:
             continue
         args = step["arguments"]
         ref = args.get("instance", {}).get("refPath", "")
         match = re.fullmatch(r"\$\{node\.(.+)\.returnValue\.(widget|slot)\.refPath\}", ref)
         if match:
-            expected[match[1]][match[2]].update(args["values"])
+            expected[match[1]][match[2]].update(step["expectedProperties"] if native_size_box else args["values"])
     return expected
 
 

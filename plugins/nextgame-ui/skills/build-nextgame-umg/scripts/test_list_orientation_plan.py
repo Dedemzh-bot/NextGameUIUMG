@@ -137,6 +137,32 @@ class ListOrientationPlanTests(unittest.TestCase):
                 for node_id, _, _ in ENDPOINTS:
                     self.assertEqual(step_by_id(plan, f"set-widget-properties-{node_id}")["arguments"]["values"]["orientation"], direction)
 
+    def test_canonical_directions_lower_to_native_enums_without_mutating_layout(self) -> None:
+        for canonical, native in (("Horizontal", "Orient_Horizontal"), ("Vertical", "Orient_Vertical")):
+            with self.subTest(canonical=canonical):
+                spec = lobby_collection_fixture()
+                for node in spec["nodes"]:
+                    if node["role"] == "collection.lua-list":
+                        node["properties"]["orientation"] = canonical
+                snapshot = deepcopy(spec)
+                plan = self.plan(spec)
+                self.assertEqual(spec, snapshot)
+                for node_id, _, _ in ENDPOINTS:
+                    self.assertEqual(step_by_id(plan, f"set-widget-properties-{node_id}")["arguments"]["values"]["orientation"], native)
+                native_spec = deepcopy(spec)
+                for node in native_spec["nodes"]:
+                    if node["role"] == "collection.lua-list":
+                        node["properties"]["orientation"] = native
+                self.assertEqual(plan, self.plan(native_spec))
+
+    def test_invalid_direction_is_rejected_before_editor_plan_is_returned(self) -> None:
+        for invalid in ("horizontal", "Orient_Orient_Horizontal", "Diagonal", "", None, 0, True, []):
+            with self.subTest(invalid=invalid):
+                spec = lobby_collection_fixture()
+                next(node for node in spec["nodes"] if node["role"] == "collection.lua-list")["properties"]["orientation"] = invalid
+                with self.assertRaisesRegex(ValueError, "orientation must be"):
+                    build_plan(SPEC_PATH, spec, CATALOG, RULES)
+
     def test_currency_native_canvas_slot_is_unchanged(self) -> None:
         plan = self.plan(lobby_collection_fixture())
         add = step_by_id(plan, "add-el_currency_collection")

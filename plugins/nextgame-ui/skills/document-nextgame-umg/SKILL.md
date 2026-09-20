@@ -1,17 +1,23 @@
 ---
 name: document-nextgame-umg
-description: Validate the accepted NextGame UIRequirementSpec, completed and verified UIBuildBundle, post-save Unreal Widget readback, and the user's independent post-build acceptance; derive a program-facing UIProgramHandoff; then coordinate DOCX creation and page-by-page verification. Use after NextGame UMG construction has been presented and explicitly accepted when Codex must produce or verify the programmer handoff document without exposing static Designer configuration or inventing runtime API details.
+description: Validate the accepted NextGame UIRequirementSpec, completed and verified UIBuildBundle, post-save Unreal Widget readback, and independent versioned post-build acceptance; derive a program-facing UIProgramHandoff; then coordinate DOCX creation and page-by-page verification. Use after NextGame UMG construction has been presented and accepted through direct user confirmation or the explicit one-request delegated result-review contract when Codex must produce or verify the programmer handoff document without exposing static Designer configuration or inventing runtime API details.
 ---
 
 # Document NextGame UMG
 
-Treat documentation as a gated stage after requirement acceptance, verified UMG construction, concrete build-result presentation, and a later direct user confirmation. Read [program-handoff.md](references/program-handoff.md) before preparing artifacts, and read [program-document-template.md](references/program-document-template.md) before creating the DOCX.
+Treat documentation as a gated stage after requirement acceptance, verified UMG construction, concrete build-result presentation, and independent post-result acceptance. The default acceptance 0.1 route requires a later direct user confirmation. Only the separately validated [one-request delegated result acceptance 0.2](references/delegated-result-acceptance.md) route permits the primary coordinator's actual post-result review under the original explicit user grant. Neither route lets the documentation Agent create or repair authorization. Read [program-handoff.md](references/program-handoff.md) before preparing artifacts, and read [program-document-template.md](references/program-document-template.md) before creating the DOCX.
 
 The packaged `artifact-template-nextgame-umg` is the canonical presentation template aligned with `program-document-content.json` 0.4. It does not supply business facts or authorize this stage: validated handoff/content contracts remain content authority, while the template contract and neutral DOCX control structure and visual presentation.
 
+## Final-art source guard
+
+When art was requested, require the final Bundle 0.4 and normalized Unreal Readback 0.4. Its required `artStage` binds the art request, plan, and passed verification using relative paths and SHA-256. The readback validator revalidates those current files and compares current actual identity with the separate art snapshot; stale hashes or an old development readback cannot authorize documentation. A pending art stage cannot be skipped because an earlier development build passed. See [on-demand-art-stage.md](../build-nextgame-umg/references/on-demand-art-stage.md).
+
+Re-saving, applying an art patch, replacing a preview, changing the Bundle, or recapturing either readback invalidates prior post-build acceptance. Present the new final result and obtain current acceptance through the applicable versioned contract, then run the existing four-input gate. A consumed 0.2 grant cannot transfer to a changed result; obtain new specific direct-user authority or ordinary post-result confirmation. Art parameters remain static evidence and do not become programmer-facing content. Legacy Bundles and developer-only tasks retain their existing strict contracts.
+
 ## Workflow
 
-1. Require the current accepted `UIRequirementSpec`, the completed and passed `UIBuildBundle`, an actual post-save Unreal readback, and `ui-build-acceptance.json`. The first three are authoritative data sources; acceptance is independent authorization evidence that must come from a later direct user message after the concrete build result was presented. Never generate, infer, repair, or pre-authorize acceptance in this skill, and never infer readback fields from the Bundle or UILayoutSpec.
+1. Require the current accepted `UIRequirementSpec`, the completed and passed `UIBuildBundle`, an actual post-save Unreal readback, and `ui-build-acceptance.json`. The first three are authoritative data sources; acceptance is independent authorization evidence. Version 0.1 requires a later direct user message after presentation. Explicit version 0.2 instead binds the original one-request user grant, the primary coordinator's actual review of the final result, and its single-use consumption. Never generate, infer, repair, consume, or pre-authorize acceptance in this skill, and never infer readback fields from the Bundle or UILayoutSpec.
 2. Validate the readback:
 
    ```powershell
@@ -26,7 +32,7 @@ The packaged `artifact-template-nextgame-umg` is the canonical presentation temp
    python scripts/validate_build_acceptance.py <ui-build-acceptance.json> --requirement <requirement.json> --bundle <bundle.json> --readback <readback.json>
    ```
 
-   Require phase `post-build-ui-review`, status `accepted`, reviewer actor type `user`, confirmation source `direct-user-message`, current Requirement/Bundle/Readback bindings, and exact reviewed asset ID/path coverage. The Requirement review gate is not a substitute.
+   Both versions require phase `post-build-ui-review`, status `accepted`, current Requirement/Bundle/Readback bindings, and exact reviewed asset ID/path coverage. Version 0.1 retains reviewer actor type `user` and confirmation source `direct-user-message`. Version 0.2 requires `authorizationMode: delegated-user-authorization`, the actual `agent` / `primary-coordinator` reviewer, `userHasReviewedResult: false` in the bound result review, and the exact grant, post-result review and frozen-result consumption bindings. Revalidate every dependency, every final asset/check review and the current conversation authority; the coordinator must have completed the real review after all final gates. Do not fabricate a later user message or treat a generic full-workflow request, art-choice delegation or the Requirement review gate as result acceptance.
 4. Prepare and validate `UIProgramHandoff 0.3`:
 
    ```powershell
@@ -65,8 +71,8 @@ The packaged `artifact-template-nextgame-umg` is the canonical presentation temp
 ## Hard boundaries
 
 - Accept only `target.mode: production` and one `/Game/UI/UMG/<SystemFolder>/...` system folder.
-- Require a schema-valid, currently bound `ui-build-acceptance.json` with accepted post-build status and direct-user-message provenance. Never substitute the Requirement review, an earlier blanket request, or Agent inference, and never create the acceptance from within this skill.
-- Treat any asset mutation or re-save, Requirement or Bundle change, preview replacement or re-verification, or Readback change as invalidating the acceptance. Re-read and fully validate all three current source files at document-content generation and again at final DOCX verification; comparing only an old handoff with an old acceptance is insufficient. Return to build-result presentation and wait for another direct user confirmation.
+- Require a schema-valid, currently bound `ui-build-acceptance.json` with accepted post-build status: direct-user-message provenance under 0.1, or the explicit independently validated delegation/review/consumption contract under 0.2. Never substitute the Requirement review, an earlier blanket request, or Agent inference. The documentation Agent must never create, repair, consume or broaden authorization.
+- Treat any asset mutation or re-save, Requirement or Bundle change, preview replacement or re-verification, or Readback change as invalidating the acceptance. Re-read and fully validate all three current source files at document-content generation and again at final DOCX verification; comparing only an old handoff with an old acceptance is insufficient. Return to final build-result presentation and the applicable acceptance gate. A consumed delegation cannot authorize a different result; obtain new specific direct-user authority or ordinary post-result confirmation.
 - Derive program variables only from the intersection of accepted in-scope runtime intent, a mapped layout node with `isVariable: true`, and actual Unreal `isVariable: true`. Accepted state branch Panels obey the same layout-and-actual variable gate.
 - Keep post-save `actualSavedVisibilityBindings` as trace evidence only; never project their saved Visibility values into the programmer-facing DOCX. Emit `runtimeVisibilityOutcomes` only from accepted explicit `implementation.stateOverrides[].changes[]` whose property is `Visibility`, after the same accepted-element, layout-variable, and actual-variable gates.
 - Preserve each state model's accepted `implementationStrategy`. Emit `State branch` document rows only for `exclusive-panel-branches`, and emit `State outcome` rows only for `shared-tree-properties`; exclusive states cannot carry runtime Visibility outcomes.

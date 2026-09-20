@@ -39,8 +39,9 @@ DEFAULT_VIEW_SCHEMA = ASSETS_ROOT / "review-view.schema.json"
 # This digest is a reviewed projection-policy boundary, not merely telemetry.  A
 # future Requirement schema must be deliberately audited before projected mode is
 # re-enabled.  Until then the safe behavior is an exact full-Draft fallback.
-SUPPORTED_REQUIREMENT_SCHEMA_SHA256 = "53f7907dc33099c8d9aa76795ad5f1b819a9edcdb6702d71397453130296f081"
-SUPPORTED_REQUIREMENT_SCHEMA_SHA256S = frozenset({SUPPORTED_REQUIREMENT_SCHEMA_SHA256, "ab6f0b0cb875046f0a3f03565c7c28a146be6eef89b1e870f6e2b54d46e0c5e8"})
+SUPPORTED_REQUIREMENT_SCHEMA_SHA256 = "1e003da9e1f5ad4d86148960fc57f62caae64cfc01c518d8429e00401d1fbf56"
+SUPPORTED_REQUIREMENT_SCHEMA_SHA256S = frozenset({
+    "53f7907dc33099c8d9aa76795ad5f1b819a9edcdb6702d71397453130296f081",SUPPORTED_REQUIREMENT_SCHEMA_SHA256, "ab6f0b0cb875046f0a3f03565c7c28a146be6eef89b1e870f6e2b54d46e0c5e8"})
 
 VIEW_NOTICE = (
     "Review-only projection; the complete Requirement remains authoritative and is validated after review."
@@ -562,6 +563,12 @@ def collect_references(
             child_path = (*path, key)
             child_opaque = opaque or key == "properties" or (is_change and key == "value")
             rule = REFERENCE_RULES.get(key)
+            # New coordinate-local refs do not reinterpret legacy opaque fields.
+            if path and path[0] == "coordinateContract":
+                if key == "assetId":
+                    rule = ReferenceRule("one", _types("asset"))
+                elif key == "sourceRef":
+                    rule = ReferenceRule("one", _types("region", "element"))
             if rule is not None:
                 parsed, parse_errors = _parse_reference_values(key, child, rule, child_path)
                 references.extend(parsed)
@@ -674,7 +681,7 @@ def _metadata_reference_owner_keys(draft: dict[str, Any], index: CanonicalIndex)
     """Seed refs from exact, non-canonical metadata retained in every View."""
 
     owners: set[str] = set()
-    for field in ("reviewGate", "reviewResolutions"):
+    for field in ("reviewGate", "reviewResolutions", "coordinateContract"):
         if field not in draft:
             continue
         references, _ = collect_references(draft[field], index, path=(field,))
@@ -734,7 +741,7 @@ def _filtered_records(
     """Project exact canonical records while preserving every source array order."""
 
     projected: dict[str, Any] = {}
-    for key in ("version", "revision", "requestId", "inputDigest", "request", "target", "analysisPolicy"):
+    for key in ("version", "revision", "requestId", "inputDigest", "request", "target", "analysisPolicy", "coordinateContract"):
         if key in draft:
             projected[key] = copy.deepcopy(draft[key])
     if "reviewGate" in draft:

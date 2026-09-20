@@ -1,0 +1,15 @@
+interface:
+  display_name: "Refine NextGame UI Art"
+  short_description: "Refine accepted UMG with artwork and scoped resource decisions"
+  default_prompt: "Use $refine-nextgame-ui-art to refine this existing accepted UMG from its artwork and cut resources, preserve design and program bindings, review source aspect, nine-slice protection, every text effect and declared families, and verify the final result under the current task. Use automatic local inspection plus specific annotations for unresolved ambiguity; missing actual geometry remains pending."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "unreal-editor"
+      description: "Local Unreal Editor MCP for schema-discovered UMG readback and supported art changes"
+      transport: "streamable_http"
+      url: "http://127.0.0.1:8000/mcp"
+
+policy:
+  allow_implicit_invocation: true

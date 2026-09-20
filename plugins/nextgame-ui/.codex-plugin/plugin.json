@@ -1,7 +1,7 @@
 {
   "name": "nextgame-ui",
-  "version": "0.1.0+codex.20260918094522",
-  "description": "Receive locked design contracts or analyze raw UI references, compile shared requirements, build and verify Unreal UMG, and maintain versioned design and production standards.",
+  "version": "0.1.0+codex.20260920095437",
+  "description": "Receive design contracts or analyze UI references, build Unreal UMG, optionally refine art from cut assets, and verify the final result before program handoff.",
   "homepage": "https://github.com/Dedemzh-bot/NextGameUIUMG",
   "repository": "https://github.com/Dedemzh-bot/NextGameUIUMG",
   "author": {
@@ -10,8 +10,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "NextGame UI",
-    "shortDescription": "Design contracts, UMG builds, and specification maintenance.",
-    "longDescription": "Uses a deterministic structured-design route or evidence-driven raw-reference analysis to produce a reviewed UIRequirementSpec. Both routes share validated layout, UMG build, post-save readback and visual checks. Provides reusable specification maintenance guidance and retains independent acceptance before formal program handoff.",
+    "shortDescription": "Design contracts, UMG builds, and optional art refinement.",
+    "longDescription": "Turns structured design or raw references into reviewed requirements and UMG. An optional art stage indexes cut assets, prepares local decisions, applies resumable changes and checks bound render evidence. Uses shared final readback and independent user acceptance before formal program handoff. Runtime capability gaps remain explicit.",
     "developerName": "NextGame Team",
     "category": "Productivity",
     "capabilities": [
@@ -21,7 +21,7 @@
     "defaultPrompt": [
       "Receive a structured NextGame design contract without reinterpreting locked decisions.",
       "Analyze raw UI references into a reviewed NextGame requirement before building UMG.",
-      "Maintain NextGame design rules, recipes, mappings and validation with explicit versions."
+      "Refine existing NextGame UMG from high-fidelity references and cut assets, preserving program bindings."
     ]
   },
   "mcpServers": "./.mcp.json"
