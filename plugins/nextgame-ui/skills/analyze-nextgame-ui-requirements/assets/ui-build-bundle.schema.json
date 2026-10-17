@@ -133,7 +133,8 @@
         "enum": [
           "shared-node-states/1",
           "content-driven-child-size/1",
-          "content-driven-child-size/2"
+          "content-driven-child-size/2",
+          "existing-asset-property-update/1"
         ]
       },
       "not": {

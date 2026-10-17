@@ -45,6 +45,7 @@ DEFAULT_SCHEMA = ASSETS_ROOT / "ui-build-bundle.schema.json"
 AUTHORITATIVE_SHARED_REGISTRY = SHARED_REGISTRY.resolve()
 AUTHORITATIVE_SHARED_REGISTRY_SCHEMA = SHARED_REGISTRY_SCHEMA.resolve()
 RECT_TOLERANCE = 0.001
+EXISTING_ASSET_UPDATE = "existing-asset-property-update/1"
 
 
 def validate_bundle_art_stage(
@@ -1728,6 +1729,12 @@ def validate_build_bundle(
 
     requirement_link = bundle.get("requirement") if isinstance(bundle.get("requirement"), dict) else {}
     accepted_build_view_requested = accepted_build_view is not None or accepted_build_view_path is not None
+    existing_update_enabled = EXISTING_ASSET_UPDATE in bundle.get("capabilities", [])
+    if existing_update_enabled:
+        if not check_linked_files:
+            errors.append(issue("existing-update.linked_files_required", "$.capabilities", "Existing-asset updates require current linked Layout/baseline files; --skip-linked-files cannot authorize them."))
+        if not accepted_build_view_requested:
+            errors.append(issue("existing-update.accepted_view_required", "$.capabilities", "Existing-asset updates require the current deterministic Accepted Build View in addition to the full Requirement."))
     if requirement_link.get("reviewStatus") != "accepted":
         errors.append(issue("requirement.review", "$.requirement.reviewStatus", "A build bundle may only use an accepted requirement review."))
 
@@ -2091,6 +2098,7 @@ def validate_build_bundle(
     build_orders: dict[int, str] = {}
     layout_nodes_by_asset: dict[str, set[str]] = {}
     layout_node_records_by_asset: dict[str, dict[str, dict[str, Any]]] = {}
+    existing_update_asset_ids: set[str] = set()
 
     for asset_id, asset in assets.items():
         plan_id = asset.get("assetPlanId")
@@ -2138,6 +2146,33 @@ def validate_build_bundle(
             actual_hash = sha256_file(layout_path)
             if asset.get("layoutSpecSha256") != actual_hash:
                 errors.append(issue("layout.sha256", f"$.assets[{asset_id}].layoutSpecSha256", f"Layout hash mismatch; expected {actual_hash}."))
+            if isinstance(layout, dict) and layout.get("version") == "0.3":
+                if not existing_update_enabled:
+                    errors.append(issue("existing-update.capability_required", f"$.assets[{asset_id}].layoutSpecPath", f"UILayoutSpec 0.3 requires explicit capability {EXISTING_ASSET_UPDATE}."))
+                    continue
+                existing_update_asset_ids.add(asset_id)
+                try:
+                    build_scripts = PLUGIN_ROOT / "skills/build-nextgame-umg/scripts"
+                    if str(build_scripts) not in sys.path:
+                        sys.path.append(str(build_scripts))
+                    from existing_asset_update import validate_bundle_layout
+                    existing_errors = validate_bundle_layout(
+                        layout, asset, bundle, requirement_spec or {},
+                        spec_path=layout_path, accepted_claim_ids=accepted_claim_ids,
+                    )
+                    errors.extend(existing_errors)
+                    if existing_errors:
+                        continue
+                except (OSError, ValueError, TypeError, KeyError, ImportError) as error:
+                    errors.append(issue("existing-update.validation_failed", f"$.assets[{asset_id}].layoutSpecPath", str(error)))
+                    continue
+                if layout.get("referenceSize") != asset.get("referenceSize"):
+                    errors.append(issue("layout.reference_size", f"$.assets[{asset_id}].referenceSize", "Bundle referenceSize does not match linked UILayoutSpec."))
+                records = {node["id"]: node for node in layout.get("nodes", [])
+                           if isinstance(node, dict) and isinstance(node.get("id"), str)}
+                layout_nodes_by_asset[asset_id] = set(records)
+                layout_node_records_by_asset[asset_id] = records
+                continue
             if not isinstance(layout, dict) or layout.get("version") != "0.2":
                 errors.append(issue("layout.version", f"$.assets[{asset_id}].layoutSpecPath", "Linked layout must be UILayoutSpec 0.2."))
                 continue
@@ -2239,6 +2274,9 @@ def validate_build_bundle(
                 node_records[node_id] = node
             layout_nodes_by_asset[asset_id] = node_ids
             layout_node_records_by_asset[asset_id] = node_records
+
+    if existing_update_enabled and not existing_update_asset_ids:
+        errors.append(issue("existing-update.layout_required", "$.capabilities", "The capability must bind at least one validated existing-only UILayoutSpec 0.3; it cannot relabel a generic Create layout."))
 
     if build_orders and set(build_orders) != set(range(len(assets))):
         errors.append(issue("asset.build_order_sequence", "$.assets", "buildOrder values must form a zero-based contiguous sequence."))

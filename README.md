@@ -4,9 +4,13 @@ NextGameUIUMG 把 NextGame 的设计接收、UMG 需求分析、构建验证、�
 
 现有设计决定通过结构化合同直接采用；缺少设计决定的图文输入经过独立分析。两种来源共用完整校验、Accepted Build View、UMG 构建和实际验收。运行时只负责派发和等待；通过校验的文件才是权威结果。
 
-## 2026-09-20 更新
+## 2026-10-17 源码同步
 
-本次同步完整权威插件，版本为 [`0.1.0+codex.20260920104858`](plugins/nextgame-ui/.codex-plugin/plugin.json)。这是当前整包的能力说明；历史 `production-review-change-20260918` 记录仍只描述当时的变更范围。
+美术风格、参数、创作请求和切图交接统一从 [NextGameUIArt](https://github.com/Dedemzh-bot/NextGameUIArt) 进入；本仓库继续负责 UMG 制作、美术修整、实际读回和程序交接文档。
+
+本次同步权威插件源码，版本为 [`0.1.0+codex.20261014.existingupdate2`](plugins/nextgame-ui/.codex-plugin/plugin.json)。本仓库保留可移植编排、运行时适配器及独立发布验证；源码同步不表示本机安装已更新或实际 Unreal 制作已通过。历史 `production-review-change-20260918` 记录仍只描述当时的变更范围。
+
+本轮补齐已有资产属性更新合同、按任务路由的规则卡、材质参考与只读来源证据，以及美术层级/资源目录门禁。材质证据仅记录仓库内引用的 `/Game`、`/Script` 对象及结构值，没有 Unreal 二进制资产；它们不代表新目标工程已经存在对应资源或完成视觉验收。
 
 后续补充包含显式启用的 `development-baseline/2`：仅允许有完整来源、实际观察和独立主协调器审查的 GameImage Brush 资源、DrawAs、镜像差异延后到美术阶段处理，保留原待完成检查及全部最终验收义务。它不把结构完成改写成视觉通过，也不放宽正式读回、结果接受或文档门禁。版本 1 保持原义；迁移与回归范围见[基线 v2 变更记录](plugins/nextgame-ui/skills/maintain-nextgame-ui-spec/references/development-baseline-v2-change-20260920.md)。
 

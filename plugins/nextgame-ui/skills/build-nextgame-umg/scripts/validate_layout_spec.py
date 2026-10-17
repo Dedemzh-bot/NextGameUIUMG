@@ -323,6 +323,9 @@ def invalid_text_characters(text: str) -> list[str]:
 
 
 def validate_spec(spec: Any, catalog: Any, *, spec_path: Path | None = None) -> dict[str, Any]:
+    if isinstance(spec, dict) and spec.get("version") == "0.3":
+        from existing_asset_update import validate_existing_asset_update
+        return validate_existing_asset_update(spec, spec_path=spec_path)
     errors: list[dict[str, str]] = []
     warnings: list[dict[str, str]] = []
 

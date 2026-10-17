@@ -13,6 +13,14 @@ Read [workflow.md](references/workflow.md) for commands and artifact ordering. B
 
 ## Authority and decisions
 
+Legacy existing-only native targets may use the Build skill's explicit
+[existing-asset-property-update/1](../build-nextgame-umg/references/existing-asset-property-update.md)
+route. Bind its full current snapshot/raw-tree evidence and preserve its
+accepted native targets; do not substitute a new-build layout, reconstruct
+the old Entry, or infer final visual acceptance from property agreement.
+
+For cut-resource reception read **Resource handoff and receiver ownership** in [visual presentation rules](../build-nextgame-umg/references/visual-presentation-rules.md). Resource parameters do not choose native components. UMG standards own class/hit-test mapping; observed legacy properties are not automatically locked design decisions. With an explicit no-nesting-change instruction, initialize `preserveHierarchy: true` and carry `preserve-hierarchy/1` through planning. Authorized geometry adjustments still require a reasoned source revision and review. Class replacement requires a separately supported UMG path and protected-reference verification, not a generic art property write.
+
 Read [visual presentation rules](../build-nextgame-umg/references/visual-presentation-rules.md) before preparing local packets. New initialization enables `presentation-review/1` in the existing pipeline. Review every scoped image and TextBlock, including hidden/unchanged nodes; use local recognition and preserve effect-type and parameter uncertainty separately. For remaining ambiguous text, retain the specific direct-user annotation route or explicitly validate `delegated-art-choice/1` for exact coordinator-selected appearance values; delegation does not confirm their source identification or final appearance. Legacy requests require an explicit new revision to adopt a capability.
 
 - Require the current accepted Requirement, verified baseline Bundle, normalized actual readback, and a separate actual art snapshot. For an unfinished formal-art development build, explicitly adopt `development-baseline/1` for pending previews only, or `development-baseline/2` for the narrow accepted Brush resource gaps and explicit open art judgments in [workflow](references/workflow.md#development-baseline-resource-deferrals). Preserve every original check and require a separate actual primary review for version 2; use the strict compiled/saved actual-state contract; this is not final verification. Preserve immutable baseline files; final Bundle and art evidence must not form circular hash references.

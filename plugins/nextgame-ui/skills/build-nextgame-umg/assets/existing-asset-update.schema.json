@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nextgame.local/schemas/existing-asset-update-0.3.json",
+  "title": "UILayoutSpec 0.3 existing-asset property update",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "capability", "mode", "asset", "referenceSize", "profile", "baseline", "nodes"],
+  "properties": {
+    "version": {"const": "0.3"},
+    "capability": {"const": "existing-asset-property-update/1"},
+    "mode": {"enum": ["prototype", "production"]},
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["folder", "name"],
+      "properties": {
+        "folder": {"type": "string", "pattern": "^/Game/UI/(?:UMG|AIPrototype)(?:/[A-Za-z0-9_]+)+$"},
+        "name": {"$ref": "#/$defs/name"}
+      }
+    },
+    "referenceSize": {
+      "type": "array", "minItems": 2, "maxItems": 2,
+      "items": {"type": "integer", "minimum": 1}
+    },
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assetKind", "listRole", "designSizeMode"],
+      "properties": {
+        "assetKind": {"enum": ["screen", "child-widget"]},
+        "listRole": {"enum": ["none", "entry"]},
+        "designSizeMode": {"enum": ["FillScreen", "Desired", null]}
+      }
+    },
+    "baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["snapshot", "rawTree", "stateSha256"],
+      "properties": {
+        "snapshot": {"$ref": "#/$defs/binding"},
+        "rawTree": {"$ref": "#/$defs/binding"},
+        "stateSha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "classPath", "isVariable", "parent", "role", "rect", "properties", "slotClassPath", "nativeProperties", "nativeSlot"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^[a-z][a-z0-9_-]*$"},
+          "name": {"$ref": "#/$defs/name"},
+          "classPath": {"type": "string", "minLength": 1},
+          "isVariable": {"type": "boolean"},
+          "parent": {"type": ["string", "null"]},
+          "role": {"type": "string", "pattern": "^[a-z][a-z0-9.-]*$"},
+          "rect": {
+            "type": "array", "minItems": 4, "maxItems": 4,
+            "items": {"type": "number"}
+          },
+          "properties": {
+            "$comment": "Reserved semantic envelope. 0.3 has no implicit canonical-property lowering.",
+            "type": "object", "additionalProperties": false
+          },
+          "slotClassPath": {"type": ["string", "null"]},
+          "nativeProperties": {"$ref": "#/$defs/nativeProperties"},
+          "nativeSlot": {"$ref": "#/$defs/nativeSlot"},
+          "adaptiveLayout": {"$ref": "#/$defs/adaptiveLayout"},
+          "flowSlot": {"$ref": "#/$defs/flowSlot"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "name": {"type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "adaptiveLayout": {
+      "type": "object",
+      "required": ["horizontal", "vertical", "reason"],
+      "additionalProperties": false,
+      "properties": {
+        "horizontal": {"enum": ["left", "center", "right", "stretch"]},
+        "vertical": {"enum": ["top", "center", "bottom", "stretch"]},
+        "reason": {"type": "string", "minLength": 1}
+      }
+    },
+    "flowSlot": {
+      "type": "object",
+      "required": ["size", "padding", "horizontalAlignment", "verticalAlignment"],
+      "additionalProperties": false,
+      "properties": {
+        "size": {
+          "type": "object",
+          "required": ["rule"],
+          "additionalProperties": false,
+          "properties": {
+            "rule": {"enum": ["Auto", "Fill"]},
+            "weight": {"type": "number", "exclusiveMinimum": 0}
+          },
+          "allOf": [{
+            "if": {"properties": {"rule": {"const": "Fill"}}, "required": ["rule"]},
+            "then": {"required": ["weight"]},
+            "else": {"not": {"required": ["weight"]}}
+          }]
+        },
+        "padding": {
+          "type": "array",
+          "prefixItems": [{"type": "number"}, {"type": "number"}, {"type": "number"}, {"type": "number"}],
+          "items": false, "minItems": 4, "maxItems": 4
+        },
+        "horizontalAlignment": {"enum": ["Fill", "Left", "Center", "Right"]},
+        "verticalAlignment": {"enum": ["Fill", "Top", "Center", "Bottom"]}
+      }
+    },
+    "nativeProperties": {
+      "$comment": "Partial observed native fields, not UE code. Runtime validation also intersects the current ArtEditor read/write allowlist and requires unchanged protected fields.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "brush": {}, "brushDelegate": {}, "colorAndOpacity": {}, "foregroundColor": {},
+        "renderOpacity": {}, "font": {}, "widgetStyle": {}, "shadowColorAndOpacity": {},
+        "shadowOffset": {}, "text": {}, "justification": {}, "wrapTextAt": {},
+        "autoWrapText": {}, "minDesiredWidth": {}, "lineHeightPercentage": {},
+        "renderTransform": {}, "renderTransformPivot": {}, "visibility": {},
+        "clipping": {}, "pixelSnapping": {}, "zOffset": {}, "padding": {},
+        "entryWidgetClass": {}, "orientation": {}, "entryWidth": {}, "entryHeight": {},
+        "horizontalEntrySpacing": {}, "verticalEntrySpacing": {}, "navigation": {},
+        "widthOverride": {}, "heightOverride": {}, "minDesiredHeight": {},
+        "maxDesiredWidth": {}, "maxDesiredHeight": {}, "bOverride_WidthOverride": {},
+        "bOverride_HeightOverride": {}, "bOverride_MinDesiredWidth": {},
+        "bOverride_MinDesiredHeight": {}, "bOverride_MaxDesiredWidth": {}, "bOverride_MaxDesiredHeight": {}
+      }
+    },
+    "nativeSlot": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "layoutData": {}, "anchors": {}, "offsets": {}, "alignment": {},
+        "autoSize": {}, "bAutoSize": {}, "zOrder": {}, "padding": {}, "size": {},
+        "horizontalAlignment": {}, "verticalAlignment": {}, "row": {}, "column": {},
+        "rowSpan": {}, "columnSpan": {}, "layer": {}, "nudge": {}
+      }
+    }
+  }
+}

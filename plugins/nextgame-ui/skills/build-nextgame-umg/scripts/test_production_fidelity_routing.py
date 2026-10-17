@@ -16,6 +16,15 @@ POLICY = 'production-fidelity-checks.md'
 STAGES = ('build-planning', 'build-execution', 'build-verification')
 
 class ProductionFidelityRoutingTests(unittest.TestCase):
+    def test_resource_receiver_ownership_reaches_all_stages(self):
+        for stage in STAGES:
+            pack = build_rule_card_pack(LAYOUT, stages=[stage])
+            self.assertEqual('routed', pack['routingMode'], pack['fallbackReasons'])
+            sections = [s for s in pack['detailSections']
+                        if s['file'] == 'visual-presentation-rules.md'
+                        and s['heading'] == '## Resource handoff and receiver ownership']
+            self.assertEqual(1, len(sections), stage)
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(prefix='nextgame-fidelity-')
         self.root = Path(self.tmp.name)

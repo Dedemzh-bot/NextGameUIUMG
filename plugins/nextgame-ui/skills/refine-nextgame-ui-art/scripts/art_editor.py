@@ -766,4 +766,3 @@ def create_editor(url: str = "http://127.0.0.1:8000/mcp", timeout: float = 60, *
     project_path = Path(project) if project else next((p for p in [Path.cwd(), *Path.cwd().parents] if (p / "NextGame.uproject").is_file()), None)
     fallback = NxueFallback(project_path, timeout=max(timeout, 120)) if project_path and (project_path / "Tools/nxue/nxue.py").is_file() else None
     return ArtEditor(HttpTransport(url, timeout), nxue=fallback)
-

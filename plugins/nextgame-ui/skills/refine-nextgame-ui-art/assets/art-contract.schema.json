@@ -619,7 +619,8 @@
               "mapped-source-reference/1",
               "procedural-ui-material/1",
               "procedural-ui-material/2",
-              "delegated-art-choice/1"
+              "delegated-art-choice/1",
+              "preserve-hierarchy/1"
             ]
           },
           "minItems": 1,

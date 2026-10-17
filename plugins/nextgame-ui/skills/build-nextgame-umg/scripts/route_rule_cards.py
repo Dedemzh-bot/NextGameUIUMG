@@ -27,8 +27,8 @@ DEFAULT_ROUTING = SKILL_ROOT / "references" / "rule-card-routing.json"
 DEFAULT_REFERENCES = SKILL_ROOT / "references"
 PACK_VERSION = "0.1"
 ROUTING_VERSION = "0.1"
-RULE_INDEX_VERSION = "0.24"
-EXPECTED_RULE_COUNT = 56
+RULE_INDEX_VERSION = "0.26"
+EXPECTED_RULE_COUNT = 58
 KNOWN_LAYOUT_VERSION = "0.2"
 KNOWN_MODES = {"prototype", "production"}
 KNOWN_ASSET_KINDS = {"prototype", "screen", "child-widget"}
@@ -129,6 +129,68 @@ FALLBACK_WORKFLOW_GUARDS: tuple[dict[str, Any], ...] = (
 
 class RequiredInputError(RuntimeError):
     """A file required to form even the complete fail-safe pack is unavailable."""
+
+
+def load_task_catalog_extension(
+    path: Path, base: Any, layout: Any,
+) -> tuple[dict[str, Any], bytes]:
+    """Append used project Widget Blueprint roles without replacing authority."""
+    task, raw = load_required_json(path, "task component catalog")
+
+    def unique_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        value: dict[str, Any] = {}
+        for key, item in pairs:
+            if key in value:
+                raise RequiredInputError("task component catalog contains a duplicate JSON key")
+            value[key] = item
+        return value
+
+    task = json.loads(raw, object_pairs_hook=unique_keys)
+    if not isinstance(base, dict) or not isinstance(base.get("components"), list):
+        raise RequiredInputError("plugin component catalog has no component authority")
+    if not isinstance(task, dict) or set(task) != set(base):
+        raise RequiredInputError("task component catalog must preserve all plugin metadata")
+    metadata = {key: value for key, value in base.items() if key != "components"}
+    task_metadata = {key: value for key, value in task.items() if key != "components"}
+    components = task.get("components")
+    builtin = base["components"]
+    if (
+        canonical_json_bytes(task_metadata) != canonical_json_bytes(metadata)
+        or not isinstance(components, list)
+        or len(components) < len(builtin)
+        or canonical_json_bytes(components[:len(builtin)]) != canonical_json_bytes(builtin)
+    ):
+        raise RequiredInputError("task component catalog must preserve plugin metadata and every built-in component in order")
+    used_roles = {
+        node.get("role") for node in layout.get("nodes", [])
+        if isinstance(node, dict) and isinstance(node.get("role"), str)
+    } if isinstance(layout, dict) and isinstance(layout.get("nodes"), list) else set()
+    seen = {component.get("role") for component in builtin}
+    fields = {"role", "classPath", "namePrefix", "hitTestPolicy", "canRepresentRegion", "isPanel", "allowedChildren", "propertyMap"}
+    for component in components[len(builtin):]:
+        if not isinstance(component, dict) or set(component) != fields:
+            raise RequiredInputError("task components require the closed owned Widget Blueprint role shape")
+        role = component["role"]
+        if not isinstance(role, str) or re.fullmatch(r"widget\.[a-z][a-z0-9_.-]*", role) is None:
+            raise RequiredInputError("task component role must be widget.*")
+        if role in seen:
+            raise RequiredInputError("task component roles must be unique and cannot replace built-ins")
+        if role not in used_roles:
+            raise RequiredInputError("every task component role must be used by the current layout")
+        seen.add(role)
+        class_path = component["classPath"]
+        if not isinstance(class_path, str) or re.fullmatch(r"/Game/(?:[A-Za-z0-9_]+/)*([A-Za-z_][A-Za-z0-9_]*)\.\1_C", class_path) is None:
+            raise RequiredInputError("task component classPath must name a /Game/ Blueprint and its same-basename _C class")
+        if (
+            component["namePrefix"] != "Wgt"
+            or component["isPanel"] is not False
+            or component["allowedChildren"] != []
+            or component["propertyMap"] != {}
+            or component["hitTestPolicy"] not in ("passive", "interactive")
+            or type(component["canRepresentRegion"]) is not bool
+        ):
+            raise RequiredInputError("task Widget roles require Wgt, a non-panel leaf, no property overrides, and valid interaction/region flags")
+    return task, raw
 
 
 def require_plugin_authority_paths(
@@ -762,11 +824,18 @@ def _build_rule_card_pack(
     catalog_path: Path = DEFAULT_CATALOG,
     references_dir: Path = DEFAULT_REFERENCES,
     stages: list[str] | tuple[str, ...] | None = None,
+    task_catalog_path: Path | None = None,
 ) -> dict[str, Any]:
     selected_stages = normalize_stages(stages)
     layout, layout_raw = load_required_json(layout_path, "layout")
     index, index_raw = load_required_json(rules_path, "rule index")
     catalog, catalog_raw = load_required_json(catalog_path, "component catalog")
+    task_catalog_raw = None
+    if task_catalog_path is not None:
+        # This compatible production input can extend only the plugin authority.
+        # Rule/routing/reference replacement remains unavailable in public APIs.
+        require_plugin_authority_paths(rules_path, routing_path, catalog_path, references_dir)
+        catalog, task_catalog_raw = load_task_catalog_extension(task_catalog_path, catalog, layout)
 
     authority_errors = validate_rule_index_authority(index)
     if authority_errors:
@@ -937,6 +1006,11 @@ def _build_rule_card_pack(
             "measurementStatus": "not-available-no-byte-to-token-conversion",
         },
     }
+    if task_catalog_raw is not None:
+        pack["bindings"]["taskComponentCatalog"] = {
+            "file": task_catalog_path.name,
+            "sha256": sha256_bytes(task_catalog_raw),
+        }
     pack["packDigestSha256"] = _pack_digest(pack)
     return pack
 
@@ -945,13 +1019,14 @@ def build_rule_card_pack(
     layout_path: Path,
     *,
     stages: list[str] | tuple[str, ...] | None = None,
+    task_catalog_path: Path | None = None,
 ) -> dict[str, Any]:
-    """Build from plugin-owned authorities only.
+    """Build from plugin authority plus an optional constrained task extension.
 
     Alternate authority injection is deliberately absent from this production API.
     Tests that exercise corrupt or missing authorities use the private helper below.
     """
-    return _build_rule_card_pack(layout_path, stages=stages)
+    return _build_rule_card_pack(layout_path, stages=stages, task_catalog_path=task_catalog_path)
 
 
 def _build_rule_card_pack_for_test(
@@ -983,6 +1058,7 @@ def _validate_rule_card_pack(
     catalog_path: Path = DEFAULT_CATALOG,
     references_dir: Path = DEFAULT_REFERENCES,
     stages: list[str] | tuple[str, ...] | None = None,
+    task_catalog_path: Path | None = None,
 ) -> dict[str, Any]:
     if stages is None or not stages:
         return {
@@ -1003,6 +1079,7 @@ def _validate_rule_card_pack(
             catalog_path=catalog_path,
             references_dir=references_dir,
             stages=stages,
+            task_catalog_path=task_catalog_path,
         )
     except (RequiredInputError, ValueError) as exc:
         return {"valid": False, "errors": [{"code": "input", "message": str(exc)}]}
@@ -1038,9 +1115,10 @@ def validate_rule_card_pack(
     layout_path: Path,
     *,
     stages: list[str] | tuple[str, ...] | None = None,
+    task_catalog_path: Path | None = None,
 ) -> dict[str, Any]:
     """Validate against plugin-owned authorities and an external expected stage."""
-    return _validate_rule_card_pack(pack_path, layout_path, stages=stages)
+    return _validate_rule_card_pack(pack_path, layout_path, stages=stages, task_catalog_path=task_catalog_path)
 
 
 def _validate_rule_card_pack_for_test(
@@ -1072,6 +1150,7 @@ def write_json(path: Path, value: Any) -> None:
 
 def add_common_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("layout", type=Path)
+    parser.add_argument("--catalog", type=Path, dest="task_catalog_path", help="Plugin catalog plus append-only owned widget.* roles used by this layout; does not replace plugin authority")
     parser.add_argument(
         "--stage",
         action="append",
@@ -1097,6 +1176,7 @@ def main() -> int:
             pack = build_rule_card_pack(
                 args.layout,
                 stages=args.stages,
+                task_catalog_path=args.task_catalog_path,
             )
             if args.output is not None:
                 write_json(args.output, pack)
@@ -1115,6 +1195,7 @@ def main() -> int:
             args.pack,
             args.layout,
             stages=args.stages,
+            task_catalog_path=args.task_catalog_path,
         )
         print(json.dumps(report, indent=2, ensure_ascii=False))
         return 0 if report.get("valid") else 1

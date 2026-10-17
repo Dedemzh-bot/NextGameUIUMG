@@ -1,0 +1,954 @@
+{
+  "capturedAt": "2026-09-30T07:13:48.466866+00:00",
+  "acquisition": "nxue-agent",
+  "fallbackReason": "Official Unreal MCP is not exposed in this session and localhost:8000 is not listening.",
+  "widgets": [
+    {
+      "blueprint": {
+        "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_skill.uw_fight_skill",
+        "class": "/Script/UMGEditor.WidgetBlueprint"
+      },
+      "widgets": [
+        {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_skill.uw_fight_skill:WidgetTree.CanvasPanel_34",
+          "class": "/Script/UMG.CanvasPanel"
+        },
+        {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_skill.uw_fight_skill:WidgetTree.CanvasPanel_28",
+          "class": "/Script/UMG.CanvasPanel"
+        },
+        {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_skill.uw_fight_skill:WidgetTree.ImgBg",
+          "class": "/Script/UMG.Image"
+        },
+        {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_skill.uw_fight_skill:WidgetTree.ImgSkillIcon",
+          "class": "/Script/UMG.Image"
+        },
+        {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_skill.uw_fight_skill:WidgetTree.CanvasPanel_64",
+          "class": "/Script/UMG.CanvasPanel"
+        },
+        {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_skill.uw_fight_skill:WidgetTree.ImgBg_1",
+          "class": "/Script/UMG.Image"
+        },
+        {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_skill.uw_fight_skill:WidgetTree.TxtKey",
+          "class": "/Script/UMG.TextBlock"
+        },
+        {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_skill.uw_fight_skill:WidgetTree.PanelCD",
+          "class": "/Script/UMG.CanvasPanel"
+        },
+        {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_skill.uw_fight_skill:WidgetTree.ImgCD",
+          "class": "/Script/UMG.Image"
+        },
+        {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_skill.uw_fight_skill:WidgetTree.TxtCdNum",
+          "class": "/Script/UMG.TextBlock"
+        }
+      ],
+      "target": {
+        "widget": {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_skill.uw_fight_skill:WidgetTree.ImgCD",
+          "class": "/Script/UMG.Image"
+        },
+        "brush": "(TintColor=(SpecifiedColor=(R=0.000000,G=0.000000,B=0.000000,A=0.600000),ColorUseRule=UseColor_Specified),DrawAs=Image,Tiling=NoTile,Mirroring=NoMirror,ImageType=FullColor,ImageSize=(X=32.000000,Y=32.000000),Margin=(Left=0.000000,Top=0.000000,Right=0.000000,Bottom=0.000000),ResourceObject=\"/Script/Engine.MaterialInstanceConstant'/Game/UI/Materials/Circular_Progress_Bar_CD_Inst.Circular_Progress_Bar_CD_Inst'\",OutlineSettings=(CornerRadii=(X=0.000000,Y=0.000000,Z=0.000000,W=0.000000),Color=(SpecifiedColor=(R=0.000000,G=0.000000,B=0.000000,A=0.000000),ColorUseRule=UseColor_Specified),Width=0.000000,RoundingType=HalfHeightRadius,bUseBrushTransparency=False),UVRegion=(Min=(X=0.000000,Y=0.000000),Max=(X=0.000000,Y=0.000000),bIsValid=False),bIsDynamicallyLoaded=False,ResourceName=\"\")",
+        "resource": {
+          "path": "/Game/UI/Materials/Circular_Progress_Bar_CD_Inst.Circular_Progress_Bar_CD_Inst",
+          "class": "/Script/Engine.MaterialInstanceConstant"
+        },
+        "visibility": "<SlateVisibility.VISIBLE: 0>"
+      }
+    },
+    {
+      "blueprint": {
+        "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_scope.uw_fight_scope",
+        "class": "/Script/UMGEditor.WidgetBlueprint"
+      },
+      "widgets": [
+        {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_scope.uw_fight_scope:WidgetTree.CanvasPanel_17",
+          "class": "/Script/UMG.CanvasPanel"
+        },
+        {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_scope.uw_fight_scope:WidgetTree.GameImageBlack",
+          "class": "/Script/UIFramework.GameImage"
+        },
+        {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_scope.uw_fight_scope:WidgetTree.PanelLU",
+          "class": "/Script/UMG.CanvasPanel"
+        },
+        {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_scope.uw_fight_scope:WidgetTree.ImgLU1",
+          "class": "/Script/UIFramework.GameImage"
+        },
+        {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_scope.uw_fight_scope:WidgetTree.ImgLU2",
+          "class": "/Script/UIFramework.GameImage"
+        },
+        {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_scope.uw_fight_scope:WidgetTree.ImgLU3",
+          "class": "/Script/UIFramework.GameImage"
+        },
+        {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_scope.uw_fight_scope:WidgetTree.ImgLU4",
+          "class": "/Script/UIFramework.GameImage"
+        },
+        {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_scope.uw_fight_scope:WidgetTree.PanelRU",
+          "class": "/Script/UMG.CanvasPanel"
+        },
+        {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_scope.uw_fight_scope:WidgetTree.ImgRU1",
+          "class": "/Script/UIFramework.GameImage"
+        },
+        {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_scope.uw_fight_scope:WidgetTree.ImgRU2",
+          "class": "/Script/UIFramework.GameImage"
+        },
+        {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_scope.uw_fight_scope:WidgetTree.ImgRU3",
+          "class": "/Script/UIFramework.GameImage"
+        },
+        {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_scope.uw_fight_scope:WidgetTree.ImgRU4",
+          "class": "/Script/UIFramework.GameImage"
+        },
+        {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_scope.uw_fight_scope:WidgetTree.PanelLD",
+          "class": "/Script/UMG.CanvasPanel"
+        },
+        {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_scope.uw_fight_scope:WidgetTree.ImgLD1",
+          "class": "/Script/UIFramework.GameImage"
+        },
+        {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_scope.uw_fight_scope:WidgetTree.ImgLD2",
+          "class": "/Script/UIFramework.GameImage"
+        },
+        {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_scope.uw_fight_scope:WidgetTree.ImgLD3",
+          "class": "/Script/UIFramework.GameImage"
+        },
+        {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_scope.uw_fight_scope:WidgetTree.ImgLD4",
+          "class": "/Script/UIFramework.GameImage"
+        },
+        {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_scope.uw_fight_scope:WidgetTree.PanelRD",
+          "class": "/Script/UMG.CanvasPanel"
+        },
+        {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_scope.uw_fight_scope:WidgetTree.ImgRD1",
+          "class": "/Script/UIFramework.GameImage"
+        },
+        {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_scope.uw_fight_scope:WidgetTree.ImgRD2",
+          "class": "/Script/UIFramework.GameImage"
+        },
+        {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_scope.uw_fight_scope:WidgetTree.ImgRD3",
+          "class": "/Script/UIFramework.GameImage"
+        },
+        {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_scope.uw_fight_scope:WidgetTree.ImgRD4",
+          "class": "/Script/UIFramework.GameImage"
+        },
+        {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_scope.uw_fight_scope:WidgetTree.Image_31",
+          "class": "/Script/UMG.Image"
+        }
+      ],
+      "target": {
+        "widget": {
+          "path": "/Game/UI/UMG/Fight/Widgets/uw_fight_scope.uw_fight_scope:WidgetTree.GameImageBlack",
+          "class": "/Script/UIFramework.GameImage"
+        },
+        "brush": "(TintColor=(SpecifiedColor=(R=0.000000,G=0.000000,B=0.000000,A=0.900000),ColorUseRule=UseColor_Specified),DrawAs=Image,Tiling=NoTile,Mirroring=NoMirror,ImageType=FullColor,ImageSize=(X=32.000000,Y=32.000000),Margin=(Left=0.000000,Top=0.000000,Right=0.000000,Bottom=0.000000),ResourceObject=\"/Script/Engine.MaterialInstanceConstant'/Game/UI/Materials/HaloMask_Scope1_Inst.HaloMask_Scope1_Inst'\",OutlineSettings=(CornerRadii=(X=0.000000,Y=0.000000,Z=0.000000,W=0.000000),Color=(SpecifiedColor=(R=0.000000,G=0.000000,B=0.000000,A=0.000000),ColorUseRule=UseColor_Specified),Width=0.000000,RoundingType=HalfHeightRadius,bUseBrushTransparency=False),UVRegion=(Min=(X=0.000000,Y=0.000000),Max=(X=0.000000,Y=0.000000),bIsValid=False),bIsDynamicallyLoaded=False,ResourceName=\"\")",
+        "resource": {
+          "path": "/Game/UI/Materials/HaloMask_Scope1_Inst.HaloMask_Scope1_Inst",
+          "class": "/Script/Engine.MaterialInstanceConstant"
+        },
+        "visibility": "<SlateVisibility.SELF_HIT_TEST_INVISIBLE: 4>"
+      }
+    }
+  ],
+  "materials": [
+    {
+      "asset": {
+        "path": "/Game/UI/Materials/Circular_Progress_Bar_CD_Inst.Circular_Progress_Bar_CD_Inst",
+        "class": "/Script/Engine.MaterialInstanceConstant"
+      },
+      "parameters": {
+        "scalar": {
+          "CutStartPivot": 1.0,
+          "Percent": 1.0,
+          "Clockwise": 0.0,
+          "CutPercent": 1.0,
+          "Opacity": 1.0
+        },
+        "vector": {
+          "FillColor": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "MoveAndScale": [
+            0.0,
+            0.0,
+            1.0,
+            1.0
+          ]
+        },
+        "texture": {
+          "Atlas": {
+            "path": "/Engine/EngineResources/WhiteSquareTexture.WhiteSquareTexture",
+            "class": "/Script/Engine.Texture2D"
+          }
+        },
+        "static_switch": {
+          "DebugAnimation": false
+        }
+      },
+      "properties": {
+        "parent": {
+          "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat",
+          "class": "/Script/Engine.Material"
+        },
+        "scalar_parameter_values": [
+          "(AtlasData=(bIsUsedAsAtlasPosition=False,Curve=None,Atlas=None),ParameterInfo=(Name=\"Percent\",Association=GlobalParameter,Index=-1),ParameterValue=1.000000,ExpressionGUID=3B3916CC43BBE848549F2DAA72E70E51)",
+          "(AtlasData=(bIsUsedAsAtlasPosition=False,Curve=None,Atlas=None),ParameterInfo=(Name=\"Clockwise\",Association=GlobalParameter,Index=-1),ParameterValue=0.000000,ExpressionGUID=B304544744E35C78978FF095AB24270D)",
+          "(AtlasData=(bIsUsedAsAtlasPosition=False,Curve=None,Atlas=None),ParameterInfo=(Name=\"CutPercent\",Association=GlobalParameter,Index=-1),ParameterValue=1.000000,ExpressionGUID=7E9905CD48A0692AF285DA948BA07AC2)",
+          "(AtlasData=(bIsUsedAsAtlasPosition=False,Curve=None,Atlas=None),ParameterInfo=(Name=\"CutStartPivot\",Association=GlobalParameter,Index=-1),ParameterValue=1.000000,ExpressionGUID=6278BB244A1BBE35DCAF19916E52805B)",
+          "(AtlasData=(bIsUsedAsAtlasPosition=False,Curve=None,Atlas=None),ParameterInfo=(Name=\"RefractionDepthBias\",Association=GlobalParameter,Index=-1),ParameterValue=0.000000,ExpressionGUID=00000000000000000000000000000000)"
+        ],
+        "vector_parameter_values": [],
+        "texture_parameter_values": [],
+        "base_property_overrides": "(bOverride_OpacityMaskClipValue=False,bOverride_BlendMode=False,bOverride_ShadingModel=False,bOverride_DitheredLODTransition=False,bOverride_CastDynamicShadowAsMasked=False,bOverride_TwoSided=False,bOverride_bIsThinSurface=False,bOverride_OutputTranslucentVelocity=False,bOverride_bHasPixelAnimation=False,bOverride_bEnableTessellation=False,bOverride_DisplacementScaling=False,bOverride_bEnableDisplacementFade=False,bOverride_DisplacementFadeRange=False,bOverride_MaxWorldPositionOffsetDisplacement=False,bOverride_CompatibleWithLumenCardSharing=False,bOverride_UsageFlags=0,bOverride_PhysMaterialMask=False,bOverride_PhysicalMaterialMap=False,TwoSided=False,bIsThinSurface=False,DitheredLODTransition=False,bCastDynamicShadowAsMasked=False,bOutputTranslucentVelocity=False,bHasPixelAnimation=False,bEnableTessellation=False,bEnableDisplacementFade=False,bCompatibleWithLumenCardSharing=False,BlendMode=BLEND_Translucent,ShadingModel=MSM_Unlit,OpacityMaskClipValue=0.333300,DisplacementScaling=(Magnitude=4.000000,Center=0.500000),DisplacementFadeRange=(StartSizePixels=4.000000,EndSizePixels=1.000000),MaxWorldPositionOffsetDisplacement=0.000000,UsageFlags=0,PhysMaterialMask=None,PhysicalMaterialMap[0]=None,PhysicalMaterialMap[1]=None,PhysicalMaterialMap[2]=None,PhysicalMaterialMap[3]=None,PhysicalMaterialMap[4]=None,PhysicalMaterialMap[5]=None,PhysicalMaterialMap[6]=None,PhysicalMaterialMap[7]=None)",
+        "static_parameters": {
+          "unavailable": "MaterialInstanceConstant: Failed to find property 'static_parameters' for attribute 'static_parameters' on 'MaterialInstanceConstant'"
+        }
+      }
+    },
+    {
+      "asset": {
+        "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat",
+        "class": "/Script/Engine.Material"
+      },
+      "parameters": {
+        "scalar": {
+          "CutStartPivot": 1.0,
+          "Percent": 1.0,
+          "Clockwise": 1.0,
+          "CutPercent": 1.0,
+          "Opacity": 1.0
+        },
+        "vector": {
+          "FillColor": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "MoveAndScale": [
+            0.0,
+            0.0,
+            1.0,
+            1.0
+          ]
+        },
+        "texture": {
+          "Atlas": {
+            "path": "/Engine/EngineResources/WhiteSquareTexture.WhiteSquareTexture",
+            "class": "/Script/Engine.Texture2D"
+          }
+        },
+        "static_switch": {
+          "DebugAnimation": false
+        }
+      },
+      "properties": {
+        "material_domain": "<MaterialDomain.MD_UI: 5>",
+        "blend_mode": "<BlendMode.BLEND_TRANSLUCENT: 2>",
+        "two_sided": false,
+        "opacity_mask_clip_value": 0.33329999446868896
+      },
+      "children": [
+        "/Game/UI/Materials/Circular_Progress_Bar_CD_Inst"
+      ],
+      "expressions": [
+        {
+          "node": {
+            "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat:MaterialExpressionMultiply_6",
+            "class": "/Script/Engine.MaterialExpressionMultiply"
+          },
+          "properties": {
+            "desc": "",
+            "const_a": 0.0,
+            "const_b": 1.0
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat:MaterialExpressionMultiply_5",
+            "class": "/Script/Engine.MaterialExpressionMultiply"
+          },
+          "properties": {
+            "desc": "",
+            "const_a": 0.0,
+            "const_b": 1.0
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat:MaterialExpressionMultiply_9",
+            "class": "/Script/Engine.MaterialExpressionMultiply"
+          },
+          "properties": {
+            "desc": "",
+            "const_a": 0.0,
+            "const_b": 1.0
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat:MaterialExpressionMultiply_10",
+            "class": "/Script/Engine.MaterialExpressionMultiply"
+          },
+          "properties": {
+            "desc": "",
+            "const_a": 0.0,
+            "const_b": 1.0
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat:MaterialExpressionClamp_1",
+            "class": "/Script/Engine.MaterialExpressionClamp"
+          },
+          "properties": {
+            "desc": "",
+            "min_default": 0.0,
+            "max_default": 1.0
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat:MaterialExpressionSubtract_5",
+            "class": "/Script/Engine.MaterialExpressionSubtract"
+          },
+          "properties": {
+            "desc": "",
+            "const_a": 1.0,
+            "const_b": 1.0
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat:MaterialExpressionTextureCoordinate_6",
+            "class": "/Script/Engine.MaterialExpressionTextureCoordinate"
+          },
+          "properties": {
+            "desc": "",
+            "coordinate_index": 0,
+            "u_tiling": 2.0,
+            "v_tiling": 2.0
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat:MaterialExpressionConstant_9",
+            "class": "/Script/Engine.MaterialExpressionConstant"
+          },
+          "properties": {
+            "desc": "",
+            "r": 1.0
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat:MaterialExpressionRotator_1",
+            "class": "/Script/Engine.MaterialExpressionRotator"
+          },
+          "properties": {
+            "desc": "",
+            "speed": 1.5700000524520874,
+            "center_x": 1.0,
+            "center_y": 1.0
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat:MaterialExpressionFloor_5",
+            "class": "/Script/Engine.MaterialExpressionFloor"
+          },
+          "properties": {
+            "desc": ""
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat:MaterialExpressionTime_0",
+            "class": "/Script/Engine.MaterialExpressionTime"
+          },
+          "properties": {
+            "desc": ""
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat:MaterialExpressionMaterialFunctionCall_6",
+            "class": "/Script/Engine.MaterialExpressionMaterialFunctionCall"
+          },
+          "properties": {
+            "desc": "",
+            "material_function": {
+              "path": "/Engine/Functions/Engine_MaterialFunctions02/Utility/VectorToRadialValue.VectorToRadialValue",
+              "class": "/Script/Engine.MaterialFunction"
+            }
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat:MaterialExpressionOneMinus_5",
+            "class": "/Script/Engine.MaterialExpressionOneMinus"
+          },
+          "properties": {
+            "desc": ""
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat:MaterialExpressionAdd_3",
+            "class": "/Script/Engine.MaterialExpressionAdd"
+          },
+          "properties": {
+            "desc": "",
+            "const_a": 0.0,
+            "const_b": 1.0
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat:MaterialExpressionScalarParameter_4",
+            "class": "/Script/Engine.MaterialExpressionScalarParameter"
+          },
+          "properties": {
+            "parameter_name": "CutStartPivot",
+            "default_value": 1.0,
+            "slider_min": 0.0,
+            "slider_max": 0.0,
+            "desc": "该参数用于设置开始点.( 1=顶部 , 2=左边 , 3=底部 , 4=右边 )"
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat:MaterialExpressionStaticSwitchParameter_3",
+            "class": "/Script/Engine.MaterialExpressionStaticSwitchParameter"
+          },
+          "properties": {
+            "parameter_name": "DebugAnimation",
+            "default_value": false,
+            "desc": ""
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat:MaterialExpressionScalarParameter_1",
+            "class": "/Script/Engine.MaterialExpressionScalarParameter"
+          },
+          "properties": {
+            "parameter_name": "Percent",
+            "default_value": 1.0,
+            "slider_min": 0.0,
+            "slider_max": 1.0,
+            "desc": ""
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat:MaterialExpressionLinearInterpolate_2",
+            "class": "/Script/Engine.MaterialExpressionLinearInterpolate"
+          },
+          "properties": {
+            "desc": "",
+            "const_a": 0.0,
+            "const_b": 1.0
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat:MaterialExpressionScalarParameter_3",
+            "class": "/Script/Engine.MaterialExpressionScalarParameter"
+          },
+          "properties": {
+            "parameter_name": "Clockwise",
+            "default_value": 1.0,
+            "slider_min": 0.0,
+            "slider_max": 1.0,
+            "desc": ""
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat:MaterialExpressionDivide_0",
+            "class": "/Script/Engine.MaterialExpressionDivide"
+          },
+          "properties": {
+            "desc": "",
+            "const_a": 1.0,
+            "const_b": 6.0
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat:MaterialExpressionAdd_1",
+            "class": "/Script/Engine.MaterialExpressionAdd"
+          },
+          "properties": {
+            "desc": "",
+            "const_a": 0.0,
+            "const_b": 1.0
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat:MaterialExpressionFloor_2",
+            "class": "/Script/Engine.MaterialExpressionFloor"
+          },
+          "properties": {
+            "desc": ""
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat:MaterialExpressionScalarParameter_11",
+            "class": "/Script/Engine.MaterialExpressionScalarParameter"
+          },
+          "properties": {
+            "parameter_name": "CutPercent",
+            "default_value": 1.0,
+            "slider_min": 0.0,
+            "slider_max": 1.0,
+            "desc": ""
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat:MaterialExpressionDivide_3",
+            "class": "/Script/Engine.MaterialExpressionDivide"
+          },
+          "properties": {
+            "desc": "",
+            "const_a": 3.0,
+            "const_b": 2.0
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat:MaterialExpressionMultiply_7",
+            "class": "/Script/Engine.MaterialExpressionMultiply"
+          },
+          "properties": {
+            "desc": "",
+            "const_a": 0.0,
+            "const_b": 1.0
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat:MaterialExpressionTextureSampleParameter2D_0",
+            "class": "/Script/Engine.MaterialExpressionTextureSampleParameter2D"
+          },
+          "properties": {
+            "parameter_name": "Atlas",
+            "desc": "",
+            "texture": {
+              "path": "/Engine/EngineResources/WhiteSquareTexture.WhiteSquareTexture",
+              "class": "/Script/Engine.Texture2D"
+            }
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat:MaterialExpressionScalarParameter_9",
+            "class": "/Script/Engine.MaterialExpressionScalarParameter"
+          },
+          "properties": {
+            "parameter_name": "Opacity",
+            "default_value": 1.0,
+            "slider_min": 0.0,
+            "slider_max": 1.0,
+            "desc": ""
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat:MaterialExpressionVectorParameter_3",
+            "class": "/Script/Engine.MaterialExpressionVectorParameter"
+          },
+          "properties": {
+            "parameter_name": "FillColor",
+            "default_value": [
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "desc": ""
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat:MaterialExpressionAdd_0",
+            "class": "/Script/Engine.MaterialExpressionAdd"
+          },
+          "properties": {
+            "desc": "",
+            "const_a": 0.0,
+            "const_b": 1.0
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat:MaterialExpressionMultiply_2",
+            "class": "/Script/Engine.MaterialExpressionMultiply"
+          },
+          "properties": {
+            "desc": "",
+            "const_a": 0.0,
+            "const_b": 1.0
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat:MaterialExpressionVectorParameter_0",
+            "class": "/Script/Engine.MaterialExpressionVectorParameter"
+          },
+          "properties": {
+            "parameter_name": "MoveAndScale",
+            "default_value": [
+              0.0,
+              0.0,
+              1.0,
+              1.0
+            ],
+            "desc": ""
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat:MaterialExpressionComponentMask_0",
+            "class": "/Script/Engine.MaterialExpressionComponentMask"
+          },
+          "properties": {
+            "desc": "",
+            "a": false,
+            "b": false,
+            "r": true,
+            "g": true
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/Circular_Progress_Bar_mat.Circular_Progress_Bar_mat:MaterialExpressionAppendVector_1",
+            "class": "/Script/Engine.MaterialExpressionAppendVector"
+          },
+          "properties": {
+            "desc": ""
+          }
+        }
+      ]
+    },
+    {
+      "asset": {
+        "path": "/Game/UI/Materials/HaloMask_Scope1_Inst.HaloMask_Scope1_Inst",
+        "class": "/Script/Engine.MaterialInstanceConstant"
+      },
+      "parameters": {
+        "scalar": {
+          "SmoothValue": 0.009999999776482582,
+          "Size": 0.44999998807907104
+        },
+        "vector": {
+          "Param": [
+            2560.0,
+            1440.0,
+            0.0,
+            1.0
+          ]
+        },
+        "texture": {},
+        "static_switch": {}
+      },
+      "properties": {
+        "parent": {
+          "path": "/Game/UI/Materials/HaloMask_mat.HaloMask_mat",
+          "class": "/Script/Engine.Material"
+        },
+        "scalar_parameter_values": [
+          "(AtlasData=(bIsUsedAsAtlasPosition=False,Curve=None,Atlas=None),ParameterInfo=(Name=\"Size\",Association=GlobalParameter,Index=-1),ParameterValue=0.450000,ExpressionGUID=F21E8D4D48B9B9144EECABB653278DD5)",
+          "(AtlasData=(bIsUsedAsAtlasPosition=False,Curve=None,Atlas=None),ParameterInfo=(Name=\"SmoothValue\",Association=GlobalParameter,Index=-1),ParameterValue=0.010000,ExpressionGUID=1954EC814C26583C6F01A1A87E925823)",
+          "(AtlasData=(bIsUsedAsAtlasPosition=False,Curve=None,Atlas=None),ParameterInfo=(Name=\"RefractionDepthBias\",Association=GlobalParameter,Index=-1),ParameterValue=0.000000,ExpressionGUID=00000000000000000000000000000000)"
+        ],
+        "vector_parameter_values": [
+          "(ParameterInfo=(Name=\"Param\",Association=GlobalParameter,Index=-1),ParameterValue=(R=2560.000000,G=1440.000000,B=0.000000,A=1.000000),ExpressionGUID=136ED1E64231BD9D7E6043925E2C754C)"
+        ],
+        "texture_parameter_values": [],
+        "base_property_overrides": "(bOverride_OpacityMaskClipValue=False,bOverride_BlendMode=False,bOverride_ShadingModel=False,bOverride_DitheredLODTransition=False,bOverride_CastDynamicShadowAsMasked=False,bOverride_TwoSided=False,bOverride_bIsThinSurface=False,bOverride_OutputTranslucentVelocity=False,bOverride_bHasPixelAnimation=False,bOverride_bEnableTessellation=False,bOverride_DisplacementScaling=False,bOverride_bEnableDisplacementFade=False,bOverride_DisplacementFadeRange=False,bOverride_MaxWorldPositionOffsetDisplacement=False,bOverride_CompatibleWithLumenCardSharing=False,bOverride_UsageFlags=0,bOverride_PhysMaterialMask=False,bOverride_PhysicalMaterialMap=False,TwoSided=False,bIsThinSurface=False,DitheredLODTransition=False,bCastDynamicShadowAsMasked=False,bOutputTranslucentVelocity=False,bHasPixelAnimation=False,bEnableTessellation=False,bEnableDisplacementFade=False,bCompatibleWithLumenCardSharing=False,BlendMode=BLEND_Translucent,ShadingModel=MSM_Unlit,OpacityMaskClipValue=0.333300,DisplacementScaling=(Magnitude=4.000000,Center=0.500000),DisplacementFadeRange=(StartSizePixels=4.000000,EndSizePixels=1.000000),MaxWorldPositionOffsetDisplacement=0.000000,UsageFlags=0,PhysMaterialMask=None,PhysicalMaterialMap[0]=None,PhysicalMaterialMap[1]=None,PhysicalMaterialMap[2]=None,PhysicalMaterialMap[3]=None,PhysicalMaterialMap[4]=None,PhysicalMaterialMap[5]=None,PhysicalMaterialMap[6]=None,PhysicalMaterialMap[7]=None)",
+        "static_parameters": {
+          "unavailable": "MaterialInstanceConstant: Failed to find property 'static_parameters' for attribute 'static_parameters' on 'MaterialInstanceConstant'"
+        }
+      }
+    },
+    {
+      "asset": {
+        "path": "/Game/UI/Materials/HaloMask_mat.HaloMask_mat",
+        "class": "/Script/Engine.Material"
+      },
+      "parameters": {
+        "scalar": {
+          "SmoothValue": 0.10000000149011612,
+          "Size": 0.30000001192092896
+        },
+        "vector": {
+          "Param": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "texture": {},
+        "static_switch": {}
+      },
+      "properties": {
+        "material_domain": "<MaterialDomain.MD_UI: 5>",
+        "blend_mode": "<BlendMode.BLEND_TRANSLUCENT: 2>",
+        "two_sided": false,
+        "opacity_mask_clip_value": 0.33329999446868896
+      },
+      "children": [
+        "/Game/UI/Materials/HaloMask_Scope1_Inst"
+      ],
+      "expressions": [
+        {
+          "node": {
+            "path": "/Game/UI/Materials/HaloMask_mat.HaloMask_mat:MaterialExpressionOneMinus_0",
+            "class": "/Script/Engine.MaterialExpressionOneMinus"
+          },
+          "properties": {
+            "desc": ""
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/HaloMask_mat.HaloMask_mat:MaterialExpressionTextureCoordinate_2",
+            "class": "/Script/Engine.MaterialExpressionTextureCoordinate"
+          },
+          "properties": {
+            "desc": "",
+            "coordinate_index": 0,
+            "u_tiling": 1.0,
+            "v_tiling": 1.0
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/HaloMask_mat.HaloMask_mat:MaterialExpressionSubtract_0",
+            "class": "/Script/Engine.MaterialExpressionSubtract"
+          },
+          "properties": {
+            "desc": "",
+            "const_a": 1.0,
+            "const_b": 0.5
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/HaloMask_mat.HaloMask_mat:MaterialExpressionDistance_0",
+            "class": "/Script/Engine.MaterialExpressionDistance"
+          },
+          "properties": {
+            "desc": ""
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/HaloMask_mat.HaloMask_mat:MaterialExpressionConstant_1",
+            "class": "/Script/Engine.MaterialExpressionConstant"
+          },
+          "properties": {
+            "desc": "",
+            "r": 0.0
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/HaloMask_mat.HaloMask_mat:MaterialExpressionSmoothStep_0",
+            "class": "/Script/Engine.MaterialExpressionSmoothStep"
+          },
+          "properties": {
+            "desc": ""
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/HaloMask_mat.HaloMask_mat:MaterialExpressionAdd_1",
+            "class": "/Script/Engine.MaterialExpressionAdd"
+          },
+          "properties": {
+            "desc": "",
+            "const_a": 0.0,
+            "const_b": 0.15000000596046448
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/HaloMask_mat.HaloMask_mat:MaterialExpressionComponentMask_0",
+            "class": "/Script/Engine.MaterialExpressionComponentMask"
+          },
+          "properties": {
+            "desc": "",
+            "a": false,
+            "b": false,
+            "r": true,
+            "g": false
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/HaloMask_mat.HaloMask_mat:MaterialExpressionMultiply_0",
+            "class": "/Script/Engine.MaterialExpressionMultiply"
+          },
+          "properties": {
+            "desc": "",
+            "const_a": 0.0,
+            "const_b": 1.0
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/HaloMask_mat.HaloMask_mat:MaterialExpressionDivide_0",
+            "class": "/Script/Engine.MaterialExpressionDivide"
+          },
+          "properties": {
+            "desc": "",
+            "const_a": 2544.0,
+            "const_b": 1080.0
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/HaloMask_mat.HaloMask_mat:MaterialExpressionComponentMask_1",
+            "class": "/Script/Engine.MaterialExpressionComponentMask"
+          },
+          "properties": {
+            "desc": "",
+            "a": false,
+            "b": false,
+            "r": false,
+            "g": true
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/HaloMask_mat.HaloMask_mat:MaterialExpressionMaterialFunctionCall_1",
+            "class": "/Script/Engine.MaterialExpressionMaterialFunctionCall"
+          },
+          "properties": {
+            "desc": "",
+            "material_function": {
+              "path": "/Engine/Functions/Engine_MaterialFunctions02/Utility/MakeFloat2.MakeFloat2",
+              "class": "/Script/Engine.MaterialFunction"
+            }
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/HaloMask_mat.HaloMask_mat:MaterialExpressionSubtract_1",
+            "class": "/Script/Engine.MaterialExpressionSubtract"
+          },
+          "properties": {
+            "desc": "",
+            "const_a": 1.0,
+            "const_b": 0.5
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/HaloMask_mat.HaloMask_mat:MaterialExpressionAdd_0",
+            "class": "/Script/Engine.MaterialExpressionAdd"
+          },
+          "properties": {
+            "desc": "",
+            "const_a": 0.0,
+            "const_b": 0.5
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/HaloMask_mat.HaloMask_mat:MaterialExpressionScalarParameter_0",
+            "class": "/Script/Engine.MaterialExpressionScalarParameter"
+          },
+          "properties": {
+            "parameter_name": "SmoothValue",
+            "default_value": 0.10000000149011612,
+            "slider_min": 0.0,
+            "slider_max": 1.0,
+            "desc": ""
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/HaloMask_mat.HaloMask_mat:MaterialExpressionScalarParameter_1",
+            "class": "/Script/Engine.MaterialExpressionScalarParameter"
+          },
+          "properties": {
+            "parameter_name": "Size",
+            "default_value": 0.30000001192092896,
+            "slider_min": 0.0,
+            "slider_max": 1.0,
+            "desc": ""
+          }
+        },
+        {
+          "node": {
+            "path": "/Game/UI/Materials/HaloMask_mat.HaloMask_mat:MaterialExpressionVectorParameter_0",
+            "class": "/Script/Engine.MaterialExpressionVectorParameter"
+          },
+          "properties": {
+            "parameter_name": "Param",
+            "default_value": [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ],
+            "desc": ""
+          }
+        }
+      ]
+    }
+  ],
+  "sha256Before": {
+    "/Game/UI/UMG/Fight/Widgets/uw_fight_skill": "98b60b83746cbd6f674836092d59373e3d785bdf6b1941b0ce9acffa0cbb7975",
+    "/Game/UI/UMG/Fight/Widgets/uw_fight_scope": "df7961b64757e5da2002d41e41abc7365576e5200e25f5baa0d5d204097147e5",
+    "/Game/UI/Materials/Circular_Progress_Bar_CD_Inst": "8b122df4fd96e9b56f655ea8b88308e2a79d199204ffa0701f3acfddc2204c47",
+    "/Game/UI/Materials/Circular_Progress_Bar_mat": "0d497f2bebe28f09e0bc0873d064273776f5366e711c669370f30e0e56efdb05",
+    "/Game/UI/Materials/HaloMask_Scope1_Inst": "208e62eed999590b29a9fb33cd77cb7c71e1d306bf56fe7feb0160fddd28ee8e",
+    "/Game/UI/Materials/HaloMask_mat": "54433bfcebe2d4ee45fefa7bedf49bab62d8a2d0214cf5f32828beb88e6cecfd"
+  },
+  "sha256After": {
+    "/Game/UI/UMG/Fight/Widgets/uw_fight_skill": "98b60b83746cbd6f674836092d59373e3d785bdf6b1941b0ce9acffa0cbb7975",
+    "/Game/UI/UMG/Fight/Widgets/uw_fight_scope": "df7961b64757e5da2002d41e41abc7365576e5200e25f5baa0d5d204097147e5",
+    "/Game/UI/Materials/Circular_Progress_Bar_CD_Inst": "8b122df4fd96e9b56f655ea8b88308e2a79d199204ffa0701f3acfddc2204c47",
+    "/Game/UI/Materials/Circular_Progress_Bar_mat": "0d497f2bebe28f09e0bc0873d064273776f5366e711c669370f30e0e56efdb05",
+    "/Game/UI/Materials/HaloMask_Scope1_Inst": "208e62eed999590b29a9fb33cd77cb7c71e1d306bf56fe7feb0160fddd28ee8e",
+    "/Game/UI/Materials/HaloMask_mat": "54433bfcebe2d4ee45fefa7bedf49bab62d8a2d0214cf5f32828beb88e6cecfd"
+  }
+}

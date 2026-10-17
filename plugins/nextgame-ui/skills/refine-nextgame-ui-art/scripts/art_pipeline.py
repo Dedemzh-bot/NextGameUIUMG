@@ -30,7 +30,7 @@ def initialize_request(job_path, output_path):
     """Expand a compact job into immutable hash-bound inputs; never infer authorization."""
     job = load_json(job_path)
     required = {'goal','originalText','scope','baseline','references','resourceDir','authorizedAssetPaths'}
-    if not isinstance(job, dict) or not required <= set(job) or set(job) - required - {'target','budget','samples','resourceCatalog','developmentBaseline','referenceMode'}:
+    if not isinstance(job, dict) or not required <= set(job) or set(job) - required - {'target','budget','samples','resourceCatalog','developmentBaseline','referenceMode','preserveHierarchy'}:
         raise ArtError('job.shape', 'Job needs goal, originalText, scope, baseline paths, references, resourceDir and exact authorizedAssetPaths.')
     def resolve(p):
         path = Path(p)
@@ -46,6 +46,11 @@ def initialize_request(job_path, output_path):
         'productionAuthorized':all(s['assetPath'] in job['authorizedAssetPaths'] for s in job['scope']),
         'budget':job.get('budget',{'maxCorrectionRounds':2,'maxModelCalls':16,'tokenLimits':{}}),
         'capabilities':['presentation-review/1']}
+    if 'preserveHierarchy' in job:
+        if type(job['preserveHierarchy']) is not bool:
+            raise ArtError('job.preserve_hierarchy', 'preserveHierarchy must be an explicit boolean.')
+        if job['preserveHierarchy']:
+            request['capabilities'].append('preserve-hierarchy/1')
     if 'referenceMode' in job:
         from art_reference import CAPABILITY
         if job['referenceMode'] != CAPABILITY:
@@ -139,6 +144,103 @@ def reserve_call(request_path, packet_path, journal_path, call_key, ledger_path=
         lock.unlink(missing_ok=True)
 
 
+def _asset_source_catalog(request, requirement, bundle, asset, layout, catalog):
+    """Lower validated child integrations without importing task catalogs.
+
+    Full Requirement/Bundle authority validation remains the caller's gate.
+    A node's class authorization cannot propagate to other nodes or assets.
+    """
+    local = copy.deepcopy(catalog)
+    components = {c['role']: c for c in local['components']}
+    node_role_overrides = {}
+    nodes = {n['id']: n for n in layout['nodes']}
+    if len(nodes) != len(layout['nodes']):
+        raise ArtError('design.child_identity', 'Child integration requires unique layout node IDs.')
+    child_ops = [op for op in bundle.get('crossAssetOperations', [])
+                 if op.get('targetAssetId') == asset['id']
+                 and (op.get('type') == 'child-widget-integration'
+                      or op.get('integrationStrategy') == 'create-child-widget')]
+    assets = {a['id']: a for a in bundle['assets']}
+    plans = {p['id']: p for p in requirement.get('assetPlan', [])}
+    scope = {a['assetPath'] for a in request['scope']}
+    reviewed = set(requirement.get('reviewGate', {}).get('acceptedClaimIds', []))
+    accepted = {c['id'] for c in requirement.get('claims', [])
+                if c.get('status') == 'accepted' and c['id'] in reviewed}
+    authorized_nodes = set()
+    for op in child_ops:
+        node_id = op.get('targetLayoutNodeId')
+        if (op.get('type') != 'child-widget-integration'
+                or op.get('integrationStrategy') != 'create-child-widget'
+                or node_id in authorized_nodes or node_id not in nodes):
+            raise ArtError('design.child_operation', 'Require one exact create-child-widget operation per actual target node.')
+        if len(assets) != len(bundle['assets']) or len(plans) != len(requirement.get('assetPlan', [])):
+            raise ArtError('design.child_identity', 'Child integration requires unique Bundle and assetPlan identities.')
+        source = assets.get(op.get('sourceAssetId'))
+        if (source is None or source['id'] == asset['id'] or source.get('assetKind') != 'child-widget'
+                or source['id'] not in asset.get('dependsOnAssetIds', [])):
+            raise ArtError('design.child_source', 'Source must be this Bundle\'s directly depended-on child-widget asset.')
+        for participant in (source, asset):
+            plan = plans.get(participant.get('assetPlanId'), {})
+            if (participant['assetPath'] not in scope or plan.get('inBuildScope') is not True
+                    or plan.get('assetPath') != participant['assetPath']
+                    or plan.get('assetKind') != participant.get('assetKind')):
+                raise ArtError('design.child_scope', 'Both child assets must match the accepted in-scope assetPlan and art scope.')
+        mappings = [m for m in bundle['nodeMappings']
+                    if m.get('assetId') == asset['id'] and m.get('layoutNodeId') == node_id]
+        if len(mappings) != 1 or not mappings[0].get('requirementRefs'):
+            raise ArtError('design.child_mapping', 'Require one exact target node mapping with Requirement references.')
+        for evidence in (op, mappings[0]):
+            claims = set(evidence.get('claimIds', []))
+            if not claims or not claims.issubset(accepted):
+                raise ArtError('design.child_claims', 'Child operation and mapping must use reviewed accepted claims.')
+        node = nodes[node_id]
+        if node.get('parent') not in nodes or any(n.get('parent') == node_id for n in layout['nodes']):
+            raise ArtError('design.child_leaf', 'Integrated child widgets must be actual non-root layout leaves.')
+        package = source['assetPath']
+        class_path = package + '.' + package.rsplit('/', 1)[-1] + '_C'
+        role = node['role']
+        if role in components:
+            existing = components[role]
+            # A child integration targets a leaf placeholder in the host
+            # layout. Container roles describe that host slot, so the
+            # integrated Widget class becomes authoritative for this node.
+            # Non-container roles remain class-locked and cannot be silently
+            # replaced by a child asset.
+            if (existing['classPath'] != class_path
+                    and not role.startswith('container.')):
+                raise ArtError('design.child_class', 'An integration cannot override or conflict with an existing role class.')
+            if existing['classPath'] != class_path:
+                child_role = f'widget.child-integration.{node_id}'
+                local['components'].append({
+                    'role': child_role,
+                    'classPath': class_path,
+                    'isPanel': False,
+                    'canRepresentRegion': True,
+                    'allowedChildren': [],
+                    'propertyMap': {},
+                })
+                components[child_role] = local['components'][-1]
+                node_role_overrides[node_id] = child_role
+        else:
+            # Use only common properties: do not infer child-specific properties
+            # or introduce a visibility default while reconstructing the design.
+            # The integrated asset can own an accepted region, but remains a
+            # leaf in this layout rather than a panel for new children.
+            component = {'role': role, 'classPath': class_path, 'isPanel': False,
+                         'canRepresentRegion': True,
+                         'allowedChildren': [], 'propertyMap': {}}
+            local['components'].append(component)
+            components[role] = component
+        authorized_nodes.add(node_id)
+    original_roles = {c['role'] for c in catalog['components']}
+    for node in layout['nodes']:
+        if node['role'] not in original_roles and node['id'] not in authorized_nodes:
+            raise ArtError('design.child_unauthorized', 'Each non-catalog node requires its own exact Bundle child integration.')
+    if node_role_overrides:
+        local['nodeRoleOverrides'] = node_role_overrides
+    return local
+
+
 def _source_nodes(request, request_path):
     """Derive locked Unreal values with the existing deterministic build lowering."""
     source = request.get('target', request['baseline'])
@@ -153,26 +255,44 @@ def _source_nodes(request, request_path):
     from prepare_build import build_plan
     catalog = load_json(build_dir.parent / 'references/component-catalog.json')
     rules = load_json(build_dir.parent / 'references/rule-index.json')
-    classes = {c['role']: c['classPath'] for c in catalog['components']}
     entries = {}
     for asset in bundle['assets']:
         if not asset.get('layoutSpecPath'):
             continue
         layout_path = bound_path({'path': asset['layoutSpecPath'], 'sha256': asset['layoutSpecSha256']}, bundle_path)
         layout = load_json(layout_path)
-        lowered = build_plan(layout_path, layout, catalog, rules)
+        if layout.get('version') == '0.3':
+            from existing_asset_update import CAPABILITY, source_entries, validate_bundle_layout
+            if CAPABILITY not in bundle.get('capabilities', []):
+                raise ArtError('design.existing_capability', 'UILayoutSpec 0.3 requires the explicit existing-asset update capability.')
+            reviewed = set(requirement.get('reviewGate', {}).get('acceptedClaimIds', []))
+            accepted = {c['id'] for c in requirement.get('claims', [])
+                        if c.get('status') == 'accepted' and c['id'] in reviewed}
+            errors = validate_bundle_layout(layout, asset, bundle, requirement,
+                                            spec_path=layout_path, accepted_claim_ids=accepted)
+            if errors:
+                raise ArtError('design.existing_targets', str(errors))
+            entries.update(source_entries(layout, spec_path=layout_path, asset=asset, mappings=bundle['nodeMappings']))
+            continue
+        asset_catalog = _asset_source_catalog(request, requirement, bundle, asset, layout, catalog)
+        lowering_layout = copy.deepcopy(layout)
+        for node in lowering_layout['nodes']:
+            node['role'] = asset_catalog.get('nodeRoleOverrides', {}).get(node['id'], node['role'])
+        classes = {c['role']: c['classPath'] for c in asset_catalog['components']}
+        lowered = build_plan(layout_path, lowering_layout, asset_catalog, rules)
         steps = {s['stepId']: s for s in lowered['steps']}
         names = {n['id']: n['name'] for n in layout['nodes']}
         mappings = {m['layoutNodeId']: m for m in bundle['nodeMappings'] if m['assetId'] == asset['id']}
         for node in layout['nodes']:
             ident = node['id']
+            lowered_role = asset_catalog.get('nodeRoleOverrides', {}).get(ident, node['role'])
             props = steps.get('set-widget-properties-' + ident, {}).get('arguments', {}).get('values', {})
             slot = {}
             for prefix in ('set-slot-properties-', 'set-flow-slot-properties-', 'set-scroll-slot-properties-',
                            'set-overlay-slot-properties-', 'set-button-slot-properties-'):
                 slot.update(steps.get(prefix + ident, {}).get('arguments', {}).get('values', {}))
             entries[(asset['assetPath'], node['name'])] = {
-                'classPath': classes[node['role']], 'parentWidgetName': names.get(node.get('parent')),
+                'classPath': classes[lowered_role], 'parentWidgetName': names.get(node.get('parent')),
                 'isVariable': node.get('isVariable', False), 'properties': props, 'slot': slot,
                 'requirementRefs': mappings.get(ident, {}).get('requirementRefs', [])}
     return entries
@@ -185,6 +305,7 @@ def _contains(actual, expected):
 
 
 def _check_design(operation, locked, request):
+    check_hierarchy_policy(request, operation)
     key = (operation['assetPath'], operation['widgetName'])
     desired = locked.get(key)
     kind = operation['kind']
@@ -206,6 +327,15 @@ def _check_design(operation, locked, request):
             raise ArtError('design.structure', 'New node does not preserve accepted property/Slot values.')
     elif kind == 'reparent-widget' and operation['after'] != desired['parentWidgetName']:
         raise ArtError('design.structure', 'Reparenting must match the accepted target design.')
+
+
+def check_hierarchy_policy(request, operation):
+    """A target revision cannot override an explicitly retained nesting boundary."""
+    if ('preserve-hierarchy/1' in request.get('capabilities', [])
+            and operation['kind'] in ('add-widget', 'remove-widget', 'reparent-widget')):
+        raise ArtError('design.hierarchy_preserved',
+                       'This request preserves nesting: no add, remove, wrapper or reparent operations. '
+                       'Geometry and visual properties still require accepted source decisions.')
 
 
 def _plan_baseline(plan, plan_path, request, request_path):
@@ -270,6 +400,7 @@ def create_plan(request_path, decisions_path, *, round_number=0, previous_verifi
     for decision in decisions['decisions']:
         op = copy.deepcopy(decision['operation'])
         check_operation(op)
+        check_hierarchy_policy(request, op)
         if op['id'] in seen:
             raise ArtError('operation.duplicate_id', 'Operation IDs must be unique.')
         seen.add(op['id'])

@@ -230,6 +230,9 @@ def size_box_native_setter_contract(node: dict[str, Any]) -> dict[str, Any]:
 
 
 def build_plan(spec_path: Path, spec: dict[str, Any], catalog: dict[str, Any], rules: dict[str, Any]) -> dict[str, Any]:
+    if isinstance(spec, dict) and spec.get("version") == "0.3":
+        from existing_asset_update import build_update_plan
+        return build_update_plan(spec_path, spec)
     validation = validate_spec(spec, catalog, spec_path=spec_path)
     if not validation["valid"]:
         error_codes = ", ".join(

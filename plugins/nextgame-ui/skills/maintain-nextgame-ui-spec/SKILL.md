@@ -5,6 +5,12 @@ description: Add, revise, version or migrate NextGame UI design and UMG producti
 
 # Maintain NextGame UI Specifications
 
+The optional [existing asset update route](../build-nextgame-umg/references/existing-asset-property-update.md)
+uses an independently closed Layout 0.3 and explicit Bundle capability.
+Maintain its baseline/accepted-target checks and regression tests without
+weakening historical Layout 0.2 new-build rules. Main-instance and child-content
+responsibilities remain separate from measured/rendered result evidence.
+
 For the reusable production review policy and its explicitly scoped migration, see [production fidelity checks](../build-nextgame-umg/references/production-fidelity-checks.md) and the [2026-09-18 change record](references/production-review-change-20260918.md). The [2026-09-20 capability migration](references/execution-capability-change-20260920.md) adds explicit size, bounded text, material and authorization-format capabilities without reclassifying old evidence. Keep task-specific dimensions and unfinished visual checks out of global defaults. The [development baseline version 2 change](references/development-baseline-v2-change-20260920.md) adds evidence-bound Brush resource deferrals without changing final gates.
 
 Locate the project design specification root supplied by the user or current project. Read its `AGENTS.md`, `AI_ENTRY.md` and `spec/07-spec-maintenance.md` when present. Do not hardcode another developer's drive or an installed plugin cache as authority.
@@ -24,6 +30,8 @@ A single screen correction is not automatically a global rule. Establish its gen
 
 ## Art-stage ownership
 
+Maintain resource/receiver separation through **Resource handoff and receiver ownership** in the build [visual presentation rules](../build-nextgame-umg/references/visual-presentation-rules.md). The art request's opt-in `preserve-hierarchy/1` belongs to the existing closed capability enum and plan/apply checks. Do not duplicate engine mappings in resource documents, freeze every observed legacy property, or turn authorized geometry adjustment into nesting/business migration. Retain source, scope, actual evidence and final acceptance gates.
+
 The optional sibling `$refine-nextgame-ui-art` stage owns art resource mappings, presentation evidence, and scoped example records; it shares the existing design authority and coordinator. A confirmed example is scoped project data, not automatically a global recipe or parameter default. Keep fixed layout/state/collection decisions in their original versioned design source. Any art change to those decisions requires an explicit source revision and new acceptance before application.
 
 Bundle/normalized Readback 0.4 add an opt-in art completion contract without relaxing 0.1–0.3. Do not relabel old accepted runs or change Requirement schema hashes merely because an art sidecar was added. Update art, Bundle, actual-state, and document gate regression tests together when changing the art handoff. See [on-demand-art-stage.md](../build-nextgame-umg/references/on-demand-art-stage.md).
@@ -31,6 +39,7 @@ Bundle/normalized Readback 0.4 add an opt-in art completion contract without rel
 ## Make a compatible, reviewable change
 
 1. Search the light registry and exact rule IDs before creating anything. Reuse a matching rule, or add a distinct version/scope. Record the problem, owning layer, authority, before/after behavior, affected consumers and migration plan.
+   For UI materials, first search the build [material reference catalog](../build-nextgame-umg/references/material-reference-catalog.md) and verify the relevant assets exist; only then call UMG/material tools and load that family's data for learning. Maintain the existing rule when present, not a duplicate rule or unindexed task note. Follow [immutable variants and per-root numbering](../build-nextgame-umg/references/material-instance-rules.md); never change a saved reference instance or root Material to test a new preset.
 2. Preserve released IDs and parameter versions. An incompatible shape/meaning needs a new contract version; a changed module gets an explicit new module version. Update exact references deliberately. Keep legacy artifacts readable against their recorded authority; never relabel or rewrite old evidence.
 3. Update all relevant registration surfaces. Project numbered rules require the `migration-map.json` entry; module versions require Registry/Invocation updates. Plugin build rules require both `rule-index.json` and `rule-card-routing.json`, with complete routing and exact headings. New fields require closed schemas, semantic checks and dependency/reference projection audit. Do not just bump an accepted-schema hash without auditing its reference shape.
 4. Add checks for observable invariants and meaningful rejection cases: conflicting locked values, stale hashes/versions, wrong scope, unsupported mappings and unapproved decisions. Run relevant Registry/Invocation, schema, source-provenance, Accepted Build View and Bundle/Coverage/Layout regressions. Validate shared assets or actual rendering only when the change requires those facts.

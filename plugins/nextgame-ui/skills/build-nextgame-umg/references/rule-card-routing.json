@@ -1,6 +1,6 @@
 {
   "version": "0.1",
-  "ruleIndexVersion": "0.24",
+  "ruleIndexVersion": "0.26",
   "cards": [
     {"ruleId": "prototype.asset-path", "selfContained": true, "detailRefs": []},
     {"ruleId": "prototype.asset-name", "selfContained": true, "detailRefs": []},
@@ -21,7 +21,9 @@
     {"ruleId": "widget.runtime-variable", "selfContained": false, "detailRefs": [{"file": "common-widget-rules.md", "heading": "## Program-controlled widget variables"}]},
     {"ruleId": "text.prototype-copy", "selfContained": true, "detailRefs": []},
     {"ruleId": "component.project-game-image", "selfContained": false, "detailRefs": [{"file": "component-knowledge.md", "heading": "## GameImage"}]},
-    {"ruleId": "structure.local-state-ownership", "selfContained": false, "detailRefs": [{"file": "visual-presentation-rules.md", "heading": "## Local state ownership"}]},
+    {"ruleId": "material.reference-discovery", "selfContained": false, "detailRefs": [{"file": "material-instance-rules.md", "heading": "## Discover before learning"}]},
+    {"ruleId": "material.instance-variants", "selfContained": false, "detailRefs": [{"file": "material-instance-rules.md", "heading": "## New instances only for authored variants"}, {"file": "material-instance-rules.md", "heading": "## One sequence per root Material"}, {"file": "material-instance-rules.md", "heading": "## Verify effects separately"}]},
+    {"ruleId": "structure.local-state-ownership", "selfContained": false, "detailRefs": [{"file": "visual-presentation-rules.md", "heading": "## Local state ownership"}, {"file": "visual-presentation-rules.md", "heading": "## Resource handoff and receiver ownership"}]},
     {"ruleId": "visual.image-aspect-evidence", "selfContained": false, "detailRefs": [{"file": "visual-presentation-rules.md", "heading": "## Image aspect and source identity"}]},
     {"ruleId": "visual.nine-slice-evidence", "selfContained": false, "detailRefs": [{"file": "visual-presentation-rules.md", "heading": "## Nine-slice evidence"}]},
     {"ruleId": "text.effect-evidence", "selfContained": false, "detailRefs": [{"file": "visual-presentation-rules.md", "heading": "## Text effects and annotations"}]},

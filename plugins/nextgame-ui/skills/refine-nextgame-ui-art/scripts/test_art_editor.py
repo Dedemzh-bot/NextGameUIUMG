@@ -477,7 +477,10 @@ class AdapterTests(unittest.TestCase):
         with self.assertRaisesRegex(CapabilityError, "registered tool absent"):
             self.editor.compile_save([PATH])
 
+    def test_object_path_normalization_accepts_package_and_object_paths(self):
+        self.assertEqual(_object(PATH)["refPath"], PATH + ".uw_test_item")
+        self.assertEqual(_object(PATH + ".uw_test_item")["refPath"], PATH + ".uw_test_item")
+
 
 if __name__ == "__main__":
     unittest.main()
-

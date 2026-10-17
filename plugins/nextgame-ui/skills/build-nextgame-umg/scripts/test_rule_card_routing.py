@@ -4,11 +4,16 @@
 from __future__ import annotations
 
 import os
+import copy
+import hashlib
+import json
 import shutil
+import subprocess
 import sys
 import unittest
 import uuid
 from pathlib import Path
+import jsonschema
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -16,6 +21,7 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 from route_rule_cards import (  # noqa: E402
+    DEFAULT_CATALOG,
     DEFAULT_REFERENCES,
     DEFAULT_ROUTING,
     DEFAULT_RULES,
@@ -88,6 +94,41 @@ class RuleCardRoutingTests(unittest.TestCase):
         expected_errors = [rule["id"] for rule in selected if rule.get("severity") == "error"]
         actual_errors = [card["id"] for card in pack["ruleCards"] if card["severity"] == "error"]
         self.assertEqual(expected_errors, actual_errors)
+
+    def test_material_policy_routes_at_every_stage_without_eager_family_reads(self) -> None:
+        for stage in ("build-planning", "build-execution", "build-verification"):
+            with self.subTest(stage=stage):
+                pack = build_rule_card_pack(EXAMPLE_LAYOUT, stages=[stage])
+                self.assertEqual("routed", pack["routingMode"])
+                self.assertIn("material.reference-discovery", pack["selectedRuleIds"])
+                self.assertIn("material.instance-variants", pack["selectedRuleIds"])
+                sections = {(s["file"], s["heading"]) for s in pack["detailSections"]}
+                for heading in ("## Discover before learning",
+                                "## New instances only for authored variants",
+                                "## One sequence per root Material",
+                                "## Verify effects separately"):
+                    self.assertIn(("material-instance-rules.md", heading), sections)
+                self.assertFalse(any(name.startswith("material-reference-") for name, _ in sections))
+
+    def test_material_policy_missing_heading_broadens_to_full_policy(self) -> None:
+        references = self.copy_references()
+        policy = references / "material-instance-rules.md"
+        policy.write_text(policy.read_text(encoding="utf-8").replace(
+            "## Discover before learning", "## Renamed discovery"), encoding="utf-8")
+        pack = _build_rule_card_pack_for_test(EXAMPLE_LAYOUT, references_dir=references)
+        self.assertEqual("fallback-full", pack["routingMode"])
+        self.assertIn("material-instance-rules.md", {d["file"] for d in pack["fullDocuments"]})
+        self.assertIn("material.instance-variants", pack["fallbackAuthorityRuleIds"])
+
+    def test_changed_material_policy_invalidates_old_pack(self) -> None:
+        references = self.copy_references()
+        pack = _build_rule_card_pack_for_test(EXAMPLE_LAYOUT, references_dir=references)
+        pack_path = self.temp_dir / "material-policy-pack.json"
+        write_json(pack_path, pack)
+        policy = references / "material-instance-rules.md"
+        policy.write_text(policy.read_text(encoding="utf-8") + "\nPolicy changed.\n", encoding="utf-8")
+        result = _validate_rule_card_pack_for_test(pack_path, EXAMPLE_LAYOUT, references_dir=references)
+        self.assertFalse(result["valid"])
 
     def test_rule_card_metadata_preserves_selector_severity(self) -> None:
         spec = load_json(EXAMPLE_LAYOUT)
@@ -320,6 +361,153 @@ class RuleCardRoutingTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             build_rule_card_pack(EXAMPLE_LAYOUT, routing_path=routing_copy)
 
+    def task_catalog_fixture(self) -> tuple[Path, Path, dict]:
+        layout = load_json(EXAMPLE_LAYOUT)
+        layout["nodes"].append({
+            "id": "owned-help", "name": "WgtOwnedHelp", "role": "widget.owned-help",
+            "parent": "header-region", "rect": [0.4, 0.06, 0.05, 0.05], "anchor": "left-top",
+            "isVariable": False, "properties": {"visibility": "SelfHitTestInvisible"},
+        })
+        catalog = load_json(DEFAULT_CATALOG)
+        catalog["components"].append({
+            "role": "widget.owned-help", "classPath": "/Game/UI/UMG/Example/Widgets/uw_example_help.uw_example_help_C",
+            "namePrefix": "Wgt", "hitTestPolicy": "passive", "canRepresentRegion": True,
+            "isPanel": False, "allowedChildren": [], "propertyMap": {},
+        })
+        layout_path = self.temp_dir / "layout.json"
+        catalog_path = self.temp_dir / "task-catalog.json"
+        write_json(layout_path, layout)
+        write_json(catalog_path, catalog)
+        return layout_path, catalog_path, catalog
+
+    def test_task_catalog_adds_used_widget_without_replacing_authority(self) -> None:
+        layout, catalog_path, _ = self.task_catalog_fixture()
+        default = build_rule_card_pack(layout, stages=["build-planning"])
+        self.assertFalse(default["machineValidation"]["layoutValid"])
+        pack = build_rule_card_pack(layout, stages=["build-planning"], task_catalog_path=catalog_path)
+        self.assertEqual("routed", pack["routingMode"])
+        self.assertTrue(pack["machineValidation"]["layoutValid"])
+        self.assertTrue(pack["machineValidation"]["machineValidatorsEnabled"])
+        self.assertFalse(pack["machineValidation"]["routingMayDisableValidators"])
+        self.assertEqual(hashlib.sha256(DEFAULT_CATALOG.read_bytes()).hexdigest(), pack["bindings"]["componentCatalog"]["sha256"])
+        self.assertEqual(hashlib.sha256(catalog_path.read_bytes()).hexdigest(), pack["bindings"]["taskComponentCatalog"]["sha256"])
+        self.assertNotIn("taskComponentCatalog", default["bindings"])
+        pack_path = self.temp_dir / "pack.json"
+        write_json(pack_path, pack)
+        self.assertTrue(validate_rule_card_pack(pack_path, layout, stages=["build-planning"], task_catalog_path=catalog_path)["valid"])
+        self.assertFalse(validate_rule_card_pack(pack_path, layout, stages=["build-planning"])["valid"])
+
+    def test_task_catalog_rejects_builtin_edits_removal_reorder_and_metadata(self) -> None:
+        layout, path, original = self.task_catalog_fixture()
+        cases = {}
+        changed = copy.deepcopy(original); changed["components"][0]["classPath"] = "/Script/UMG.Button"; cases["edit"] = changed
+        changed = copy.deepcopy(original); del changed["components"][0]; cases["remove"] = changed
+        changed = copy.deepcopy(original); changed["components"][0:2] = reversed(changed["components"][0:2]); cases["reorder"] = changed
+        changed = copy.deepcopy(original); changed["status"] = "replaced"; cases["metadata"] = changed
+        changed = copy.deepcopy(original); changed["newMetadata"] = True; cases["extra"] = changed
+        changed = copy.deepcopy(original); changed["components"][0]["isPanel"] = 1; cases["boolean-not-number"] = changed
+        for label, value in cases.items():
+            with self.subTest(label=label):
+                write_json(path, value)
+                with self.assertRaises(RequiredInputError):
+                    build_rule_card_pack(layout, task_catalog_path=path)
+
+    def test_task_catalog_rejects_duplicate_unused_and_non_widget_roles(self) -> None:
+        layout, path, original = self.task_catalog_fixture()
+        cases = {}
+        changed = copy.deepcopy(original); changed["components"].append(copy.deepcopy(changed["components"][-1])); cases["duplicate"] = changed
+        changed = copy.deepcopy(original); changed["components"][-1]["role"] = "widget.unused"; cases["unused"] = changed
+        changed = copy.deepcopy(original); changed["components"][-1]["role"] = "visual.image"; cases["builtin-collision"] = changed
+        changed = copy.deepcopy(original); changed["components"][-1]["role"] = "visual.custom"; cases["non-widget"] = changed
+        for label, value in cases.items():
+            with self.subTest(label=label):
+                write_json(path, value)
+                with self.assertRaises(RequiredInputError):
+                    build_rule_card_pack(layout, task_catalog_path=path)
+
+    def test_task_catalog_rejects_native_engine_mismatched_and_unsafe_class_paths(self) -> None:
+        layout, path, original = self.task_catalog_fixture()
+        for class_path in ("/Script/UMG.UserWidget", "/Engine/UI/Example.Example_C", "/Game/UI/Example.Other_C", "/Game/UI/Example.Example", "/Game/UI/../Example.Example_C"):
+            with self.subTest(class_path=class_path):
+                changed = copy.deepcopy(original); changed["components"][-1]["classPath"] = class_path
+                write_json(path, changed)
+                with self.assertRaises(RequiredInputError):
+                    build_rule_card_pack(layout, task_catalog_path=path)
+
+    def test_task_catalog_rejects_unbounded_leaf_mapping_and_invalid_flags(self) -> None:
+        layout, path, original = self.task_catalog_fixture()
+        for key, value in (("namePrefix", "Panel"), ("isPanel", True), ("isPanel", 0), ("allowedChildren", ["*"]), ("propertyMap", {"visibility": "hidden"}), ("hitTestPolicy", "none"), ("canRepresentRegion", 1), ("extra", "field")):
+            with self.subTest(field=key, value=value):
+                changed = copy.deepcopy(original); changed["components"][-1][key] = value
+                write_json(path, changed)
+                with self.assertRaises(RequiredInputError):
+                    build_rule_card_pack(layout, task_catalog_path=path)
+
+    def test_task_catalog_rejects_duplicate_json_keys(self) -> None:
+        layout, path, _ = self.task_catalog_fixture()
+        text = path.read_text(encoding="utf-8")
+        path.write_text(text.replace('"namePrefix": "Wgt"', '"namePrefix": "Wgt", "namePrefix": "Wgt"'), encoding="utf-8")
+        with self.assertRaises(RequiredInputError):
+            build_rule_card_pack(layout, task_catalog_path=path)
+
+    def test_task_catalog_whole_bytes_make_pack_stale(self) -> None:
+        layout, path, _ = self.task_catalog_fixture()
+        pack = build_rule_card_pack(layout, stages=["build-planning"], task_catalog_path=path)
+        pack_path = self.temp_dir / "pack.json"; write_json(pack_path, pack)
+        with path.open("a", encoding="utf-8") as stream: stream.write("\n")
+        result = validate_rule_card_pack(pack_path, layout, stages=["build-planning"], task_catalog_path=path)
+        self.assertFalse(result["valid"])
+        self.assertIn("pack.stale-or-tampered", {row["code"] for row in result["errors"]})
+
+    def test_task_catalog_optional_binding_uses_closed_pack_schema(self) -> None:
+        layout, path, _ = self.task_catalog_fixture()
+        schema = load_json(SKILL_ROOT / "assets/rule-card-pack.schema.json")
+        validator = jsonschema.Draft202012Validator(schema)
+        default = build_rule_card_pack(EXAMPLE_LAYOUT, stages=["build-planning"])
+        extended = build_rule_card_pack(layout, stages=["build-planning"], task_catalog_path=path)
+        self.assertEqual([], list(validator.iter_errors(default)))
+        self.assertEqual([], list(validator.iter_errors(extended)))
+        self.assertEqual(["layout", "ruleIndex", "routingConfig", "componentCatalog"], schema["properties"]["bindings"]["required"])
+        unknown = copy.deepcopy(extended); unknown["bindings"]["unknownCatalog"] = {"file": "x", "sha256": "0"*64}
+        self.assertTrue(list(validator.iter_errors(unknown)))
+        nested_unknown = copy.deepcopy(extended); nested_unknown["bindings"]["taskComponentCatalog"]["extra"] = True
+        self.assertTrue(list(validator.iter_errors(nested_unknown)))
+        bad_hash = copy.deepcopy(extended); bad_hash["bindings"]["taskComponentCatalog"]["sha256"] = "invalid"
+        self.assertTrue(list(validator.iter_errors(bad_hash)))
+
+    def test_task_catalog_does_not_disable_layout_failures(self) -> None:
+        layout, path, _ = self.task_catalog_fixture()
+        spec = load_json(layout); next(n for n in spec["nodes"] if n["id"] == "title")["properties"]["text"] = "one\ntwo"
+        write_json(layout, spec)
+        pack = build_rule_card_pack(layout, task_catalog_path=path)
+        self.assertEqual("fallback-full", pack["routingMode"])
+        self.assertFalse(pack["machineValidation"]["layoutValid"])
+        self.assertGreaterEqual(pack["machineValidation"]["layoutErrorCount"], 2)
+
+    def test_task_catalog_cli_route_validate_and_old_authority_rejection(self) -> None:
+        layout, catalog_path, _ = self.task_catalog_fixture()
+        pack = self.temp_dir / "cli-pack.json"
+        script = SCRIPT_DIR / "route_rule_cards.py"
+        env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1", PYTHONIOENCODING="utf-8")
+        commands = [
+            ["route", str(layout), "--stage", "build-planning", "--catalog", str(catalog_path), "--output", str(pack)],
+            ["validate", str(pack), str(layout), "--stage", "build-planning", "--catalog", str(catalog_path)],
+        ]
+        for arguments in commands:
+            result = subprocess.run([sys.executable, "-B", str(script), *arguments], capture_output=True, text=True, encoding="utf-8", env=env)
+            self.assertEqual(0, result.returncode, result.stderr + result.stdout)
+            self.assertTrue(json.loads(result.stdout)["valid"])
+        self.assertTrue(load_json(pack)["machineValidation"]["layoutValid"])
+        for flag in ("--rules", "--routing", "--references-dir", "--catalog-path"):
+            result = subprocess.run([sys.executable, "-B", str(script), "route", str(layout), "--stage", "build-planning", flag, str(catalog_path)], capture_output=True, text=True, encoding="utf-8", env=env)
+            self.assertEqual(2, result.returncode)
+        for key in ("rules_path", "routing_path", "references_dir", "catalog_path"):
+            with self.subTest(old_authority=key):
+                with self.assertRaises(TypeError):
+                    build_rule_card_pack(layout, task_catalog_path=catalog_path, **{key: catalog_path})
+                with self.assertRaises(TypeError):
+                    validate_rule_card_pack(pack, layout, task_catalog_path=catalog_path, **{key: catalog_path})
+
     def test_missing_routing_config_falls_back(self) -> None:
         pack = _build_rule_card_pack_for_test(
             EXAMPLE_LAYOUT,
@@ -341,7 +529,7 @@ class RuleCardRoutingTests(unittest.TestCase):
         self.assertIn("layout-profile-unknown", pack["fallbackReasons"])
         legacy = select_rules(layout, load_json(DEFAULT_RULES))
         self.assertEqual([rule["id"] for rule in legacy], pack["selectedRuleIds"])
-        self.assertEqual(56, len(pack["fallbackAuthorityRuleIds"]))
+        self.assertEqual(58, len(pack["fallbackAuthorityRuleIds"]))
 
     def test_unknown_layout_schema_version_falls_back(self) -> None:
         layout = load_json(EXAMPLE_LAYOUT)
@@ -354,7 +542,7 @@ class RuleCardRoutingTests(unittest.TestCase):
         self.assertIn("layout-schema-version-unknown", pack["fallbackReasons"])
         legacy = select_rules(layout, load_json(DEFAULT_RULES))
         self.assertEqual([rule["id"] for rule in legacy], pack["selectedRuleIds"])
-        self.assertEqual(56, len(pack["fallbackAuthorityRuleIds"]))
+        self.assertEqual(58, len(pack["fallbackAuthorityRuleIds"]))
         source_types = [card["sourceType"] for card in pack["fallbackAuthorityRuleCards"]]
         self.assertEqual(
             source_types,
