@@ -5,6 +5,8 @@ description: Receive or prepare a versioned NextGame design-contract/1 from expl
 
 # Receive NextGame Design
 
+UI tasks do not authorize game-source or Blueprint business-logic changes. Read [the business-code boundary](../build-nextgame-umg/references/visual-presentation-rules.md#business-code-boundary) before planning or mutation; hand runtime-code dependencies and code conflicts to programmers.
+
 Apply [production fidelity checks](../build-nextgame-umg/references/production-fidelity-checks.md) to specific gaps and downstream handoff coverage. Preserve locked values; do not use these checks to reinterpret an accepted structured design.
 
 Design decides intent once; the receiver checks and translates it. Read [the contract workflow](references/design-contract-workflow.md) for commands and provenance. This skill does not connect to Unreal or create assets.

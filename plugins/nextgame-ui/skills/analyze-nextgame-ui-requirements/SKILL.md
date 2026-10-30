@@ -5,6 +5,8 @@ description: Analyze NextGame UI reference images, written requirements, project
 
 # Analyze NextGame UI Requirements
 
+UI tasks do not authorize game-source or Blueprint business-logic changes. Read [the business-code boundary](../build-nextgame-umg/references/visual-presentation-rules.md#business-code-boundary) before planning or mutation; hand runtime-code dependencies and code conflicts to programmers.
+
 During analysis, apply the text-capacity, resource-identity and geometry-responsibility sections of [production fidelity checks](../build-nextgame-umg/references/production-fidelity-checks.md). Preserve uncertainties and distinguish reference framing from device safety; these review duties do not authorize Unreal mutation.
 
 Turn raw UI evidence into one reviewable requirement contract before invoking `$build-nextgame-umg`. Keep requirement meaning, build instructions, and actual Unreal results in separate artifacts.

@@ -2,6 +2,28 @@
 
 These production rules generalize reviewed layout and art corrections. They apply to new analysis, build planning, art refinement and final verification. Exact resources, dimensions, slice cuts and text effects remain task decisions. They do not authorize a design change or establish acceptance of a finished Widget.
 
+## Business-code boundary
+
+Execution projection of `NG-UI-GOV-017@1.0.0`, directly required by the user on 2026-10-27. This instruction applies to analysis, design, art, UMG, verification, documentation and related version-control work.
+
+### UI work does not authorize business code
+
+Game business code belongs to the project's programmers. Read source only to establish existing callers, bindings and dependencies. Do not add, edit, delete, overwrite, merge or commit game Lua/C++/C# or other runtime source, Blueprint EventGraph/function graphs, business state machines, event bindings, data protocols or runtime configuration. Code that only changes brushes, colors, quality frames, visibility, button selection, empty-slot markers, timers or Tooltip placement is still protected runtime code.
+
+Perform authorized UI resource import and static WidgetTree/layout/appearance updates through the existing supported build/art path. Preserve program variables, names, references, collection EntryClass, events and runtime behavior. Prepare visual resources and static state branches for programmers to connect; never repair runtime behavior or patch a few source lines to achieve visual fidelity.
+
+Requests to finish, fix, integrate into the engine, continue, or commit UI work do not grant code authority. A separate direct user request naming a code target or exact rollback version can authorize that particular code task; it does not broaden UI-tool permissions or establish knowledge of the whole program framework.
+
+Tool-source maintenance is allowed when that tool maintenance is explicitly requested. Isolated task automation may orchestrate authorized UI asset operations, but must not write or hot-load game source, inject runtime logic, or create Blueprint logic to bypass this boundary.
+
+### Handoff and version control
+
+For a code dependency, record the file/Widget, actual and intended behavior, triggering states, relevant resources/variables and remaining unknowns for the programmer. Continue independent UI work and report the code-dependent result as incomplete until programmers integrate it.
+
+Use an explicit UI asset/document allowlist and inspect the final version-control diff. Exclude business source from UI commits. When a code file is out of date or conflicted, do not auto-merge, select mine/theirs, or mark the working version resolved. Preserve evidence and leave that file for the programmer unless the user separately specified the exact code operation. Do not automatically revert historical code while adopting this rule.
+
+This is an Agent execution boundary and routed instruction, not a claim that a filesystem or Editor sandbox enforces it.
+
 ## Stage ownership
 
 | Existing stage | Required decision or evidence |

@@ -5,6 +5,8 @@ description: Refine existing NextGame UMG from high-fidelity artwork and cut res
 
 # Refine NextGame UI Art
 
+UI tasks do not authorize game-source or Blueprint business-logic changes. Read [the business-code boundary](../build-nextgame-umg/references/visual-presentation-rules.md#business-code-boundary) before planning or mutation; hand runtime-code dependencies and code conflicts to programmers.
+
 Before local art decisions or application, apply [production fidelity checks](../build-nextgame-umg/references/production-fidelity-checks.md): verify resource identity and complete-frame responsibilities, trace each accepted native property and retain unsupported or unrendered items as outstanding.
 
 Use one optional stage under the original primary coordinator. `developer-only` keeps the existing build workflow; `formal-art` follows a development baseline; `upgrade-art` and `local-art` start from current existing UMG. Keep the same request identity and accepted design. Missing art resources or unavailable verification remain unfinished items when formal art was requested.

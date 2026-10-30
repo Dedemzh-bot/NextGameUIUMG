@@ -5,6 +5,8 @@ description: Validate the accepted NextGame UIRequirementSpec, completed and ver
 
 # Document NextGame UMG
 
+UI tasks do not authorize game-source or Blueprint business-logic changes. Read [the business-code boundary](../build-nextgame-umg/references/visual-presentation-rules.md#business-code-boundary) before planning or mutation; hand runtime-code dependencies and code conflicts to programmers.
+
 Treat documentation as a gated stage after requirement acceptance, verified UMG construction, concrete build-result presentation, and independent post-result acceptance. The default acceptance 0.1 route requires a later direct user confirmation. Only the separately validated [one-request delegated result acceptance 0.2](references/delegated-result-acceptance.md) route permits the primary coordinator's actual post-result review under the original explicit user grant. Neither route lets the documentation Agent create or repair authorization. Read [program-handoff.md](references/program-handoff.md) before preparing artifacts, and read [program-document-template.md](references/program-document-template.md) before creating the DOCX.
 
 The packaged `artifact-template-nextgame-umg` is the canonical presentation template aligned with `program-document-content.json` 0.4. It does not supply business facts or authorize this stage: validated handoff/content contracts remain content authority, while the template contract and neutral DOCX control structure and visual presentation.

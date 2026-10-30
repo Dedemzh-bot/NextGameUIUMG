@@ -4,6 +4,14 @@ NextGameUIUMG 把 NextGame 的设计接收、UMG 需求分析、构建验证、�
 
 现有设计决定通过结构化合同直接采用；缺少设计决定的图文输入经过独立分析。两种来源共用完整校验、Accepted Build View、UMG 构建和实际验收。运行时只负责派发和等待；通过校验的文件才是权威结果。
 
+## 2026-10-30 反推原型与职责边界更新
+
+同步插件版本 [`0.1.0+codex.20261030.reverse1`](plugins/nextgame-ui/.codex-plugin/plugin.json)。新增 [`reverse-nextgame-umg`](plugins/nextgame-ui/skills/reverse-nextgame-umg/SKILL.md)，将现有 UMG 的结构和只读行为证据整理为功能状态清单、可编辑原型与多页版本档案，重点检查隐藏控件、正常可见状态及关联内容是否遗漏。
+
+反推脚本提供清单准备、覆盖检查和批量汇总；Unreal 采集、Figma 绘制与实际画面核验仍由宿主工具和协调者执行，不是无人值守转换器。普通系统页布局参数引用 NextGameUIDesign 的版本化原型配置，插件不重复维护尺寸值。
+
+UI 工具的职责边界已同步到各入口：可处理授权的设计、美术资源和 UMG 静态制作，不修改游戏源码或 Blueprint 业务逻辑；运行时接入缺口交程序处理。源码发布不替代实际安装、页面验收或引擎验证。
+
 ## 2026-10-17 源码同步
 
 美术风格、参数、创作请求和切图交接统一从 [NextGameUIArt](https://github.com/Dedemzh-bot/NextGameUIArt) 进入；本仓库继续负责 UMG 制作、美术修整、实际读回和程序交接文档。

@@ -1,0 +1,4 @@
+interface:
+  display_name: "NextGame UMG反推原型"
+  short_description: "从现有UMG整理可编辑原型，核对隐藏控件与状态覆盖，留存多页设计版本"
+  default_prompt: "使用 $reverse-nextgame-umg 将现有UMG反推为Figma原型，先检查条件隐藏控件和状态覆盖，再优化布局并留档。"

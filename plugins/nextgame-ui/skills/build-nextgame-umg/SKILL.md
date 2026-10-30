@@ -5,6 +5,10 @@ description: Build or update Unreal Engine UMG Widget Blueprints from an accepte
 
 # Build NextGame UMG
 
+For an existing Demo/UMG-to-Figma reverse prototype request, use sibling [reverse-nextgame-umg](../reverse-nextgame-umg/SKILL.md). That route reads Unreal and associated behavior but does not mutate Unreal assets; its coverage ledger is not a production Requirement or build acceptance.
+
+UI tasks do not authorize game-source or Blueprint business-logic changes. Read [the business-code boundary](references/visual-presentation-rules.md#business-code-boundary) before planning or mutation; hand runtime-code dependencies and code conflicts to programmers.
+
 Before planning, execution or verification, read the applicable [production fidelity checks](references/production-fidelity-checks.md). Existing rule packs route the matching duties; keep accepted-property coverage and missing visual evidence explicit.
 
 Create prototype or explicitly authorized formal UMG assets. Treat image interpretation, component selection, layout planning, Editor mutation, and validation as separate stages so project-specific components and standards can evolve without changing the workflow.

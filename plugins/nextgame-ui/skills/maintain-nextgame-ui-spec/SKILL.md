@@ -5,6 +5,8 @@ description: Add, revise, version or migrate NextGame UI design and UMG producti
 
 # Maintain NextGame UI Specifications
 
+UI tasks do not authorize game-source or Blueprint business-logic changes. Read [the business-code boundary](../build-nextgame-umg/references/visual-presentation-rules.md#business-code-boundary) before planning or mutation; hand runtime-code dependencies and code conflicts to programmers.
+
 The optional [existing asset update route](../build-nextgame-umg/references/existing-asset-property-update.md)
 uses an independently closed Layout 0.3 and explicit Bundle capability.
 Maintain its baseline/accepted-target checks and regression tests without

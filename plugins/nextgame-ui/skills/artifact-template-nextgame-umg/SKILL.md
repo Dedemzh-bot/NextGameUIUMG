@@ -5,6 +5,8 @@ description: Create a document using the NextGame UMG 界面说明 retained refe
 
 # NextGame UMG 界面说明
 
+UI tasks do not authorize game-source or Blueprint business-logic changes. Read [the business-code boundary](../build-nextgame-umg/references/visual-presentation-rules.md#business-code-boundary) before planning or mutation; hand runtime-code dependencies and code conflicts to programmers.
+
 Create a document from the retained neutral reference without treating its placeholders as business data.
 
 ## Positioning and authority
