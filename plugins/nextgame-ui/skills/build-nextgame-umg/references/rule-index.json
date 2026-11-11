@@ -1,5 +1,5 @@
 {
-  "version": "0.27",
+  "version": "0.29",
   "rules": [
     {"id": "prototype.asset-path", "severity": "error", "when": {"mode": "prototype"}, "summary": "Generate prototype assets only below /Game/UI/AIPrototype.", "validator": "asset_folder"},
     {"id": "prototype.asset-name", "severity": "error", "when": {"mode": "prototype"}, "summary": "Use umg_ai_* for prototype screens; explicit child-widget assets may use uw_ai_* for an analyzed local Designer mode. Legacy umg_ai_* children retain FillScreen.", "validator": "asset_name"},
@@ -58,6 +58,10 @@
     {"id": "fight.integration-shell", "severity": "error", "sourceType": "explicit", "when": {"profile.system": "fight", "profile.assetKind": "screen", "profile.subsystem": null}, "summary": "Keep umg_fight as an integration/layout shell; functional features must be independent child Widget Blueprints, with layout-only panels allowed.", "reference": "fight-ui.md"},
     {"id": "fight.child-module", "severity": "error", "sourceType": "explicit", "when": {"profile.system": "fight", "profile.assetKind": "child-widget"}, "summary": "Create fight feature modules under /Game/UI/UMG/Fight/Widgets as uw_fight_* assets and integrate required top-level modules into umg_fight.", "reference": "fight-ui.md"},
     {"id": "fight.magazine-grid", "severity": "error", "sourceType": "explicit", "when": {"profile.system": "fight", "profile.function": "magazine"}, "summary": "Build the magazine as a four-column show-all LuaTileView with a width-only SizeBox constraint and Existing, Incoming, and Empty entry states.", "reference": "fight-magazine-grid.md"},
-    {"id": "fight.reference-layout", "severity": "info", "sourceType": "observed", "when": {"profile.system": "fight"}, "summary": "Use the observed umg_fight module tree and anchor distribution as reference evidence without copying offsets blindly.", "reference": "fight-ui.md"}
+    {"id": "fight.reference-layout", "severity": "info", "sourceType": "observed", "when": {"profile.system": "fight"}, "summary": "Use the observed umg_fight module tree and anchor distribution as reference evidence without copying offsets blindly.", "reference": "fight-ui.md"},
+    {"id": "structure.slot-composition", "severity": "error", "sourceType": "explicit", "when": {}, "summary": "Recognize native Slots, inherited NamedSlot bindings, nested instances and runtime providers; explicitly decide and verify how common shells and replaceable content compose without flattening or duplicating them.", "reference": "shared-widget-reuse.md"},
+    {"id": "layout.whole-component-scale", "severity": "error", "sourceType": "explicit", "when": {}, "summary": "For proportional resizing, audit the complete composed descendant sizing chain and compare actual reference/compressed views; a ScaleBox or stretched host alone does not prove correct child proportions.", "reference": "visual-presentation-rules.md"},
+    {"id": "naming.component-creation-revision-free", "severity": "error", "sourceType": "explicit", "when": {}, "summary": "Reject iteration-version tokens such as R14 in new WidgetTree component names; preserve existing program-bound names and keep revision identity in task metadata.", "reference": "widget-component-naming.md"},
+    {"id": "existing-update.supplemental-review", "severity": "info", "sourceType": "explicit", "when": {"version": "0.4", "capability": "existing-asset-layout-update/2"}, "summary": "Optionally explain Layout 0.4 ownership declarations, scoped reference evidence and update conflicts with the offline supplemental review. Every result keeps executionAllowed=false; this diagnostic adds no production execution permission or new-build duty.", "reference": "existing-update-review.md"}
   ]
 }

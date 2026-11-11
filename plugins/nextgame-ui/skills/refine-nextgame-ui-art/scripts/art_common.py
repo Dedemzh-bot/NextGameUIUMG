@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import importlib.util
 import json
 import math
 import os
@@ -21,6 +22,10 @@ from jsonschema import Draft202012Validator
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
 PLUGIN_ROOT = SKILL_ROOT.parents[1]
+_naming_spec = importlib.util.spec_from_file_location('_component_creation_naming',
+    PLUGIN_ROOT / 'skills/build-nextgame-umg/scripts/component_naming.py')
+_naming_module = importlib.util.module_from_spec(_naming_spec)
+_naming_spec.loader.exec_module(_naming_module)
 SCHEMA = SKILL_ROOT / 'assets' / 'art-contract.schema.json'
 ART_GOALS = ('formal-art', 'upgrade-art', 'local-art')
 WIDGET_PROPERTIES = frozenset(('brush', 'colorAndOpacity', 'renderOpacity', 'font', 'shadowOffset',
@@ -235,6 +240,10 @@ def check_operation(operation):
     elif kind == 'add-widget':
         node = operation['after']
         validate(node, 'widget')
+        revision_token = _naming_module.iteration_token(node['widgetName'])
+        if revision_token is not None:
+            raise ArtError('operation.name_iteration',
+                f'New WidgetTree names cannot contain iteration token {revision_token!r}; keep revisions in task metadata.')
         if node['widgetName'] != operation['widgetName'] or node['isVariable'] or node['classPath'] not in STATIC_CLASSES:
             raise ArtError('operation.static_only', 'New art nodes must be supported static visual nodes.')
         if node['classPath'].endswith('.GameImage') and not node['widgetName'].startswith('Img'):
@@ -341,7 +350,7 @@ def validate_authority(request, request_path):
     return paths
 
 
-def validate_art_stage(stage, *, bundle_path, requirement, requirement_path, readback=None, final_bundle=None):
+def validate_art_stage(stage, *, bundle_path, requirement, requirement_path, readback=None, final_bundle=None, _candidate=None):
     """Bundle/document gate. No recursive Bundle validation and no model judgments."""
     errors = []
     try:
@@ -351,11 +360,18 @@ def validate_art_stage(stage, *, bundle_path, requirement, requirement_path, rea
         validate(stage, 'stage')
         request_path = bound_path(stage['request'], bundle_path)
         plan_path = bound_path(stage['plan'], bundle_path)
-        verification_path = bound_path(stage['verification'], bundle_path)
+        if _candidate is None:
+            verification_path = bound_path(stage['verification'], bundle_path)
+            verification = validate(load_json(verification_path), 'verification')
+        else:
+            verification_path, verification = _candidate
+            verification_path = Path(verification_path).resolve()
+            validate(verification, 'verification')
+            if verification['version'] != 2 or stage['verification'] != _verification_candidate_binding(verification, verification_path):
+                raise ArtError('art.candidate', 'Only the exact new verification/2 document may use pre-emission validation.')
         request = validate(load_json(request_path), 'request')
         validate_preview_contract(request,request_path)
         plan = validate(load_json(plan_path), 'plan')
-        verification = validate(load_json(verification_path), 'verification')
         if {'development-baseline/1', 'development-baseline/2'} & set(request.get('capabilities', [])):
             from art_baseline import validate_baseline_closure
             validate_baseline_closure(request, request_path, final_bundle)
@@ -389,7 +405,20 @@ def validate_art_stage(stage, *, bundle_path, requirement, requirement_path, rea
             raise ArtError('art.actual_state', 'Actual art readback does not match the approved operation result.')
         from art_presentation import validate_presentation
         decisions_path = bound_path(plan['decisions'], plan_path)
-        presentation = validate_presentation(request, load_json(decisions_path), snapshot, request_path, decisions_path, phase='actual')
+        from art_geometry import verification_geometry
+        geometry_captures = []
+        for comparison in verification['comparisons']:
+            comparison_path = bound_path(comparison, verification_path)
+            comparison_record = load_json(comparison_path)
+            geometry_captures.append({'referenceId': comparison_record['referenceId'],
+                'capture': binding(bound_path(comparison_record['capture'], comparison_path))})
+        geometry_adoption = bound_path(verification['geometryAdoption'], verification_path) if verification['version'] == 2 else None
+        measured = verification_geometry(plan_path, bound_path(verification['execution'], verification_path),
+                                         geometry_captures, verification_path, adoption_path=geometry_adoption)
+        if verification['version'] == 2 and (measured is None or verification['geometryEvidence'] != [measured['geometryEvidence']]):
+            raise ArtError('art.geometry', 'Verification/2 must bind the exact independently revalidated adoption and sidecar.')
+        presentation = validate_presentation(request, load_json(decisions_path), snapshot, request_path, decisions_path,
+                                            phase='actual', measured_geometry=measured)
         if 'presentation-review/1' in request.get('capabilities', []):
             presentation_ids = {c['id'] for c in presentation['checks']}
             expected_ids = presentation_ids | {'capture:' + r['id'] for r in request['references']}
@@ -414,6 +443,8 @@ def validate_art_stage(stage, *, bundle_path, requirement, requirement_path, rea
         validate(review, 'visualReview')
         if review['status'] != 'passed' or review['snapshotSha256'] != sha256(snapshot_path) or review['unresolved']:
             raise ArtError('art.visual_review', 'Visual review is missing or stale.')
+        if measured and any(aware_time(case['capturedAt']) > aware_time(review['reviewedAt']) for case in measured['cases']):
+            raise ArtError('art.geometry_time', 'Both actual same-instance captures must precede visual inspection.')
         reviewer = review['reviewer']
         if (reviewer['actorType'], reviewer['confirmationSource']) not in {
             ('user', 'direct-user-message'), ('agent', 'visual-inspection')}:
@@ -457,6 +488,8 @@ def validate_art_stage(stage, *, bundle_path, requirement, requirement_path, rea
         if {read_bound(c, verification_path).get('referenceId') for c in verification['comparisons']} != {r['id'] for r in request['references']}:
             raise ArtError('art.preview_coverage', 'Every required state/viewport reference must be compared.')
         expected_regions = {r['id'] + ':' + region['id'] for r in request['references'] for region in r['regions']}
+        if measured:
+            expected_regions |= measured['inspectedRegions']
         if set(review['inspectedRegions']) != expected_regions:
             raise ArtError('art.region_coverage', 'Visual inspection must cover every required region.')
         if not verification['checks'] or any(c['status'] != 'passed' for c in verification['checks']):
@@ -485,3 +518,17 @@ def validate_art_stage(stage, *, bundle_path, requirement, requirement_path, rea
     except (ArtError, OSError, ValueError, KeyError, TypeError) as exc:
         errors.append({'code': getattr(exc, 'code', 'art.invalid'), 'path': '$.artStage', 'message': str(exc)})
     return errors
+
+
+def _verification_candidate_binding(verification, output_path):
+    data = (json.dumps(verification, ensure_ascii=False, indent=2, allow_nan=False) + '\n').encode('utf-8')
+    return {'path': str(Path(output_path).resolve()), 'sha256': hashlib.sha256(data).hexdigest()}
+
+
+def validate_art_verification_candidate(verification, output_path, request_path, plan_path, requirement_path):
+    """Run the same new-v2 stage gate before emitting any passed receipt bytes."""
+    request = load_json(request_path)
+    stage = {'goal': request['goal'], 'request': binding(request_path), 'plan': binding(plan_path),
+             'verification': _verification_candidate_binding(verification, output_path)}
+    return validate_art_stage(stage, bundle_path=output_path, requirement=load_json(requirement_path),
+        requirement_path=requirement_path, _candidate=(output_path, verification))

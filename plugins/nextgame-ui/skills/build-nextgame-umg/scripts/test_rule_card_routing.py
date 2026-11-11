@@ -529,7 +529,14 @@ class RuleCardRoutingTests(unittest.TestCase):
         self.assertIn("layout-profile-unknown", pack["fallbackReasons"])
         legacy = select_rules(layout, load_json(DEFAULT_RULES))
         self.assertEqual([rule["id"] for rule in legacy], pack["selectedRuleIds"])
-        self.assertEqual(58, len(pack["fallbackAuthorityRuleIds"]))
+        index_rules = load_json(DEFAULT_RULES)["rules"]
+        indexed_rule_ids = [rule["id"] for rule in index_rules]
+        self.assertEqual(len(index_rules), len(pack["fallbackAuthorityRuleIds"]))
+        self.assertCountEqual(indexed_rule_ids, pack["fallbackAuthorityRuleIds"])
+        self.assertCountEqual(
+            indexed_rule_ids,
+            [card["id"] for card in pack["fallbackAuthorityRuleCards"]],
+        )
 
     def test_unknown_layout_schema_version_falls_back(self) -> None:
         layout = load_json(EXAMPLE_LAYOUT)
@@ -542,7 +549,14 @@ class RuleCardRoutingTests(unittest.TestCase):
         self.assertIn("layout-schema-version-unknown", pack["fallbackReasons"])
         legacy = select_rules(layout, load_json(DEFAULT_RULES))
         self.assertEqual([rule["id"] for rule in legacy], pack["selectedRuleIds"])
-        self.assertEqual(58, len(pack["fallbackAuthorityRuleIds"]))
+        index_rules = load_json(DEFAULT_RULES)["rules"]
+        indexed_rule_ids = [rule["id"] for rule in index_rules]
+        self.assertEqual(len(index_rules), len(pack["fallbackAuthorityRuleIds"]))
+        self.assertCountEqual(indexed_rule_ids, pack["fallbackAuthorityRuleIds"])
+        self.assertCountEqual(
+            indexed_rule_ids,
+            [card["id"] for card in pack["fallbackAuthorityRuleCards"]],
+        )
         source_types = [card["sourceType"] for card in pack["fallbackAuthorityRuleCards"]]
         self.assertEqual(
             source_types,
@@ -551,7 +565,6 @@ class RuleCardRoutingTests(unittest.TestCase):
                 key={"explicit": 0, "observed": 1, "baseline": 2}.__getitem__,
             ),
         )
-        index_rules = load_json(DEFAULT_RULES)["rules"]
         for source_type in ("explicit", "observed", "baseline"):
             expected_within_group = [
                 rule["id"]

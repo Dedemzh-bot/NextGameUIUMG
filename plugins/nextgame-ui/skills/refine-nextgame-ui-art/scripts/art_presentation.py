@@ -203,7 +203,7 @@ def _same_family_value(left, right):
     return len(left) == len(right) and all(_close(a, b) for a, b in zip(left, right))
 
 
-def _image(item, node, nodes, catalog, owner, checks, phase, capabilities=()):
+def _image(item, node, nodes, catalog, owner, checks, phase, capabilities=(), measured_geometry=None):
     key = (item['assetPath'], item['widgetName'])
     identity = key[0] + ':' + key[1]
     props = node['properties']
@@ -321,15 +321,21 @@ def _image(item, node, nodes, catalog, owner, checks, phase, capabilities=()):
            else 'Source identity, full frame, alpha bounds and observed Brush configuration agree; this is not measured geometry.')
     if mode in ('preserve', 'nine-slice'):
         pending = phase == 'actual' or target is None or transform is None
+        measured = (phase == 'actual' and mode == 'preserve' and measured_geometry is not None
+                    and measured_geometry.get('capability') == 'measured-presentation-geometry/1'
+                    and (item['assetPath'], item['widgetName']) in measured_geometry['keys'])
+        if measured:
+            pending = False
         _check(checks, identity + ':geometry', 'pending' if pending else 'passed',
-               'Actual Widget geometry is unavailable; configuration arithmetic cannot prove rendered dimensions.' if phase == 'actual'
+               'Actual native VM paint corners in both same-instance captures match accepted complete-frame geometry; visual review remains separate.' if measured
+               else 'Actual Widget geometry is unavailable; configuration arithmetic cannot prove rendered dimensions.' if phase == 'actual'
                else ('Static allocation/transform proof is incomplete; actual layout evidence is required.' if pending
                      else 'Narrow static allocation/transform arithmetic agrees; no actual geometry is claimed.'))
     return {'brush': size, 'frame': frame, 'slot': target, 'mode': mode,
             **({'evaluationSize': basis} if is_material else {})}
 
 
-def validate_presentation(request, decisions, snapshot, request_path, decisions_path, *, phase='planned'):
+def validate_presentation(request, decisions, snapshot, request_path, decisions_path, *, phase='planned', measured_geometry=None):
     """Return deterministic checks/issues, or reject a concrete inconsistency.
 
     An opt-in plan can remain executable with pending *actual geometry*, but
@@ -378,7 +384,8 @@ def validate_presentation(request, decisions, snapshot, request_path, decisions_
             if group == 'images':
                 if item['resolution'] == 'confirmed' and not item.get('confirmation'):
                     _fail('confirmation', 'Confirmed image decisions require appearance confirmation, not method approval.')
-                image_values[key] = _image(item, nodes[key], nodes, catalog, decisions_path, checks, phase, request.get('capabilities', ()))
+                image_values[key] = _image(item, nodes[key], nodes, catalog, decisions_path, checks, phase,
+                                           request.get('capabilities', ()), measured_geometry)
                 continue
             is_delegated = item['resolution'] == 'delegated'
             if is_delegated:

@@ -4,13 +4,17 @@
 from __future__ import annotations
 
 import argparse
+import copy
+import hashlib
 import importlib.util
 import json
+import math
 import sys
 from pathlib import Path
 from typing import Any
 
 from _contract_common import ASSETS_ROOT, issue, load_json, resolve_contract_path, result, sha256_file, validate_schema_instance
+from _inherited_provider_coverage import _inherited_provider_coverage
 from accepted_build_view import RequirementSnapshot, validate_accepted_build_view as validate_accepted_build_view_contract
 from _bundle_capabilities import CONTENT_HEIGHT, CONTENT_HEIGHT_V2, SHARED_STATES, content_height_capability, content_proof_capability_errors, enabled, initial_refs, planned_size_proofs, validate_content_height, validate_shared_states
 from validate_requirement_spec import (
@@ -46,6 +50,66 @@ AUTHORITATIVE_SHARED_REGISTRY = SHARED_REGISTRY.resolve()
 AUTHORITATIVE_SHARED_REGISTRY_SCHEMA = SHARED_REGISTRY_SCHEMA.resolve()
 RECT_TOLERANCE = 0.001
 EXISTING_ASSET_UPDATE = "existing-asset-property-update/1"
+EXISTING_LAYOUT_UPDATE = "existing-asset-layout-update/2"
+
+
+def _final_native_slots_v2(layout: dict, spec_path: Path) -> dict[str, dict]:
+    """Resolve target Slots after the full Layout 0.4 local gate has passed.
+
+    Baseline is evidence, nativeSlot is a patch, while additions/reparents carry
+    complete new Slots. No Requirement intent participates in this derivation.
+    """
+    from existing_asset_update_v2 import _baseline, legacy
+    _, _, observed = _baseline(layout, spec_path)
+    reparents = {record["nodeId"]: record for record in layout["reparents"]}
+    slots = {}
+    for node in layout["nodes"]:
+        move = reparents.get(node["id"])
+        if move is not None:
+            slots[node["id"]] = {"classPath": move["afterSlotClassPath"], "properties": copy.deepcopy(move["nativeSlot"])}
+            continue
+        slot = copy.deepcopy(observed[node["name"]]["slot"])
+        for key, target in node["nativeSlot"].items():
+            before = slot["properties"].get(key)
+            slot["properties"][key] = legacy._merge_observed(before, target, key)
+        slots[node["id"]] = slot
+    for node in layout["additions"]:
+        slots[node["id"]] = {"classPath": node["slotClassPath"], "properties": copy.deepcopy(node["nativeSlot"])}
+    return slots
+
+
+def _native_slot_adaptation(slot: dict) -> dict[str, str]:
+    """Translate the parent Slot contract, never the child's image stretch mode."""
+    slot_class = slot.get("classPath")
+    properties = slot.get("properties", {})
+    if slot_class == "/Script/UMG.CanvasPanelSlot":
+        anchors = properties["layoutData"]["anchors"]
+        result = {}
+        for axis, field, labels in (("x", "horizontal", ("left", "center", "right")),
+                                    ("y", "vertical", ("top", "center", "bottom"))):
+            low, high = anchors["minimum"][axis], anchors["maximum"][axis]
+            if any(isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) for v in (low, high)):
+                raise ValueError("Canvas anchors must be finite numbers")
+            if not 0 <= low <= high <= 1:
+                raise ValueError("Canvas anchor range has no supported responsive interpretation")
+            if low < high:
+                result[field] = "stretch"
+            elif low in (0, 0.5, 1):
+                result[field] = labels[(0, 0.5, 1).index(low)]
+            else:
+                raise ValueError("Fixed Canvas anchor is not an explicit edge/center responsive policy")
+        return result
+    # These native Slots explicitly expose both alignment axes. ScaleBox's
+    # ScaleToFit/Both remains a separate child-scaling contract: Fill allocates
+    # the Slot, it does not assert a non-uniform image stretch.
+    alignment_slots = {"/Script/UMG." + name for name in (
+        "OverlaySlot", "HorizontalBoxSlot", "VerticalBoxSlot", "ButtonSlot", "SizeBoxSlot", "ScaleBoxSlot")}
+    if slot_class not in alignment_slots:
+        raise ValueError(f"Unsupported native responsive Slot class: {slot_class!r}")
+    horizontal = {"HAlign_Left": "left", "HAlign_Center": "center", "HAlign_Right": "right", "HAlign_Fill": "stretch"}
+    vertical = {"VAlign_Top": "top", "VAlign_Center": "center", "VAlign_Bottom": "bottom", "VAlign_Fill": "stretch"}
+    return {"horizontal": horizontal[properties["horizontalAlignment"]],
+            "vertical": vertical[properties["verticalAlignment"]]}
 
 
 def validate_bundle_art_stage(
@@ -623,6 +687,130 @@ def _positive_pair(value: Any) -> bool:
             for item in value
         )
     )
+
+
+def _scale_reference_basis(node: dict[str, Any], records: dict[str, dict[str, Any]]) -> list[float] | None:
+    """Return an explicit unscaled size, never a planned rect as Desired Size."""
+    constraints = node.get("sizeBoxConstraints", {})
+    if node.get("role") == "container.size" and isinstance(constraints, dict):
+        size = [constraints.get("widthOverride"), constraints.get("heightOverride")]
+        if _positive_pair(size):
+            return size
+    measured = node.get("contentDrivenSize", {})
+    if (isinstance(measured, dict) and measured.get("verified") is True
+            and measured.get("evidenceId") and _positive_pair(measured.get("measuredDesiredSize"))):
+        return measured["measuredDesiredSize"]
+    if node.get("role") == "visual.image":
+        size = node.get("properties", {}).get("brushImageSize")
+        if _positive_pair(size):
+            return size
+    # A Canvas can establish its own desired extent without an extra SizeBox,
+    # but only fixed origin-anchored, non-auto-sized children prove this here.
+    if node.get("role") in {"container.canvas", "screen.root"}:
+        children = [child for child in records.values() if child.get("parent") == node.get("id")
+                    and child.get("properties", {}).get("visibility") != "Collapsed"]
+        extents = []
+        for child in children:
+            slot = child.get("slotLayout", {})
+            anchors = slot.get("anchors", {})
+            offsets = slot.get("offsets", {})
+            if (anchors.get("minimum") != [0, 0] or anchors.get("maximum") != [0, 0]
+                    or slot.get("alignment") != [0, 0] or slot.get("autoSize") is not False):
+                return None
+            values = [offsets.get(key) for key in ("left", "top", "right", "bottom")]
+            if (not all(isinstance(value, (float, int)) and not isinstance(value, bool)
+                        and math.isfinite(value) for value in values)
+                    or min(values[:2]) < 0 or min(values[2:]) <= 0):
+                return None
+            extents.append([values[0] + values[2], values[1] + values[3]])
+        if extents:
+            return [max(size[axis] for size in extents) for axis in (0, 1)]
+    return None
+
+
+def _validate_uniform_child_scale(
+    source_id: str, source_records: list[dict[str, Any]], records: dict[str, dict[str, Any]],
+    reference_size: Any, host_size: Any, bundle: dict[str, Any], path: str,
+    errors: list[dict[str, str]], warnings: list[dict[str, str]],
+) -> None:
+    """Check the complete local scaling chain; pixels and injected internals remain separate evidence."""
+    candidates = [node for node in source_records if node.get("role") == "container.scale"]
+    if not candidates:
+        errors.append(issue("operation.child_sizing_scale", path, "explicit-scalebox requires a cited container.scale node mapped to UMG ScaleBox, not a role whose name merely contains scale."))
+        return
+    if (not _positive_pair(reference_size) or not all(math.isfinite(x) for x in reference_size)
+            or not _positive_pair(host_size) or not all(math.isfinite(x) for x in host_size)):
+        errors.append(issue("operation.child_sizing_scale_basis", path, "Uniform scaling requires finite positive source referenceSize and placement hostSize."))
+        return
+
+    def within(node_id: str, ancestor_id: str) -> bool:
+        seen = set()
+        while node_id in records and node_id not in seen:
+            if node_id == ancestor_id:
+                return True
+            seen.add(node_id)
+            node_id = records[node_id].get("parent")
+        return False
+
+    # State visuals count even while Collapsed. Empty support containers outside
+    # the scaled branch are harmless; render/input/collection/custom-widget content is not.
+    content_ids = {node_id for node_id, node in records.items()
+                   if str(node.get("role", "")).startswith(("visual.", "text.", "progress.", "input.", "collection.", "widget."))}
+    for operation in bundle.get("crossAssetOperations", []):
+        if operation.get("targetAssetId") == source_id and operation.get("type") in {"child-widget-integration", "entry-widget-class"}:
+            content_ids.add(operation.get("targetLayoutNodeId"))
+    for relation in bundle.get("reuseRelations", []):
+        if relation.get("targetAssetId") == source_id and relation.get("type") == "widget-tree-instance":
+            anchor = _relation_parent_node_id(relation, {source_id: records})
+            content_ids.add(anchor)
+    common = [node for node in candidates if all(within(node_id, node["id"]) for node_id in content_ids)]
+    if not common:
+        errors.append(issue("operation.child_sizing_scale_coverage", path, "No cited ScaleBox is a common ancestor of all local visuals, text, states, controls, collections, custom widgets and declared nested-content hosts. Keep the complete scaling unit together; a local icon ScaleBox does not prove whole-child scaling."))
+        return
+    # If both an outer and inner ScaleBox were cited, use the outer common owner.
+    scale = next((node for node in common if not any(node["id"] != other["id"] and within(node["id"], other["id"]) for other in common)), common[0])
+    current, visited = scale, set()
+    while current.get("parent") in records and current["id"] not in visited:
+        visited.add(current["id"])
+        parent = records[current["parent"]]
+        if parent.get("role") in {"screen.root", "container.canvas"}:
+            slot = current.get("slotLayout", {})
+            if not (_has_slot_stretch(current, "horizontal") and _has_slot_stretch(current, "vertical")
+                    and slot.get("autoSize") is False and slot.get("alignment") == [0, 0]):
+                warnings.append(issue("operation.child_sizing_scale_allocation_review", path, "ScaleBox allocation is not proven to follow the caller through Canvas child " + current["id"] + ". Check fixed offsets, Auto Size and effective allocation at the compressed host size; a fixed outer ScaleBox can leave the content unscaled."))
+        elif parent.get("role") == "container.overlay":
+            slot = current.get("overlaySlot", {})
+            if not (slot.get("horizontalAlignment") == "Fill" and slot.get("verticalAlignment") == "Fill"
+                    and slot.get("padding", [0, 0, 0, 0]) == [0, 0, 0, 0]):
+                warnings.append(issue("operation.child_sizing_scale_allocation_review", path, "Overlay allocation into " + current["id"] + " is not full-fill with zero padding; inspect the actual available scaling rectangle."))
+        else:
+            warnings.append(issue("operation.child_sizing_scale_allocation_review", path, "The sizing effect of ancestor " + parent["id"] + " requires actual allocation evidence; this check does not infer flow, fixed-size, scroll or nested-scale allocation from a reference rect."))
+        current = parent
+    properties = scale.get("properties", {})
+    mode = properties.get("stretch")
+    if mode not in {"ScaleToFit", "ScaleToFitX", "ScaleToFitY", "ScaleToFill"}:
+        errors.append(issue("operation.child_sizing_scale_mode", path, "Whole-child proportional scaling requires an explicit uniform ScaleBox mode. Fill distorts, None does not scale, and safe-zone scaling does not prove host/reference fitting."))
+    ratios = [host_size[axis] / reference_size[axis] for axis in (0, 1)]
+    factor = {"ScaleToFit": min(ratios), "ScaleToFitX": ratios[0],
+              "ScaleToFitY": ratios[1], "ScaleToFill": max(ratios)}.get(mode, min(ratios))
+    direction = properties.get("stretchDirection")
+    if direction not in {"Both", "DownOnly", "UpOnly"} or (factor < 1 and direction == "UpOnly") or (factor > 1 and direction == "DownOnly"):
+        errors.append(issue("operation.child_sizing_scale_direction", path, "Explicit stretchDirection must allow the required host/reference scale; UpOnly cannot shrink and DownOnly cannot enlarge."))
+    if any(reference_size[axis] * factor > host_size[axis] + RECT_TOLERANCE for axis in (0, 1)):
+        warnings.append(issue("operation.child_sizing_scale_overflow_review", path, "The selected uniform mode predicts content larger than the host on at least one axis. Confirm accepted overflow/cropping and inspect the actual clipping chain; equal X/Y scaling alone does not prove the result fits."))
+    children = [node for node in records.values() if node.get("parent") == scale["id"]]
+    if len(children) != 1:
+        errors.append(issue("operation.child_sizing_scale_content", path, "The common ScaleBox must own exactly one complete content root."))
+        return
+    basis = _scale_reference_basis(children[0], records)
+    if (basis is None or not all(math.isfinite(x) for x in basis)
+            or any(abs(basis[axis] - reference_size[axis]) > RECT_TOLERANCE for axis in (0, 1))):
+        errors.append(issue("operation.child_sizing_scale_basis", path, "The unscaled content root must establish the source referenceSize through explicit two-axis SizeBox constraints, fixed origin-anchored Canvas extent, image brush size, or verified measured contentDrivenSize. A normalized rect or referenceSize alone is not a desired-size proof."))
+    nested = [node_id for node_id, node in records.items() if node_id != scale["id"]
+              and node.get("role") == "container.scale" and within(node_id, scale["id"])]
+    if nested:
+        warnings.append(issue("operation.child_sizing_nested_scale_review", path, "Nested ScaleBoxes retain independent sizing behavior; inspect their modes, desired sizes and ancestor-scale handling at the compressed size: " + ", ".join(sorted(nested))))
+    warnings.append(issue("operation.child_sizing_scale_visual_required", path, "This is local structural evidence only. Read back the final allocation/desired sizes and inspect baseline plus compressed renders, including text, icons, state overlays, clipping and runtime/NamedSlot content. No rendered-effect or injected-subtree pass is inferred."))
 
 
 def _root_direct_nodes(layout: dict[str, Any]) -> list[dict[str, Any]]:
@@ -1730,7 +1918,8 @@ def validate_build_bundle(
     requirement_link = bundle.get("requirement") if isinstance(bundle.get("requirement"), dict) else {}
     accepted_build_view_requested = accepted_build_view is not None or accepted_build_view_path is not None
     existing_update_enabled = EXISTING_ASSET_UPDATE in bundle.get("capabilities", [])
-    if existing_update_enabled:
+    existing_layout_update_enabled = EXISTING_LAYOUT_UPDATE in bundle.get("capabilities", [])
+    if existing_update_enabled or existing_layout_update_enabled:
         if not check_linked_files:
             errors.append(issue("existing-update.linked_files_required", "$.capabilities", "Existing-asset updates require current linked Layout/baseline files; --skip-linked-files cannot authorize them."))
         if not accepted_build_view_requested:
@@ -2099,6 +2288,8 @@ def validate_build_bundle(
     layout_nodes_by_asset: dict[str, set[str]] = {}
     layout_node_records_by_asset: dict[str, dict[str, dict[str, Any]]] = {}
     existing_update_asset_ids: set[str] = set()
+    existing_layout_update_asset_ids: set[str] = set()
+    final_native_slots_by_asset: dict[str, dict[str, dict]] = {}
 
     for asset_id, asset in assets.items():
         plan_id = asset.get("assetPlanId")
@@ -2139,13 +2330,40 @@ def validate_build_bundle(
         if check_linked_files and asset.get("representationKind") != "reuse-only" and isinstance(asset.get("layoutSpecPath"), str):
             layout_path = resolve_contract_path(bundle_path, asset["layoutSpecPath"])
             try:
-                layout = load_json(layout_path)
+                layout_bytes = layout_path.read_bytes()
+                layout = json.loads(layout_bytes.decode("utf-8-sig"))
             except (OSError, json.JSONDecodeError) as error:
                 errors.append(issue("layout.read", f"$.assets[{asset_id}].layoutSpecPath", str(error)))
                 continue
-            actual_hash = sha256_file(layout_path)
+            actual_hash = hashlib.sha256(layout_bytes).hexdigest()
             if asset.get("layoutSpecSha256") != actual_hash:
                 errors.append(issue("layout.sha256", f"$.assets[{asset_id}].layoutSpecSha256", f"Layout hash mismatch; expected {actual_hash}."))
+            if isinstance(layout, dict) and layout.get("version") == "0.4":
+                if asset.get("layoutSpecSha256") != actual_hash:
+                    continue
+                if not existing_layout_update_enabled:
+                    errors.append(issue("existing-layout-update.capability_required", f"$.assets[{asset_id}].layoutSpecPath", f"UILayoutSpec 0.4 requires explicit capability {EXISTING_LAYOUT_UPDATE}."))
+                    continue
+                existing_layout_update_asset_ids.add(asset_id)
+                try:
+                    build_scripts = PLUGIN_ROOT / "skills/build-nextgame-umg/scripts"
+                    if str(build_scripts) not in sys.path:
+                        sys.path.append(str(build_scripts))
+                    from existing_asset_update_v2 import validate_bundle_layout_v2
+                    existing_errors = validate_bundle_layout_v2(layout, asset, bundle, requirement_spec or {}, spec_path=layout_path, accepted_claim_ids=accepted_claim_ids)
+                    errors.extend(existing_errors)
+                    if existing_errors:
+                        continue
+                    final_native_slots_by_asset[asset_id] = _final_native_slots_v2(layout, layout_path)
+                except (OSError, ValueError, TypeError, KeyError, ImportError) as error:
+                    errors.append(issue("existing-layout-update.validation_failed", f"$.assets[{asset_id}].layoutSpecPath", str(error)))
+                    continue
+                if layout.get("referenceSize") != asset.get("referenceSize"):
+                    errors.append(issue("layout.reference_size", f"$.assets[{asset_id}].referenceSize", "Bundle referenceSize does not match linked UILayoutSpec."))
+                records = {node["id"]: node for node in layout.get("nodes", []) + layout.get("additions", []) if isinstance(node, dict) and isinstance(node.get("id"), str)}
+                layout_nodes_by_asset[asset_id] = set(records)
+                layout_node_records_by_asset[asset_id] = records
+                continue
             if isinstance(layout, dict) and layout.get("version") == "0.3":
                 if not existing_update_enabled:
                     errors.append(issue("existing-update.capability_required", f"$.assets[{asset_id}].layoutSpecPath", f"UILayoutSpec 0.3 requires explicit capability {EXISTING_ASSET_UPDATE}."))
@@ -2274,6 +2492,9 @@ def validate_build_bundle(
                 node_records[node_id] = node
             layout_nodes_by_asset[asset_id] = node_ids
             layout_node_records_by_asset[asset_id] = node_records
+
+    if existing_layout_update_enabled and not existing_layout_update_asset_ids:
+        errors.append(issue("existing-layout-update.layout_required", "$.capabilities", "The capability must bind an existing-asset UILayoutSpec 0.4; it cannot authorize a generic Create plan."))
 
     if existing_update_enabled and not existing_update_asset_ids:
         errors.append(issue("existing-update.layout_required", "$.capabilities", "The capability must bind at least one validated existing-only UILayoutSpec 0.3; it cannot relabel a generic Create layout."))
@@ -2610,6 +2831,13 @@ def validate_build_bundle(
                         )
                         continue
                 adaptive_layout = node.get("adaptiveLayout") if isinstance(node.get("adaptiveLayout"), dict) else {}
+                if mapping.get("assetId") in existing_layout_update_asset_ids:
+                    try:
+                        adaptive_layout = _native_slot_adaptation(final_native_slots_by_asset[mapping["assetId"]][mapping["layoutNodeId"]])
+                    except (KeyError, TypeError, ValueError) as error:
+                        errors.append(issue("mapping.native_responsive_slot", "$.nodeMappings",
+                                            f"Cannot derive native Slot adaptation for intent {intent_id}: {error}"))
+                        continue
                 if (
                     adaptive_layout.get("horizontal") != intent.get("horizontal")
                     or adaptive_layout.get("vertical") != intent.get("vertical")
@@ -2618,7 +2846,7 @@ def validate_build_bundle(
                         issue(
                             "mapping.element_responsive_adaptive" if image_target else "mapping.owner_responsive_adaptive",
                             "$.nodeMappings",
-                            f"Layout node for responsive intent {intent_id} must copy its horizontal and vertical adaptiveLayout exactly.",
+                            f"Layout node for responsive intent {intent_id} must match horizontal/vertical adaptation exactly; resolved {adaptive_layout!r}, required {intent.get('horizontal')!r}/{intent.get('vertical')!r}.",
                         )
                     )
 
@@ -2887,6 +3115,13 @@ def validate_build_bundle(
             if isinstance(requirement_ref, str)
         },
     }
+    if check_linked_files and existing_layout_update_enabled:
+        inherited_refs, inherited_regions = _inherited_provider_coverage(
+            bundle, requirement_spec or {}, bundle_path, accepted_claim_ids, errors)
+        # Only the strict helper's proven nonvisual policy elements and their
+        # uniquely owned full-canvas regions gain asset-level coverage.
+        coverage_sets["element"] = mapped_requirement_refs | inherited_refs
+        coverage_sets["region"] = mapped_requirement_refs | inherited_regions
     for kind, mapped_ids in coverage_sets.items():
         for entity_id, entity in requirement_index["byKind"].get(kind, {}).items():
             if entity.get("inBuildScope") is True and entity_id not in mapped_ids:
@@ -3011,8 +3246,11 @@ def validate_build_bundle(
                         source_layout = {"nodes": list(source_node_records.values()), "referenceSize": assets.get(source_id, {}).get("referenceSize")}
                         errors.extend(validate_content_height(bundle, operation, f"{operation_path}.placementContract.childSizingCompatibility", source_layout, target_node or {}))
                     elif compatibility.get("mode") == "explicit-scalebox":
-                        if not any("scale" in str(node.get("role", "")).lower() for node in source_records):
-                            errors.append(issue("operation.child_sizing_scale", f"{operation_path}.placementContract.childSizingCompatibility", "explicit-scalebox requires a cited ScaleBox layout node."))
+                        _validate_uniform_child_scale(
+                            source_id, source_records, source_node_records,
+                            assets.get(source_id, {}).get("referenceSize"), placement.get("hostSize"),
+                            bundle, f"{operation_path}.placementContract.childSizingCompatibility", errors, warnings,
+                        )
                     elif compatibility.get("mode") in {
                         "inherited-reuse-only-full-stretch",
                         "inherited-reuse-only-flow-slot",

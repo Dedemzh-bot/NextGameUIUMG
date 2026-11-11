@@ -20,6 +20,10 @@ _dependency_module = importlib.util.module_from_spec(_dependency_spec)
 _dependency_spec.loader.exec_module(_dependency_module)
 bounded_wrap_capacity = _dependency_module.bounded_wrap_capacity
 dependency_bounds_v2 = _dependency_module.dependency_bounds_v2
+_naming_spec = importlib.util.spec_from_file_location("_component_creation_naming", SKILL_ROOT / "scripts/component_naming.py")
+_naming_module = importlib.util.module_from_spec(_naming_spec)
+_naming_spec.loader.exec_module(_naming_module)
+iteration_token = _naming_module.iteration_token
 
 DEFAULT_CATALOG = SKILL_ROOT / "references" / "component-catalog.json"
 ID_PATTERN = re.compile(r"^[a-z][a-z0-9_-]*$")
@@ -323,6 +327,9 @@ def invalid_text_characters(text: str) -> list[str]:
 
 
 def validate_spec(spec: Any, catalog: Any, *, spec_path: Path | None = None) -> dict[str, Any]:
+    if isinstance(spec, dict) and spec.get("version") == "0.4":
+        from existing_asset_update_v2 import validate_existing_asset_update_v2
+        return validate_existing_asset_update_v2(spec, spec_path=spec_path)
     if isinstance(spec, dict) and spec.get("version") == "0.3":
         from existing_asset_update import validate_existing_asset_update
         return validate_existing_asset_update(spec, spec_path=spec_path)
@@ -822,6 +829,11 @@ def validate_spec(spec: Any, catalog: Any, *, spec_path: Path | None = None) -> 
             issue(errors, "node.name.duplicate", f"{path}.name", f"Duplicate widget name: {name}")
         else:
             names.add(name)
+
+        revision_token = iteration_token(name)
+        if revision_token is not None:
+            issue(errors, "node.name_iteration", f"{path}.name",
+                  f"New WidgetTree names cannot contain iteration token {revision_token!r}; use a semantic name and keep revisions in task metadata. Do not rename an existing binding to satisfy a new-build layout.")
 
         role = node.get("role")
         font_size_unit = node.get("fontSizeUnit", "pt")

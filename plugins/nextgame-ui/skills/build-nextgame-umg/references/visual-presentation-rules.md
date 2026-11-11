@@ -55,6 +55,16 @@ For resource reception and existing-UI refinement, first apply **Resource handof
 - A square icon must remain square through the complete rendering chain: source frame, Brush `ImageSize`, parent Slot allocation, alignment, ancestor constraints, ScaleBox behavior and effective transforms. A square Brush inside a rectangular stretched Slot does not prove correctness.
 - Inspect source/frame, Brush and allocation separately. Missing runtime geometry or unsupported ancestor reads remain unverified; never fill them from the planned rectangle. A calculated prediction may guide repair but cannot be labelled actual geometry.
 
+## Whole-component proportional scaling
+
+Explicitly distinguish uniform scaling of a complete component from stretching its allocated layout and from reflowing its content. A smaller host rectangle, stretched anchors or the presence of any ScaleBox does not prove proportional scaling.
+
+- Trace the effective path from host allocation through the common scaling ancestor to every relevant descendant, including inherited and NamedSlot content, nested widgets, dynamic entries, fonts, icons, quantity groups, frames and state overlays. Identify the accepted design size and all fixed sizes, min/max constraints, Auto Size/Desired Size producers, padding, clipping, local render transforms and nested scale boxes on that path. Keep native PanelSlot and NamedSlot ownership separate.
+- Check whether the chosen uniform mode permits the required shrink/grow direction, and whether descendants share the intended scale. Identify content outside the scaling ancestor, ignored inherited scale, double scaling, fixed-size allocations that defeat the intended scale, nonuniform transforms, overflow and clipping. A deliberate fixed-size label or hit region requires an explicit design exception; never infer one merely because its size stayed unchanged.
+- Preserve authored proportions, including deliberate local icon/text proportions. Do not repair a whole-component sizing defect by independently shrinking fonts or images. Select a supported common scaling structure that has a demonstrable positive design-size basis; do not impose a new universal pixel size or wrap every legacy component without review.
+- Inspect the actual assembled result at its reference size and the requested compressed size, using matching state/content and recorded viewport, DPI and zoom. Compare icon-to-frame ratio, text-to-frame ratio, quantity placement, state coverage, clipping and readability. Include supported empty/populated and relevant longest-number/text cases. For runtime-injected content, a bare Designer shell cannot close the visual check.
+- Report static structure/property checks, actual geometry and rendered comparison separately. If geometry or rendering is unavailable, keep that part unverified and name the missing case. Do not mark the whole component correct because a ScaleBox node or planned rectangle passed. Existing formal visual evidence and acceptance gates remain in force; this section creates no synthetic pass flag.
+
 ## Nine-slice evidence
 
 - Decide whether the artwork permits stretching before choosing Draw As. Complete ornaments or logos may require a fixed aspect image; a plate and a separate fixed glyph have different responsibilities.

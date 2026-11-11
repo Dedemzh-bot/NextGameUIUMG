@@ -11,6 +11,19 @@ Before planning or creating a project Widget Blueprint, validate and read the pl
 5. Do not mutate a shared parent merely because a child needs extra behavior. Report the compatibility gap and require separate authorization for that exact shared asset. When a proposed common source lacks either normalized dual-layer extension Slot, it cannot be activated until that mutation is authorized and verified.
 6. Block any selected relation whose registry mode is `unverified`; do not use it as a best-effort fallback.
 
+## Slot recognition and composition decisions
+
+Apply this section to source analysis, reverse prototypes, design reception, build planning, art refinement and result review. Slot recognition is not complete until the intended use is also explicit.
+
+- Distinguish the child's native PanelSlot (layout allocation), a NamedSlot content interface, a nested UserWidget instance, Class Settings inheritance and runtime class-path/EntryClass use. Preserve asset-qualified node identities and instance-specific bindings. A null native parent is not proof of an independent root: inspect inherited NamedSlotBindings and the parent asset before classifying it.
+- Read the complete relevant composition: host asset/instance, inherited source, exact slot name, content root and owning asset, content provider (authored, inherited or runtime), size responsibility, state responsibility and source evidence. An empty Designer slot with a runtime provider is not unused. Unread providers and inherited trees remain unresolved rather than flattened into ordinary parent edges.
+- Identify the common frame, replaceable content and local extensions. Reuse a compatible observed Slot interface when it expresses that responsibility; do not copy its internals into each consumer. Introduce a Slot only for an explicit reusable/replaceable responsibility, not for every panel. Decide whether the consumer inherits a common asset, nests it or supplies content through an existing runtime interface before planning construction.
+- Record a concrete preserve/reuse/fill/extend decision for each relevant Slot, with the exact target and intended content. Preserve existing slot names and content ownership; the standard SlotDown/SlotUp activation contract below does not rename or reinterpret legacy slots such as ItemSlot or SlotTime. New shared-control activation still follows that contract independently.
+- Map the accepted composition into an existing supported Bundle relation and verify the actual binding after save. Do not fabricate support for arbitrary slot insertion, force a legacy slot into the dual-layer relation or replace a missing capability by duplicating the widget. Keep unsupported relations outstanding. Runtime providers may be inspected read-only; changing their business code requires separate code authorization.
+- Review the assembled host and inserted content together: empty/populated and supported state branches, ancestor visibility, clipping, sizing and proportional scaling. A correct local tree or a readable relationship list alone does not prove correct Slot use. Follow [whole-component scaling](visual-presentation-rules.md#whole-component-proportional-scaling).
+
+Existing source observations are facts, not an instruction to redesign that source. New design decisions must enter the owning accepted design revision; retain old evidence and permissions separately.
+
 ## Shared-control activation contract
 
 Before adding or promoting a reusable control in the public registry, verify all of the following against the saved asset:

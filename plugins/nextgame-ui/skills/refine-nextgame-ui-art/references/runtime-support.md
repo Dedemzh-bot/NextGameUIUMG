@@ -38,6 +38,30 @@ The tooling's synthetic tests validate contracts, recovery, comparisons and gate
 
 ## Contracts and recovery
 
+For a reviewed renderer that uses native `RenderingLibrary.export_render_target`,
+the optional stdlib helper `scripts/art_native_png.py` can write a new PNG
+artifact containing exactly the CRC-valid native RGBA8 stream through IEND.
+Preserve the raw native export as a separate immutable file and retain the
+helper's source/output and trailing-byte length/hash receipt. Do this before
+binding a new capture's image hash; never rewrite a previously bound capture.
+The helper does not re-encode pixels, supply a renderer, measure geometry or
+grant visual acceptance. Malformed or unsupported PNG streams must fail.
+
+Resource-batch validation resolves the selected resource tool's flat local
+dependencies in a private invocation namespace, without requiring callers to
+add the resource directory to `PYTHONPATH`. Missing or escaping dependencies
+remain validation failures; ambient modules cannot substitute for that source.
+
+The [measured presentation receiver](measured-presentation-geometry.md) adopts
+exact completed Art lineage through a separate immutable read-only contract.
+It does not add a renderer, change request authority, replay apply, or relax the
+default renderer's unavailable result. The narrow Retainer/native Blueprint VM
+consumer rechecks retained actual helper topology, native paint-to-target
+mapping, full loaded/runtime state, and exact RTF_RGBA8/sRGB-false/gamma1
+byte-domain pixels. It makes no Python cached-geometry claim. Capability probes
+remain separate from production inputs; source implementation or provider-only
+recomputation is not a canonical capture or visual acceptance receipt.
+
 [art-contract.schema.json](../assets/art-contract.schema.json) is the format authority for request, snapshot, decisions, plan, execution, capture, visual review, verification and stage. SHA-256 binds physical input files; stable state hashes omit acquisition timestamps but retain actual structure and properties. Do not edit immutable evidence in place to satisfy a stale binding. Build a new revision, refresh affected outputs and obtain fresh result acceptance where required.
 
 Material evidence acquisition uses existing official MaterialTools/ObjectTools/AssetTools with discovered input/output schemas. The importable material validator itself never calls Editor tools. `AssetTools.is_dirty` takes `asset_path`; save uses the exact nonempty asset-path list. Preserve actual returned refs and responses, and keep a failed/unknown native call visible. No capability permits fabricated import metadata, material graph history or saved hashes.

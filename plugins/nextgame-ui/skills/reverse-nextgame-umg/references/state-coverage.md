@@ -2,6 +2,8 @@
 
 Empty source dependencies produce an `@unexpanded` audit marker with `sourceUnread=true`. It is not a WidgetTree node. Refresh the source with actual inherited/content evidence before completing coverage; changing the classification alone cannot clear this gap.
 
+For Slot-aware version 2 work, also follow [Slot composition](slot-composition.md). Read and review the actual relationships between host, inherited slot and content; ordinary node coverage does not prove that the design used the correct composition. An explicitly read-back inheritance-only asset may use `ownTreeEmptyConfirmed` with its resolved inheritance relation; its parent content still requires coverage. Version 1 coverage remains historical and does not certify composition.
+
 ## Why source-node preservation is insufficient
 
 The umg_bag pilot preserved BtnQuick but copied Designer Collapsed into ordinary screens. Static Lua analysis already showed positive-cost visibility; only the insufficient-funds combination was illustrated. The missing deliverable was the normal visible state, not a missing source node. Preserve this distinction in future reviews.

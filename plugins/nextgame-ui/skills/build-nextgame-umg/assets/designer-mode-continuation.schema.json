@@ -1,0 +1,317 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nextgame.local/schemas/designer-mode-continuation-1.json",
+  "title": "Explicit protected Designer-mode continuation receipt/1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "kind": {
+      "const": "nextgame-ui-designer-mode-continuation"
+    },
+    "version": {
+      "const": "1"
+    },
+    "capability": {
+      "const": "designer-mode-continuation/1"
+    },
+    "status": {
+      "const": "completed"
+    },
+    "assetPath": {
+      "type": "string",
+      "minLength": 1
+    },
+    "objectPath": {
+      "type": "string",
+      "minLength": 1
+    },
+    "expectedMode": {
+      "enum": [
+        "FillScreen",
+        "Desired"
+      ]
+    },
+    "beforeMode": {
+      "enum": [
+        "FillScreen",
+        "Desired",
+        "DesiredOnScreen",
+        "Custom",
+        "CustomOnScreen"
+      ]
+    },
+    "finalMode": {
+      "enum": [
+        "FillScreen",
+        "Desired"
+      ]
+    },
+    "startedAt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "completedAt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "visualVerified": {
+      "const": false
+    },
+    "originalCheckpointStatus": {
+      "const": "unchanged-failed"
+    },
+    "substitutedStepIds": {
+      "const": [
+        "list-design-size-mode-property",
+        "get-design-size-mode-before",
+        "set-design-size-mode",
+        "get-saved-blueprint-default-object",
+        "verify-design-size-mode"
+      ]
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "plan": {
+          "$ref": "#/$defs/binding"
+        },
+        "failedCheckpoint": {
+          "$ref": "#/$defs/binding"
+        },
+        "projectFile": {
+          "$ref": "#/$defs/binding"
+        },
+        "beforeAsset": {
+          "$ref": "#/$defs/binding"
+        },
+        "layout": {
+          "$ref": "#/$defs/binding"
+        },
+        "requirement": {
+          "$ref": "#/$defs/binding"
+        },
+        "acceptedBuildView": {
+          "$ref": "#/$defs/binding"
+        },
+        "bundle": {
+          "$ref": "#/$defs/binding"
+        }
+      },
+      "required": [
+        "plan",
+        "failedCheckpoint",
+        "projectFile",
+        "beforeAsset",
+        "layout",
+        "requirement",
+        "acceptedBuildView",
+        "bundle"
+      ]
+    },
+    "planSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "originalCompletedPrefix": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "sourceAssetFile": {
+      "type": "string",
+      "minLength": 1
+    },
+    "mcpURL": {
+      "type": "string",
+      "minLength": 1
+    },
+    "editorPid": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "formalBindings": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requirement": {
+          "$ref": "#/$defs/binding"
+        },
+        "acceptedBuildView": {
+          "$ref": "#/$defs/binding"
+        },
+        "bundle": {
+          "$ref": "#/$defs/binding"
+        },
+        "requestPacket": {
+          "$ref": "#/$defs/binding"
+        }
+      },
+      "required": [
+        "requirement",
+        "acceptedBuildView",
+        "bundle",
+        "requestPacket"
+      ]
+    },
+    "journal": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/binding"
+      }
+    },
+    "afterAsset": {
+      "$ref": "#/$defs/binding"
+    },
+    "authority": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "$ref": "#/$defs/binding"
+      }
+    },
+    "recoveryGetWidgetsSequence": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "compileSequence": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "saveSequence": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "postSaveModeSequence": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "tailReadbacks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "stepId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "arguments": {
+            "type": "object"
+          },
+          "sequence": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "stepId",
+          "arguments",
+          "sequence"
+        ]
+      }
+    }
+  },
+  "required": [
+    "kind",
+    "version",
+    "capability",
+    "status",
+    "assetPath",
+    "objectPath",
+    "expectedMode",
+    "beforeMode",
+    "finalMode",
+    "startedAt",
+    "completedAt",
+    "visualVerified",
+    "originalCheckpointStatus",
+    "substitutedStepIds",
+    "inputs",
+    "planSha256",
+    "originalCompletedPrefix",
+    "sourceAssetFile",
+    "mcpURL",
+    "editorPid",
+    "formalBindings",
+    "journal",
+    "afterAsset",
+    "authority",
+    "recoveryGetWidgetsSequence",
+    "compileSequence",
+    "saveSequence",
+    "postSaveModeSequence",
+    "tailReadbacks"
+  ],
+  "$defs": {
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ]
+    },
+    "journalRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sequence": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "startedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "completedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "const": "completed"
+        },
+        "request": {
+          "type": "object"
+        },
+        "response": {},
+        "provider": {
+          "enum": [
+            "official-unreal-mcp",
+            "nxue-agent",
+            "local-os",
+            "derived-contract",
+            "offline-formal-validator",
+            "local-filesystem"
+          ]
+        }
+      },
+      "required": [
+        "sequence",
+        "label",
+        "startedAt",
+        "completedAt",
+        "status",
+        "request",
+        "response",
+        "provider"
+      ]
+    }
+  }
+}

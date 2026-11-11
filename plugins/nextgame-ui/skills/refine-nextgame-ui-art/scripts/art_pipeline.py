@@ -30,7 +30,7 @@ def initialize_request(job_path, output_path):
     """Expand a compact job into immutable hash-bound inputs; never infer authorization."""
     job = load_json(job_path)
     required = {'goal','originalText','scope','baseline','references','resourceDir','authorizedAssetPaths'}
-    if not isinstance(job, dict) or not required <= set(job) or set(job) - required - {'target','budget','samples','resourceCatalog','developmentBaseline','referenceMode','preserveHierarchy'}:
+    if not isinstance(job, dict) or not required <= set(job) or set(job) - required - {'target','budget','samples','resourceCatalog','developmentBaseline','referenceMode','preserveHierarchy','designerModeContinuation'}:
         raise ArtError('job.shape', 'Job needs goal, originalText, scope, baseline paths, references, resourceDir and exact authorizedAssetPaths.')
     def resolve(p):
         path = Path(p)
@@ -67,6 +67,11 @@ def initialize_request(job_path, output_path):
                 record[key] = binding(resolve(record[key]))
         if version == 2:
             request['developmentBaseline']['primaryReview'] = binding(resolve(job['developmentBaseline']['primaryReview']))
+    if 'designerModeContinuation' in job:
+        if (job['designerModeContinuation'] != 'designer-mode-continuation/1' or job['goal'] != 'formal-art'
+                or 'developmentBaseline' not in job):
+            raise ArtError('job.designer_continuation', 'Exact Designer continuation opt-in requires formal-art development baseline 1 or 2.')
+        request['capabilities'].append('designer-mode-continuation/1')
     if 'target' in job:
         request['target']={key:binding(resolve(value)) for key,value in job['target'].items()}
     if 'samples' in job: request['samples']=[binding(resolve(p)) for p in job['samples']]
@@ -847,7 +852,7 @@ def prepare_packets(request_path, output_dir):
     return receipt
 
 
-def verify_plan(plan_path, execution_path, captures_path, output_path, *, visual_review_path=None):
+def verify_plan(plan_path, execution_path, captures_path, output_path, *, visual_review_path=None, geometry_adoption_path=None):
     from art_images import compare_images
     from art_reference import CAPABILITY, source_size, compare_mapped
     plan, request, request_path = _validated_plan(plan_path)
@@ -867,7 +872,11 @@ def verify_plan(plan_path, execution_path, captures_path, output_path, *, visual
         raise ArtError('verify.coverage', 'Capture reference IDs must cover every reference exactly once.')
     from art_presentation import validate_presentation
     decisions_path = bound_path(plan['decisions'], plan_path)
-    presentation = validate_presentation(request, load_json(decisions_path), snapshot, request_path, decisions_path, phase='actual')
+    from art_geometry import verification_geometry
+    measured = verification_geometry(plan_path, execution_path, captures, captures_path,
+                                     adoption_path=geometry_adoption_path)
+    presentation = validate_presentation(request, load_json(decisions_path), snapshot, request_path, decisions_path,
+                                        phase='actual', measured_geometry=measured)
     comparisons, checks = [], list(presentation['checks'])
     for reference in request['references']:
         capture_path = bound_path(by_ref[reference['id']], captures_path)
@@ -896,17 +905,26 @@ def verify_plan(plan_path, execution_path, captures_path, output_path, *, visual
             'snapshotSha256': sha256(snapshot_path), 'comparisons': comparisons, 'reviewedAt': utc_now(),
             'reviewer': {'actorType': 'agent', 'confirmationSource': 'visual-inspection'},
             'message': 'Pending actual image inspection; this template is not acceptance.', 'inspectedRegions':
-            [r['id'] + ':' + region['id'] for r in request['references'] for region in r['regions']],
+            [r['id'] + ':' + region['id'] for r in request['references'] for region in r['regions']]
+            + (sorted(measured['inspectedRegions']) if measured else []),
             'unresolved': [{'code': 'visual.pending', 'message': 'Inspect all listed region comparisons.'}]}
         visual_review_path = output_path.with_name(output_path.stem + '.review-template.json')
         write_json(visual_review_path, review)
     else:
         review = validate(load_json(visual_review_path), 'visualReview')
     passed = review['status'] == 'passed' and not review['unresolved'] and all(c['status'] == 'passed' for c in checks)
-    verification = {'kind': 'nextgame-ui-art-verification', 'version': 1, 'plan': binding(plan_path),
+    verification = {'kind': 'nextgame-ui-art-verification', 'version': 2 if measured else 1, 'plan': binding(plan_path),
         'snapshot': binding(snapshot_path), 'execution': binding(execution_path), 'visualReview': binding(visual_review_path),
         'comparisons': comparisons, 'status': 'passed' if passed else 'needs-review', 'checks': checks, 'verifiedAt': utc_now()}
+    if measured:
+        verification.update(geometryAdoption=binding(geometry_adoption_path), geometryEvidence=[measured['geometryEvidence']])
     validate(verification, 'verification')
+    if passed and measured:
+        from art_common import validate_art_verification_candidate
+        requirement_path = bound_path(request.get('target', request['baseline'])['requirement'], request_path)
+        candidate_errors = validate_art_verification_candidate(verification, output_path, request_path, plan_path, requirement_path)
+        if candidate_errors:
+            raise ArtError('verify.failed', str(candidate_errors))
     write_json(output_path, verification)
     if passed:
         requirement_path = bound_path(request.get('target', request['baseline'])['requirement'], request_path)
@@ -972,6 +990,7 @@ def main(argv=None):
     p.add_argument('--scope',required=True); p.add_argument('--output-dir',type=Path,required=True)
     p = commands.add_parser('verify'); p.add_argument('plan', type=Path); p.add_argument('--execution', type=Path, required=True)
     p.add_argument('--captures', type=Path, required=True); p.add_argument('--visual-review', type=Path)
+    p.add_argument('--geometry-adoption', type=Path, help='Independent frozen read-only receiver binding original completed apply lineage.')
     p.add_argument('--output', type=Path, required=True)
     p = commands.add_parser('stage'); p.add_argument('verification', type=Path); p.add_argument('--output', type=Path, required=True)
     p.add_argument('--bundle-path',type=Path,required=True,help='Final Bundle location; emitted bindings resolve relative to its directory.')
@@ -1004,7 +1023,8 @@ def main(argv=None):
         elif args.command == 'capture':
             result=capture_reference(args.plan,args.execution,args.reference,args.output,_editor(args.url,args.timeout))
         elif args.command == 'verify':
-            result = verify_plan(args.plan, args.execution, args.captures, args.output, visual_review_path=args.visual_review)
+            result = verify_plan(args.plan, args.execution, args.captures, args.output, visual_review_path=args.visual_review,
+                                 geometry_adoption_path=args.geometry_adoption)
         elif args.command == 'stage':
             verification = validate(load_json(args.verification), 'verification')
             plan_path = bound_path(verification['plan'], args.verification)

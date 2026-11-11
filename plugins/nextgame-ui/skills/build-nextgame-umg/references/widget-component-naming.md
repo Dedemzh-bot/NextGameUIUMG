@@ -20,8 +20,19 @@ Keep future Widget Blueprint asset-name rules in `project-ui-rules.md`. Keep fut
 - When a component's purpose is clear, replace Unreal-generated defaults such as `CanvasPanel_0` with a concise semantic mapped name.
 - A generated/default name or prefix mismatch is a review warning, not a build-blocking error. If purpose is not yet clear, report it without failing or inventing a misleading functional name.
 - Do not infer a prefix for an unmapped type. Record the missing rule and ask the project owner to supply it.
-- This rule only fixes the type prefix. Do not invent additional mandatory suffix segments until the project owner supplies them.
+- The prefix rule does not prescribe mandatory suffix segments; also apply the owner-confirmed creation rule below.
 - For data-driven collections, use a semantic `List` or `Tile` instance name such as `ListTask`; keep the entry Widget Blueprint asset naming separate according to `dynamic-list-widgets.md`.
+
+## Revision-free creation names
+
+Owner-confirmed on 2026-11-04; policy `component-creation-naming/2026-11-04`.
+
+- New WidgetTree components use stable semantic names. Do not insert task iterations, revisions or batch versions such as `R14` into the name. For example, create `ImgShieldLocked`, not `ImgR14ShieldLocked`; record the revision in the task artifacts.
+- Apply this to new-build Layout nodes in both prototype and production mode, and to Art `add-widget` operations in existing assets. A reserved iteration token is a blocking error, independent of the existing prefix warning.
+- The shared creation check recognizes `R<number>`, `V<number>`, `Rev<number>`, `Revision<number>` and `Version<number>` at PascalCase or underscore boundaries, including lower-case underscore-delimited forms. It does not reject digits alone: `TxtPlayer2`, `ImgSlot01` and embedded identifiers such as `ImgR2D2Icon` are not revision tokens. A lexical check does not establish the purpose of every number; review ambiguous or differently spelled batch names semantically.
+- Preserve unchanged observed names, program variables, Lua accesses, Blueprint and animation bindings. Existing-only Layout 0.3 takes its independent baseline-preserving route and cannot add or rename nodes. Art property/Slot edits do not apply creation naming checks to their existing target names. Do not force a legacy component rename to make it pass a new-build gate.
+- Historical accepted layouts, snapshots and operations retain their original names and evidence. Review/replay them with their recorded frozen authority; selecting this newer creation gate for new work is an explicit policy migration, not retroactive evidence that older artifacts were invalid. A requested rename requires its own binding/reference audit and authorized migration.
+- Build and Art share `scripts/component_naming.py` from the Build skill; do not duplicate a different token recognizer in another entry point.
 
 ## Type-to-prefix mapping
 

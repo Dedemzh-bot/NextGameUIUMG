@@ -1,6 +1,6 @@
 {
   "name": "nextgame-ui",
-  "version": "0.1.0+codex.20261030.reverse1",
+  "version": "0.1.0+codex.20261110.toolchaingreen1",
   "description": "Reverse existing UMG into state-audited Figma prototypes, receive design contracts or analyze UI references, build Unreal UMG, refine art, and verify results before program handoff.",
   "homepage": "https://github.com/Dedemzh-bot/NextGameUIUMG",
   "repository": "https://github.com/Dedemzh-bot/NextGameUIUMG",

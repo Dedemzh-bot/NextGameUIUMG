@@ -27,12 +27,14 @@ def _checks(bundle):
     return {c['id']: c for c in checks}
 
 
-def _build_evidence(contract, request_path, bundle, bundle_path, completed):
+def _build_evidence(contract, request_path, bundle, bundle_path, completed, capabilities=()):
     from _document_contract_common import resolve_request_path
     build_scripts = str(PLUGIN_ROOT / 'skills/build-nextgame-umg/scripts')
     if build_scripts not in sys.path:
         sys.path.insert(0, build_scripts)
     from execute_plan_programmatic import plan_digest
+    from designer_mode_continuation import (CAPABILITY as DESIGNER_CONTINUATION, KIND as CONTINUATION_KIND,
+                                            ordered_arguments, validate_receipt)
 
     checks = _checks(bundle)
     expected = {key: c for key, c in checks.items() if c['type'] in {'compile', 'save'}}
@@ -53,20 +55,39 @@ def _build_evidence(contract, request_path, bundle, bundle_path, completed):
             _fail('build_artifact', 'Check artifactPath must name its exact bound execution checkpoint.')
         plan, checkpoint = load_json(plan_path), load_json(checkpoint_path)
         steps, events = plan.get('steps', []), checkpoint.get('events', [])
-        if (plan.get('assetPath') != asset['assetPath'] or checkpoint.get('formatVersion') != 2
-                or checkpoint.get('planSha256') != plan_digest(plan)
-                or checkpoint.get('status') != 'completed' or checkpoint.get('requiresGetWidgets')
-                or checkpoint.get('completedPrefix') != len(steps) or not steps or len(events) != len(steps)):
-            _fail('build_checkpoint', 'Require the complete current executor checkpoint and exact asset plan.')
-        for index, (step, event) in enumerate(zip(steps, events), 1):
-            if (event.get('status') != 'completed' or event.get('index') != index
-                    or event.get('stepId') != step.get('stepId')
-                    or event.get('tool') != step.get('toolsetName', '') + '.' + step.get('toolName', '')):
-                _fail('build_events', 'Checkpoint must prove every ordered plan step, without gaps.')
-        candidates = [(s, e) for s, e in zip(steps, events) if s.get('stepId') == record['stepId']]
-        if len(candidates) != 1:
-            _fail('build_step', 'Build evidence step must resolve exactly once.')
-        step, event = candidates[0]
+        if checkpoint.get('kind') == CONTINUATION_KIND:
+            if DESIGNER_CONTINUATION not in capabilities:
+                _fail('continuation_capability', 'A separate truthful continuation receipt requires its exact explicit opt-in.')
+            try:
+                continuation = validate_receipt(checkpoint_path, plan_path, expected_bundle=bundle_path)
+            except Exception as exc:
+                _fail('continuation', str(exc))
+            if continuation['assetPath'] != asset['assetPath']:
+                _fail('build_asset', 'Continuation belongs to another Bundle asset.')
+            candidates = [s for s in steps if s.get('stepId') == record['stepId']]
+            if len(candidates) != 1 or record['stepId'] != check['type']:
+                _fail('build_step', 'Continuation compile/save evidence must name its exact original step.')
+            step = candidates[0]
+            event = continuation['steps'][check['type']]
+            resolved_arguments = event['arguments']
+            stamp = aware_time(event['completedAt'])
+        else:
+            if (plan.get('assetPath') != asset['assetPath'] or checkpoint.get('formatVersion') != 2
+                    or checkpoint.get('planSha256') != plan_digest(plan)
+                    or checkpoint.get('status') != 'completed' or checkpoint.get('requiresGetWidgets')
+                    or checkpoint.get('completedPrefix') != len(steps) or not steps or len(events) != len(steps)):
+                _fail('build_checkpoint', 'Require the complete current executor checkpoint and exact asset plan.')
+            try:
+                # Reconstruct only historical saveResultAs values at each step;
+                # final checkpoint.saved must never rewrite an earlier target.
+                arguments, _ = ordered_arguments(steps, events, checkpoint, checkpoint_path)
+            except (ValueError, KeyError, TypeError, OSError) as exc:
+                _fail('build_events', str(exc))
+            candidates = [(s, e, a) for s, e, a in zip(steps, events, arguments) if s.get('stepId') == record['stepId']]
+            if len(candidates) != 1:
+                _fail('build_step', 'Build evidence step must resolve exactly once.')
+            step, event, resolved_arguments = candidates[0]
+            stamp = aware_time(checkpoint.get('updatedAt', ''))
         path = asset['assetPath']
         expected_tool, expected_args = (
             ('UMGToolSet.UMGToolSet.CompileWidgetBlueprint',
@@ -75,9 +96,8 @@ def _build_evidence(contract, request_path, bundle, bundle_path, completed):
             ('editor_toolset.toolsets.asset.AssetTools.save_assets', {'asset_paths': [path]})
         )
         if (step.get('operation', 'call_tool') != 'call_tool' or event['tool'] != expected_tool
-                or step.get('arguments') != expected_args or event.get('result', {}).get('returnValue') is not True):
+                or resolved_arguments != expected_args or event.get('result', {}).get('returnValue') is not True):
             _fail('build_result', 'Compile/save must have the supported official tool, exact target and true result.')
-        stamp = aware_time(checkpoint.get('updatedAt', ''))
         if not started <= stamp <= completed:
             _fail('build_time', 'Actual compile/save checkpoint must fall within the structural build interval.')
         times.setdefault((asset['id'], check['type']), []).append(stamp)
@@ -133,7 +153,7 @@ def validate_development_baseline(request, request_path, paths=None):
         covered = {c['type'] for c in checks.values() if c.get('assetId') == asset['id'] and c['status'] == 'passed'}
         if not structural_types <= covered:
             _fail('structural_coverage', 'Every asset needs passed compile, save, widget-tree and key-properties checks.')
-    _build_evidence(contract, request_path, bundle, paths['bundle'], completed)
+    _build_evidence(contract, request_path, bundle, paths['bundle'], completed, request.get('capabilities', ()))
     report = _validate_readback_actual_state(
         readback, load_json(READBACK_SCHEMA), readback_path=paths['readback'], requirement=requirement,
         requirement_path=paths['requirement'], bundle=bundle, bundle_path=paths['bundle'],

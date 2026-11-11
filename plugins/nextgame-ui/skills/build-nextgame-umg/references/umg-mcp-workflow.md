@@ -4,6 +4,24 @@
 
 Connect through the plugin dependency named `unreal-editor` at `http://127.0.0.1:8000/mcp`. The server exposes registry wrappers. Use `call_tool` with `toolset_name`, `tool_name`, and `arguments`.
 
+For an explicitly authorized new Editor session with a fresh user profile, pass
+both `-ModelContextProtocolStartServer` and `-ModelContextProtocolPort=<port>`.
+The port flag alone does not request startup when Auto Start Server is disabled.
+Resolve the Editor executable from the current project's EngineAssociation or
+an explicitly supplied engine root; do not publish a developer's engine path.
+For an already running session, the native console command
+`ModelContextProtocol.StartServer <port>` starts the existing official server.
+Do not change persistent user settings merely to start a task's own session.
+
+Before using a nondefault endpoint, inspect its actual MCP initialization and
+OS listener ownership. Bind the actual process/project and URL; a requested
+port or same project path cannot establish the running instance's identity.
+If a separate NxUE fallback is required, verify that its explicit endpoint
+belongs to the same process. Never silently substitute a different listener.
+
+These startup controls are documented in Epic's
+[Unreal MCP command-line flags](https://dev.epicgames.com/documentation/unreal-engine/unreal-mcp-in-unreal-editor?application_version=5.8).
+
 ## Toolsets
 
 - `UMGToolSet.UMGToolSet`: create, inspect, modify, compile, and organize Widget Blueprints.
@@ -35,6 +53,16 @@ Apply [Actual verification and unchanged replay](visual-presentation-rules.md#ac
 - When official ObjectTools does not expose the protected CDO field, the permitted fallback is NxUE `manage-property` with object path `/Game/.../<Asset>.Default__<Asset>_C` and property path `DesignSizeMode`. Record the fallback reason in acquisition evidence; for mixed acquisition, identify the exact `$.assets[i].designSizeMode` field path. Save the WidgetBlueprint package and use a second `manage-property` get as post-save readback. `UWidgetBlueprint.ThumbnailSizeMode` is unrelated and must not be changed.
 - Preserve the actual asset and Widget identities returned by Unreal, then relate them to Bundle assets and node mappings explicitly. A matching planned name is not proof that the Widget exists or is exposed as a variable.
 - Do not pass `widget-tree` or `key-properties` verification until the normalized artifact is schema-valid and covers the affected asset.
+
+## Preview and thumbnail freshness
+
+Content Browser thumbnails and open Designer previews can be stale. Confirm actual asset identity, saved structure and a fresh relevant view before diagnosing an obsolete asset or visual regression; an old thumbnail alone is not evidence that a replacement or deletion is needed.
+
+After the authorized compile/save/readback sequence, use an existing supported preview-refresh or thumbnail-refresh operation if the connected tool exposes one, then observe whether the display actually changed. Record an unavailable or unsuccessful refresh without blocking otherwise verified production. Do not create a replacement asset, delete a referenced asset, change ThumbnailSizeMode, clear broad caches, or force unrelated asset saves to repair a preview.
+
+Unreal exposes Content Browser **Settings → Real-Time Thumbnails** and the native `FAssetThumbnail::RefreshThumbnail` API. These are discovery options, not a claim that a Widget Blueprint thumbnail will refresh through the current MCP/Python adapter. Do not fabricate a reflected callable for a native API or leave global realtime rendering enabled as a hidden workflow change. If no supported scoped refresh is available, report the preview limitation and use the current Designer/render evidence for the actual result.
+
+References: [Content Browser settings](https://dev.epicgames.com/documentation/unreal-engine/content-browser-settings-in-unreal-engine?lang=en-US), [FAssetThumbnail](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Editor/UnrealEd/FAssetThumbnail).
 
 ## References and failures
 

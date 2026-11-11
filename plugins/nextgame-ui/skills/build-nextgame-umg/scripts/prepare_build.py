@@ -229,7 +229,31 @@ def size_box_native_setter_contract(node: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def lower_px_font(font: dict[str, Any], justification: str, *, native_font_key: str = "font") -> dict[str, Any]:
+    """Single source for 96-DPI px -> even Slate points with scale compensation.
+
+    Native targets are partial struct writes: preserve the actual font family,
+    other transform members and original layout allocation.
+    """
+    size = font.get("size")
+    if type(size) not in (int, float) or not math.isfinite(size) or size <= 0:
+        raise ValueError("Pixel font size must be positive and finite.")
+    if justification not in {"Left", "Center", "Right"}:
+        raise ValueError("Pixel font lowering requires explicit justification.")
+    source_points = size * (72 / 96)
+    target_points = max(2, 2 * math.ceil(source_points / 2))
+    scale = source_points / target_points
+    return {
+        native_font_key: {**font, "size": target_points},
+        "renderTransform": {"scale": {"x": scale, "y": scale}},
+        "renderTransformPivot": {"x": {"Left": 0, "Center": 0.5, "Right": 1}[justification], "y": 0.5},
+    }
+
+
 def build_plan(spec_path: Path, spec: dict[str, Any], catalog: dict[str, Any], rules: dict[str, Any]) -> dict[str, Any]:
+    if isinstance(spec, dict) and spec.get("version") == "0.4":
+        from existing_asset_update_v2 import build_existing_asset_update_v2_plan
+        return build_existing_asset_update_v2_plan(spec, spec_path=spec_path)
     if isinstance(spec, dict) and spec.get("version") == "0.3":
         from existing_asset_update import build_update_plan
         return build_update_plan(spec_path, spec)
@@ -360,18 +384,7 @@ def build_plan(spec_path: Path, spec: dict[str, Any], catalog: dict[str, Any], r
                     "colorUseRule": "UseColor_Specified",
                 }
             elif component.get("role") == "text.label" and canonical_name == "font" and node.get("fontSizeUnit") == "px":
-                source_points = value["size"] * (72 / 96)
-                target_points = max(2, 2 * math.ceil(source_points / 2))
-                scale = source_points / target_points
-                mapped_values[unreal_name] = {**value, "size": target_points}
-                # Partial struct writes preserve unrelated font and transform
-                # fields. Pivot keeps the justified edge/center fixed without
-                # changing the source rectangle or the parent Slot.
-                mapped_values["renderTransform"] = {"scale": {"x": scale, "y": scale}}
-                mapped_values["renderTransformPivot"] = {
-                    "x": {"Left": 0, "Center": 0.5, "Right": 1}[canonical_values["justification"]],
-                    "y": 0.5,
-                }
+                mapped_values.update(lower_px_font(value, canonical_values["justification"], native_font_key=unreal_name))
             elif component.get("role") == "input.button" and canonical_name == "buttonBrushes":
                 # ObjectTools merges this partial FButtonStyle into the live
                 # struct. Four explicitly transparent states describe a hit

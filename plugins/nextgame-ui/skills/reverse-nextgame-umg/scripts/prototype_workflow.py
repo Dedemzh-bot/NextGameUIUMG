@@ -8,6 +8,7 @@ from pathlib import Path
 import sys
 
 from jsonschema import Draft202012Validator
+from composition_contract import relation_inventory, validate_reviews
 
 
 def obj(properties, required=None):
@@ -36,6 +37,14 @@ SCHEMA = obj({"kind": {"const": "nextgame-reverse-state-ledger"}, "version": {"c
               "source": obj({"path": TEXT, "sha256": HASH}),
               "limits": STRINGS, "evidence": {"type": "array", "items": EVIDENCE},
               "elements": {"type": "array", "minItems": 1, "items": ELEMENT}})
+COMPOSITION_REVIEW = obj({"relationId": TEXT, "role": {"type": "string"},
+    "decision": {"enum": ["unresolved", "preserve-composition", "reuse-slot", "propose-redesign"]},
+    "rationale": {"type": "string"}, "evidenceIds": STRINGS,
+    "cases": {"type": "array", "items": CASE}})
+SCHEMA_V2 = obj(dict(SCHEMA["properties"], version={"const": 2},
+    elements={"type": "array", "minItems": 1, "items": obj(dict(ELEMENT["properties"],
+        sourceVisibilityScope={"const": "asset-local; composed visibility requires per-instance cases"}))},
+    compositionReviews={"type": "array", "items": COMPOSITION_REVIEW}))
 
 
 def read(path):
@@ -59,22 +68,36 @@ def resolve(base, path):
 
 
 def inventory(source):
-    if source.get("kind") != "nextgame-umg-reverse-prototype" or source.get("version") != 1:
-        raise ValueError("Unsupported normalized source: require nextgame-umg-reverse-prototype version 1")
+    if source.get("kind") != "nextgame-umg-reverse-prototype" or source.get("version") not in (1, 2):
+        raise ValueError("Unsupported normalized source: require nextgame-umg-reverse-prototype version 1 or 2")
     blocks = [source["screen"]]
     deps = source.get("dependencies", {})
     blocks.extend(deps.values() if isinstance(deps, dict) else deps)
     result = {}
+    composition = relation_inventory(source)
     for block in blocks:
         asset = block["asset"]
+        if source["version"] == 2:
+            context_id = asset + "#@asset"
+            if context_id in result:
+                raise ValueError(f"Duplicate asset context: {asset}")
+            result[context_id] = {"id": context_id, "asset": asset, "widget": "@asset",
+                "class": "__asset_context__", "sourceVisibility": "Unknown", "sourceHidden": False,
+                "sourceUnread": False, "interactive": False,
+                "sourceVisibilityScope": "asset-local; composed visibility requires per-instance cases"}
         if not block.get("nodes"):
             # An audit marker, never a claimed WidgetTree node.
             identity = asset + "#@unexpanded"
             if identity in result:
                 raise ValueError(f"Duplicate asset: {asset}")
+            inherited_only = source["version"] == 2 and block.get("ownTreeEmptyConfirmed") is True and any(
+                relation["kind"] == "inheritance" and relation["hostAsset"] == asset and relation["status"] == "resolved"
+                for relation in composition.values())
             result[identity] = {"id": identity, "asset": asset, "widget": "@unexpanded",
                                 "class": "__unexpanded_asset__", "sourceVisibility": "Unknown",
-                                "sourceHidden": False, "sourceUnread": True, "interactive": False}
+                                "sourceHidden": False, "sourceUnread": not inherited_only, "interactive": False}
+            if source["version"] == 2:
+                result[identity]["sourceVisibilityScope"] = "asset-local; composed visibility requires per-instance cases"
             continue
         nodes = {n["name"]: n for n in block["nodes"]}
         if len(nodes) != len(block["nodes"]):
@@ -97,6 +120,8 @@ def inventory(source):
                                 "sourceVisibility": node.get("visibility", "Unknown"),
                                 "sourceHidden": hidden, "sourceUnread": bool(node.get("unread", False)),
                                 "interactive": interactive}
+            if source["version"] == 2:
+                result[identity]["sourceVisibilityScope"] = "asset-local; composed visibility requires per-instance cases"
     return result
 
 
@@ -106,10 +131,13 @@ def prepare(args):
     nodes = inventory(source)
     elements = [dict(n, classification="unknown", rationale="", evidenceIds=[], relatedIds=[],
                      requiredCases=[], cases=[]) for n in nodes.values()]
-    ledger = {"kind": "nextgame-reverse-state-ledger", "version": 1, "pageId": args.page_id,
+    ledger = {"kind": "nextgame-reverse-state-ledger", "version": source["version"], "pageId": args.page_id,
               "revision": args.revision, "source": {"path": str(source_path), "sha256": digest(source_path)},
               "limits": list(dict.fromkeys(source.get("limits", []))), "evidence": [], "elements": elements}
-    Draft202012Validator(SCHEMA).validate(ledger)
+    if source["version"] == 2:
+        ledger["compositionReviews"] = [{"relationId": identity, "role": "", "decision": "unresolved",
+            "rationale": "", "evidenceIds": [], "cases": []} for identity in relation_inventory(source)]
+    Draft202012Validator(SCHEMA_V2 if source["version"] == 2 else SCHEMA).validate(ledger)
     write_new(args.out, ledger)
     return {"status": "prepared-pending-analysis", "nodes": len(elements),
             "interactiveCandidates": sum(n["interactive"] for n in elements),
@@ -121,14 +149,17 @@ def validate(path):
     errors = []
     try:
         ledger = read(path)
+        schema = SCHEMA_V2 if ledger.get("version") == 2 else SCHEMA
         errors.extend("schema:" + "/".join(map(str, e.absolute_path)) + ": " + e.message
-                      for e in Draft202012Validator(SCHEMA).iter_errors(ledger))
+                      for e in Draft202012Validator(schema).iter_errors(ledger))
         if errors:
             return {"ledger": str(path), "status": "incomplete", "errors": errors}
         source_path = resolve(path.parent, ledger["source"]["path"])
         if digest(source_path).lower() != ledger["source"]["sha256"].lower():
             errors.append("source hash is stale")
         source = read(source_path)
+        if source.get("version") != ledger["version"]:
+            errors.append("source/ledger version mismatch; migrate explicitly without relabeling historical evidence")
         nodes = inventory(source)
         elements = {n["id"]: n for n in ledger["elements"]}
         if len(elements) != len(ledger["elements"]):
@@ -148,6 +179,9 @@ def validate(path):
                 if identity not in evidence:
                     errors.append(f"{owner}: missing evidence ID {identity}")
             return {evidence[i]["kind"] for i in ids if i in evidence}
+
+        if ledger["version"] == 2:
+            validate_reviews(ledger, relation_inventory(source), evidence_kinds, errors, elements)
 
         for identity, node in elements.items():
             prefix = identity + ": "
@@ -203,7 +237,8 @@ def validate(path):
                     errors.append(prefix + "visible case omits control or related content")
         return {"ledger": str(path), "ledgerSHA256": digest(path), "pageId": ledger["pageId"],
                 "revision": ledger["revision"], "status": "incomplete" if errors else "coverage-complete",
-                "scope": "declared source inventory and evidence-bound state coverage; not runtime or user acceptance",
+                "scope": "declared source inventory and evidence-bound state/composition coverage; not runtime or user acceptance",
+                "compositionCoverage": "declared-v2" if ledger["version"] == 2 else "not-assessed-legacy-v1",
                 "limits": ledger["limits"], "elementCount": len(elements), "errors": errors}
     except (OSError, ValueError, KeyError, TypeError) as exc:
         return {"ledger": str(path), "status": "incomplete", "errors": [f"input error: {exc}"]}

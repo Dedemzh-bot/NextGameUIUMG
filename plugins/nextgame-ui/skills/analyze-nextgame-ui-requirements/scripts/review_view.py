@@ -11,10 +11,11 @@ from __future__ import annotations
 
 import argparse
 import copy
+import hashlib
 import json
 import re
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
@@ -109,6 +110,7 @@ class CanonicalIndex:
     bindings: dict[str, CanonicalBinding]
     order: list[str]
     duplicate_ids: list[str]
+    layout_reference_scopes: dict[tuple[str | int, ...], dict[str, Any]] = field(default_factory=dict)
 
 
 ANY_TYPE: frozenset[str] | None = None
@@ -492,7 +494,81 @@ def build_canonical_index(draft: dict[str, Any]) -> CanonicalIndex:
                 continue
             bindings[canonical_id] = CanonicalBinding(canonical_id, canonical_type, key)
             order.append(canonical_id)
-    return CanonicalIndex(owners=owners, bindings=bindings, order=order, duplicate_ids=duplicate_ids)
+    return CanonicalIndex(owners=owners, bindings=bindings, order=order, duplicate_ids=duplicate_ids,
+                          layout_reference_scopes=_layout_reference_scopes(draft))
+
+
+def _layout_reference_scopes(draft: dict[str, Any]) -> dict[tuple[str | int, ...], dict[str, Any]]:
+    """Register exact Layout 0.4 payloads, bound to their source bytes and asset.
+
+    This grants reference interpretation only, not Layout validity or execution
+    approval. The existing Layout/Bundle gates still validate the whole plan.
+    Neither a matching property name nor a canonical-looking local ID opts in.
+    """
+    scopes: dict[tuple[str | int, ...], dict[str, Any]] = {}
+    # Projected v0.2 views intentionally omit provenance metadata. Capability
+    # comes from the hash-bound Layout, not from that omitted metadata.
+    if draft.get("version") != "0.2":
+        return scopes
+    assets = [a for a in draft.get("assetPlan", []) if isinstance(a, dict)]
+    layouts: list[tuple[dict, dict]] = []
+    filenames = {Path(a["layoutSpecPath"]).name for a in assets if isinstance(a.get("layoutSpecPath"), str)}
+    for source in draft.get("sources", []):
+        if not isinstance(source, dict) or source.get("locatorKind") != "local-file":
+            continue
+        source_path = source.get("path")
+        if not isinstance(source_path, str) or Path(source_path).name not in filenames:
+            continue
+        try:
+            raw = Path(source_path).read_bytes()
+            if hashlib.sha256(raw).hexdigest() != source.get("contentSha256"):
+                continue
+            layout = json.loads(raw)
+            if layout.get("version") == "0.4" and layout.get("capability") == "existing-asset-layout-update/2":
+                layouts.append((source, layout))
+        except (OSError, ValueError, TypeError, AttributeError):
+            continue
+    for position, element in enumerate(draft.get("uiModel", {}).get("elements", [])):
+        if not isinstance(element, dict) or not isinstance(element.get("properties"), dict):
+            continue
+        for block_name in ("providerSizing", "desiredSizeProof", "collectionCoordination"):
+            block = element["properties"].get(block_name)
+            if not isinstance(block, dict):
+                continue
+            matches = []
+            for source, layout in layouts:
+                asset = layout.get("asset", {})
+                asset_path = str(asset.get("folder", "")).rstrip("/") + "/" + str(asset.get("name", ""))
+                candidates = layout.get("collections", []) if block_name == "collectionCoordination" else [layout.get("profile", {}).get(block_name)]
+                if block not in candidates:
+                    continue
+                for plan in assets:
+                    if (plan.get("assetPath") == asset_path
+                            and element.get("id") in plan.get("coversElementIds", [])
+                            and Path(plan.get("layoutSpecPath", "")).name == Path(source["path"]).name):
+                        local_ids = {n.get("id") for section in ("nodes", "additions")
+                                     for n in layout.get(section, []) if isinstance(n, dict) and isinstance(n.get("id"), str)}
+                        matches.append({"localIds": local_ids, "sourceId": source.get("id"), "assetId": plan.get("id")})
+            if len(matches) == 1:
+                scopes[("uiModel", "elements", position, "properties", block_name)] = matches[0]
+    return scopes
+
+
+def _layout_reference_rule(path: tuple[str | int, ...], index: CanonicalIndex) -> tuple[ReferenceRule | None, dict | None]:
+    """Only the seven audited nested fields have these new semantics."""
+    block_path = path[:5]
+    scope = index.layout_reference_scopes.get(block_path)
+    if scope is not None:
+        tail = path[5:]
+        if tail == ("acceptedRequirementRef",):
+            return ReferenceRule("one", _types("element")), None
+        if (block_path[-1] == "providerSizing" and len(tail) == 3 and tail[0] == "consumers"
+                and isinstance(tail[1], int) and tail[2] == "acceptedRequirementRef"):
+            return ReferenceRule("one", _types("element")), None
+        local_key = "rootSizingNodeId" if block_path[-1] == "providerSizing" else "nodeId"
+        if tail == (local_key,):
+            return None, {**scope, "nullable": block_path[-1] != "collectionCoordination"}
+    return None, None
 
 
 def _parse_reference_values(
@@ -553,6 +629,14 @@ def collect_references(
 
     references: list[Reference] = []
     errors: list[dict[str, str]] = []
+    scope = index.layout_reference_scopes.get(path)
+    if scope is not None:
+        # Preserve capability evidence and owning asset through both review and
+        # accepted-build dependency closure, including owner-by-owner traversal.
+        references.extend([
+            Reference(scope["sourceId"], _types("source"), _path_text(path)),
+            Reference(scope["assetId"], _types("asset"), _path_text(path)),
+        ])
     if isinstance(value, dict):
         is_change = {"elementId", "property", "value"}.issubset(value)
         for key, child in value.items():
@@ -563,6 +647,21 @@ def collect_references(
             child_path = (*path, key)
             child_opaque = opaque or key == "properties" or (is_change and key == "value")
             rule = REFERENCE_RULES.get(key)
+            layout_rule, local_scope = _layout_reference_rule(child_path, index)
+            if local_scope is not None:
+                if not ((child is None and local_scope["nullable"])
+                        or (isinstance(child, str) and child in local_scope["localIds"])):
+                    errors.append(issue("review-view.reference_shape", _path_text(child_path),
+                                        "Layout-local reference must resolve in the bound Layout nodes/additions, or be explicitly nullable."))
+                continue
+            if layout_rule is not None:
+                rule = layout_rule
+            elif (key == "acceptedRequirementRef" and child_path[:2] == ("uiModel", "elements")
+                    and len(child_path) >= 6 and child_path[3] == "properties"
+                    and child_path[4] in {"providerSizing", "desiredSizeProof", "collectionCoordination"}):
+                errors.append(issue("review-view.unknown_reference_shape", _path_text(child_path),
+                                    "This reference requires an exact hash-bound Layout 0.4 existing-asset-layout-update/2 payload."))
+                continue
             # New coordinate-local refs do not reinterpret legacy opaque fields.
             if path and path[0] == "coordinateContract":
                 if key == "assetId":

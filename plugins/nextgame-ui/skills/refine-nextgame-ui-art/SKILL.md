@@ -5,7 +5,11 @@ description: Refine existing NextGame UMG from high-fidelity artwork and cut res
 
 # Refine NextGame UI Art
 
+An explicit `designer-mode-continuation/1` request may bind the [distinct protected Designer continuation receipt](../build-nextgame-umg/references/designer-mode-continuation.md) alongside development-baseline/1 or /2. Ordinary checkpoints retain their complete-v2 requirements; compile/save arguments resolve from preceding actual event results, and an unchanged failed checkpoint never becomes completed by declaration. The opt-in receipt still must prove official compile/save, same-process transports, typed Designer CAS, current bound source and actual post-save evidence.
+
 UI tasks do not authorize game-source or Blueprint business-logic changes. Read [the business-code boundary](../build-nextgame-umg/references/visual-presentation-rules.md#business-code-boundary) before planning or mutation; hand runtime-code dependencies and code conflicts to programmers.
+
+Before analyzing or changing a composed widget, apply [Slot recognition and composition decisions](../build-nextgame-umg/references/shared-widget-reuse.md#slot-recognition-and-composition-decisions) and [whole-component proportional scaling](../build-nextgame-umg/references/visual-presentation-rules.md#whole-component-proportional-scaling). Record the common shell, content providers and intended Slot use; inspect descendant sizing and actual compressed views separately. New components follow [revision-free creation names](../build-nextgame-umg/references/widget-component-naming.md#revision-free-creation-names); existing bindings remain protected.
 
 Before local art decisions or application, apply [production fidelity checks](../build-nextgame-umg/references/production-fidelity-checks.md): verify resource identity and complete-frame responsibilities, trace each accepted native property and retain unsupported or unrendered items as outstanding.
 
@@ -13,7 +17,17 @@ Use one optional stage under the original primary coordinator. `developer-only` 
 
 Read [workflow.md](references/workflow.md) for commands and artifact ordering. Before any Editor operation, read [runtime-support.md](references/runtime-support.md) and check the current host's capabilities. Shared chain/version rules remain in [on-demand-art-stage.md](../build-nextgame-umg/references/on-demand-art-stage.md).
 
+The explicit [measured presentation receiver](references/measured-presentation-geometry.md)
+uses a separately frozen read-only adoption of an existing completed Art
+execution. It preserves the original request/decisions/plan/execution bytes and
+adds capture/2 and verification/2 without another apply. Legacy capture/1 and
+verification/1 retain their own semantics. Missing actual producer, paint,
+loaded/runtime state or color evidence remains pending; a probe or Slot
+calculation cannot close preserved-image geometry.
+
 ## Authority and decisions
+
+When the scope includes inherited, nested or NamedSlot content, acquire separate raw [composition evidence](../reverse-nextgame-umg/references/slot-composition.md#acquire-before-normalizing) through `ArtEditor.composition_evidence()` / the read-only capture CLI, or the approved field-level fallback. Inspect each relevant host instance and provider before choosing art receivers or a scaling boundary. The unchanged art snapshot/1 remains the apply baseline; its flattened `parentWidgetName` or references digest is not sufficient evidence of Slot placement. Missing composition evidence remains an explicit gap and does not authorize structural edits.
 
 Legacy existing-only native targets may use the Build skill's explicit
 [existing-asset-property-update/1](../build-nextgame-umg/references/existing-asset-property-update.md)
@@ -48,3 +62,7 @@ After passed art verification, create the stage bindings, finalize Bundle 0.4, a
 Any art, preview, Bundle or readback change invalidates earlier result acceptance. Static art parameters do not become programmer-facing API requirements.
 
 Write task artifacts under the current request directory outside the plugin and resource input folder. Samples are scoped `reference-only` project data; they do not train model weights or establish global standards. Report completed capabilities and remaining runtime limitations separately.
+
+## Explicit existing-layout update capability
+
+For authorized collection layout and local existing-tree changes, use the separate [Layout 0.4 / existing-asset-layout-update/2](../build-nextgame-umg/references/existing-asset-layout-update-v2.md) branch with actual snapshot v2, complete accepted Requirement/View/Bundle gates, and the dedicated executor. Historical Layout 0.2/0.3 and art snapshot/1 remain unchanged. Keep runtime code and final render/acceptance boundaries.

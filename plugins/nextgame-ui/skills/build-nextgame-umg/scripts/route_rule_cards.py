@@ -27,8 +27,8 @@ DEFAULT_ROUTING = SKILL_ROOT / "references" / "rule-card-routing.json"
 DEFAULT_REFERENCES = SKILL_ROOT / "references"
 PACK_VERSION = "0.1"
 ROUTING_VERSION = "0.1"
-RULE_INDEX_VERSION = "0.27"
-EXPECTED_RULE_COUNT = 58
+RULE_INDEX_VERSION = "0.29"
+EXPECTED_RULE_COUNT = 62
 KNOWN_LAYOUT_VERSION = "0.2"
 KNOWN_MODES = {"prototype", "production"}
 KNOWN_ASSET_KINDS = {"prototype", "screen", "child-widget"}
@@ -40,6 +40,8 @@ FENCE_PATTERN = re.compile(r"^ {0,3}(`{3,}|~{3,})(?:[^\r\n]*)$")
 # These documents preserve every workflow gate even when the routing
 # configuration itself is missing or corrupt.
 FALLBACK_WORKFLOW_DOCS = (
+    "visual-presentation-rules.md",
+    "widget-component-naming.md",
     "on-demand-art-stage.md",
     "production-fidelity-checks.md",
     "requirement-build-handoff.md",
@@ -48,6 +50,7 @@ FALLBACK_WORKFLOW_DOCS = (
 )
 
 FALLBACK_WORKFLOW_GUARDS: tuple[dict[str, Any], ...] = (
+    {'id': 'workflow.composition-scale-review', 'stages': ['build-planning', 'build-execution', 'build-verification'], 'severity': 'error', 'summary': 'Preserve and use Slot composition; reject revision-bearing new names; inspect descendant sizing and actual compressed results independently of static checks.', 'detailRefs': [{'file': 'shared-widget-reuse.md', 'heading': '## Slot recognition and composition decisions'}, {'file': 'visual-presentation-rules.md', 'heading': '## Whole-component proportional scaling'}, {'file': 'widget-component-naming.md', 'heading': '## Revision-free creation names'}, {'file': 'requirement-build-handoff.md', 'heading': '## Complete-child proportional scaling'}], 'files': ['shared-widget-reuse.md', 'visual-presentation-rules.md', 'widget-component-naming.md', 'requirement-build-handoff.md']},
     {
         "id": "workflow.requirement-review-gate",
         "stages": ["build-planning"],
@@ -108,6 +111,7 @@ FALLBACK_WORKFLOW_GUARDS: tuple[dict[str, Any], ...] = (
         "detailRefs": [
             {"file": "on-demand-art-stage.md", "heading": "## Development baseline property deferral"},
             {"file": "umg-mcp-workflow.md", "heading": "## Actual readback boundary"},
+            {"file": "umg-mcp-workflow.md", "heading": "## Preview and thumbnail freshness"},
             {"file": "visual-presentation-rules.md", "heading": "## Actual verification and unchanged replay"},
             {"file": "requirement-build-handoff.md", "heading": "## Result capture"},
             {"file": "production-fidelity-checks.md", "heading": "## Geometry responsibilities and related surfaces"},

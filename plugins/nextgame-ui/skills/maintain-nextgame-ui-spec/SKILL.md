@@ -5,6 +5,13 @@ description: Add, revise, version or migrate NextGame UI design and UMG producti
 
 # Maintain NextGame UI Specifications
 
+For Layout 0.4 provider/collection reference projection, see the
+[scoped registry correction](references/existing-layout-reference-registry-20261105.md).
+Layout 0.4 Bundle adaptation uses the
+[native Slot validation and shared inherited coverage](references/existing-layout-native-responsive-20261105.md).
+For the narrow live Designer/Brush/ScaleBoxSlot capability corrections, see
+[execution preflight correction](references/existing-layout-preflight-20261105.md).
+
 UI tasks do not authorize game-source or Blueprint business-logic changes. Read [the business-code boundary](../build-nextgame-umg/references/visual-presentation-rules.md#business-code-boundary) before planning or mutation; hand runtime-code dependencies and code conflicts to programmers.
 
 The optional [existing asset update route](../build-nextgame-umg/references/existing-asset-property-update.md)
@@ -40,6 +47,8 @@ Bundle/normalized Readback 0.4 add an opt-in art completion contract without rel
 
 ## Make a compatible, reviewable change
 
+For Slot recognition and use, revision-free creation names, proportional descendant-size review and optional thumbnail freshness, follow the [2026-11-04 composition review change](references/composition-review-change-20261104.md). Preserve reverse source/ledger v1 compatibility and the independent closed art snapshot; current creation/sizing checks do not retroactively validate old artifacts or claim rendered correctness.
+
 1. Search the light registry and exact rule IDs before creating anything. Reuse a matching rule, or add a distinct version/scope. Record the problem, owning layer, authority, before/after behavior, affected consumers and migration plan.
    For UI materials, first search the build [material reference catalog](../build-nextgame-umg/references/material-reference-catalog.md) and verify the relevant assets exist; only then call UMG/material tools and load that family's data for learning. Maintain the existing rule when present, not a duplicate rule or unindexed task note. Follow [immutable variants and per-root numbering](../build-nextgame-umg/references/material-instance-rules.md); never change a saved reference instance or root Material to test a new preset.
 2. Preserve released IDs and parameter versions. An incompatible shape/meaning needs a new contract version; a changed module gets an explicit new module version. Update exact references deliberately. Keep legacy artifacts readable against their recorded authority; never relabel or rewrite old evidence.
@@ -51,3 +60,16 @@ Bundle/normalized Readback 0.4 add an opt-in art completion contract without rel
 Use the project's `templates/spec-change.md` for substantial changes. Do not invent a new report/checklist for a spelling correction. Generated previews, exports and installed caches are outputs; change their authoritative source first.
 
 Design contract changes flow back to the design source, increment its revision and invalidate affected derived approvals/results. Preserve unchanged module decisions and analyze only new gaps. Both structured and raw inputs continue through the same UMG generation and actual verification path.
+
+## Explicit existing-layout update capability
+
+For the narrow original new-build protected Designer failure, preserve the distinct opt-in [Designer-mode continuation/1](../build-nextgame-umg/references/designer-mode-continuation.md) and its [maintenance proposal](references/designer-mode-continuation-change-20261110.md). Never promote its NxUE calls to official events, edit failed v2 history or resolve past arguments from final saved state. Same-project paths alone cannot prove that two running Editor transports share one process.
+
+For authorized collection layout and local existing-tree changes, use the separate [Layout 0.4 / existing-asset-layout-update/2](../build-nextgame-umg/references/existing-asset-layout-update-v2.md) branch with actual snapshot v2, complete accepted Requirement/View/Bundle gates, and the dedicated executor. Historical Layout 0.2/0.3 and art snapshot/1 remain unchanged. Keep runtime code and final render/acceptance boundaries.
+
+The branch's [supplemental review](../build-nextgame-umg/references/existing-update-review.md) is opt-in read-only diagnosis, not another executor or production gate. Preserve its evidence-bound declarations, incomplete animation/native/external Lua coverage and constant `executionAllowed=false`; do not turn `review-ready` into authorization or require unrelated new builds to use it. The [2026-11-10 maintenance record](references/existing-update-review-change-20261110.md) binds the rule-index/routing change and unchanged historical formats.
+
+For cross-package identity and current-version routing, use the project `NextGameUIArt` root's `tools/ui_toolchain_doctor.py` and `data/toolchain-doctor-README.md` when present. Supply the resolved package roots and explicit installed copy; no machine-specific path is a published default. The doctor reuses existing authority/library/current-run readers and does not refresh consumer locks, prove semantic compatibility or close Editor/result acceptance.
+
+For the compatible resource-loader, native PNG export boundary, fallback-test
+and cold-start corrections, see [toolchain retest corrections](references/toolchain-green-fixes-20261110.md).

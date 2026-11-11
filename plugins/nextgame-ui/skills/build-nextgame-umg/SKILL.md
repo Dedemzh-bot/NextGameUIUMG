@@ -9,6 +9,8 @@ For an existing Demo/UMG-to-Figma reverse prototype request, use sibling [revers
 
 UI tasks do not authorize game-source or Blueprint business-logic changes. Read [the business-code boundary](references/visual-presentation-rules.md#business-code-boundary) before planning or mutation; hand runtime-code dependencies and code conflicts to programmers.
 
+Before analyzing or changing a composed widget, apply [Slot recognition and composition decisions](references/shared-widget-reuse.md#slot-recognition-and-composition-decisions) and [whole-component proportional scaling](references/visual-presentation-rules.md#whole-component-proportional-scaling). Record the common shell, content providers and intended Slot use; inspect descendant sizing and actual compressed views separately. New components follow [revision-free creation names](references/widget-component-naming.md#revision-free-creation-names); existing bindings remain protected.
+
 Before planning, execution or verification, read the applicable [production fidelity checks](references/production-fidelity-checks.md). Existing rule packs route the matching duties; keep accepted-property coverage and missing visual evidence explicit.
 
 Create prototype or explicitly authorized formal UMG assets. Treat image interpretation, component selection, layout planning, Editor mutation, and validation as separate stages so project-specific components and standards can evolve without changing the workflow.
@@ -221,6 +223,8 @@ Use the selected [visual presentation rules](references/visual-presentation-rule
 
 ## Safety boundaries
 
+An original new-build plan that explicitly declares the protected generated-CDO Designer fallback may use [Designer-mode continuation/1](references/designer-mode-continuation.md) only through that separate explicit capability and single-purpose runner. It preserves the failed original plan/checkpoint, requires same-process official MCP/NxUE identity and produces a distinct mixed-provider receipt. This optional route does not make NxUE mandatory for ordinary builds or replace accepted source, actual readback and result gates.
+
 - Do not claim pixel-perfect reproduction.
 - Do not create or modify C++ classes.
 - Do not infer undocumented project standards.
@@ -239,3 +243,9 @@ Use the selected [visual presentation rules](references/visual-presentation-rule
 - Add confirmed reusable Widget Blueprint assets to the plugin-level `assets/shared-widget-registry.json`, not `component-catalog.json`. Registry 0.4 activation requires live-verified root-direct `SlotDown`/`SlotUp` order, strict lower/upper ZOrder, full-fill layouts, `IsVariable` flags, and `SelfHitTestInvisible` visibility. Use the direct-add contract for a new common asset; for an existing asset preserve every observed legacy NamedSlot and saved binding, and require lossless pre-save proof for any historical standard-name migration. `Slot1` is a bag-item-specific legacy name, not a global requirement. Never use the reflected-reserved name `Slot` for a NamedSlot. Refresh interface evidence and both hashes; record size/state hard-checks, semantic similarity, `class-settings-parent-class`, both inherited Slot `empty|panel` records, later WidgetTree nesting/EntryClass, and Lua/dynamic-reference relations separately. Registry candidates are never build inputs. Require the review evidence and run `python ../../scripts/test_shared_widget_registry.py`.
 - Add project standards to `references/rule-index.json`; express applicability through profile fields and keep detailed prose in a directly linked reference file. Add the same unique rule ID to `references/rule-card-routing.json` with either a self-contained declaration or exact unique Markdown headings, update the bound index version/count deliberately, and run `python scripts/test_rule_card_routing.py`. A partial routing-map update must fall back rather than silently omit the new rule.
 - Add deterministic checks to the validator instead of relying only on instructions.
+
+## Explicit existing-layout update capability
+
+For authorized collection layout and local existing-tree changes, use the separate [Layout 0.4 / existing-asset-layout-update/2](references/existing-asset-layout-update-v2.md) branch with actual snapshot v2, complete accepted Requirement/View/Bundle gates, and the dedicated executor. Historical Layout 0.2/0.3 and art snapshot/1 remain unchanged. Keep runtime code and final render/acceptance boundaries.
+
+For that explicitly selected Layout 0.4 branch, the [supplemental existing-update review](references/existing-update-review.md) is an optional offline diagnostic for ownership declarations, scoped reference evidence, baseline drift and structural conflicts. Invoke `scripts/review_existing_update.py` only when this explanation is useful; new builds and unrelated property-only work acquire no new duty. The routed `existing-update.supplemental-review` card is informational. Every result keeps `executionAllowed=false`, `formalGatesValidated=false` and `visualVerified=false`, including `review-ready`; it adds no production execution permission and never substitutes for the existing accepted Requirement/View/Bundle, current CAS, native schema discovery or post-save/visual gates.

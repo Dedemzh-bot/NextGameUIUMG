@@ -310,67 +310,13 @@
       ]
     },
     "capture": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "kind": {
-          "const": "nextgame-ui-art-capture"
+      "oneOf": [
+        {
+          "$ref": "#/$defs/captureV1"
         },
-        "version": {
-          "const": 1
-        },
-        "assetPath": {
-          "type": "string",
-          "pattern": "^/Game/UI/(?:UMG|AIPrototype)/[^.]+$"
-        },
-        "context": {
-          "$ref": "#/$defs/context"
-        },
-        "snapshotSha256": {
-          "type": "string",
-          "pattern": "^[0-9a-f]{64}$"
-        },
-        "image": {
-          "$ref": "#/$defs/binding"
-        },
-        "capturedAt": {
-          "type": "string",
-          "minLength": 1
-        },
-        "acquisition": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "method": {
-              "enum": [
-                "official-unreal-mcp",
-                "nxue-agent",
-                "mixed"
-              ]
-            },
-            "fallbackReason": {
-              "type": "string",
-              "minLength": 1
-            }
-          },
-          "required": [
-            "method"
-          ]
-        },
-        "canonical": {
-          "const": true
+        {
+          "$ref": "#/$defs/captureV2"
         }
-      },
-      "required": [
-        "kind",
-        "version",
-        "assetPath",
-        "context",
-        "snapshotSha256",
-        "image",
-        "capturedAt",
-        "acquisition",
-        "canonical"
       ]
     },
     "region": {
@@ -616,6 +562,7 @@
               "presentation-review/1",
               "development-baseline/1",
               "development-baseline/2",
+              "designer-mode-continuation/1",
               "mapped-source-reference/1",
               "procedural-ui-material/1",
               "procedural-ui-material/2",
@@ -866,6 +813,44 @@
                 }
               }
             }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "capabilities": {
+                "contains": {
+                  "const": "designer-mode-continuation/1"
+                }
+              }
+            },
+            "required": [
+              "capabilities"
+            ]
+          },
+          "then": {
+            "properties": {
+              "goal": {
+                "const": "formal-art"
+              },
+              "capabilities": {
+                "anyOf": [
+                  {
+                    "contains": {
+                      "const": "development-baseline/1"
+                    }
+                  },
+                  {
+                    "contains": {
+                      "const": "development-baseline/2"
+                    }
+                  }
+                ]
+              }
+            },
+            "required": [
+              "developmentBaseline"
+            ]
           }
         }
       ]
@@ -1165,64 +1150,13 @@
       ]
     },
     "verification": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "kind": {
-          "const": "nextgame-ui-art-verification"
+      "oneOf": [
+        {
+          "$ref": "#/$defs/verificationV1"
         },
-        "version": {
-          "const": 1
-        },
-        "plan": {
-          "$ref": "#/$defs/binding"
-        },
-        "snapshot": {
-          "$ref": "#/$defs/binding"
-        },
-        "execution": {
-          "$ref": "#/$defs/binding"
-        },
-        "visualReview": {
-          "$ref": "#/$defs/binding"
-        },
-        "comparisons": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/binding"
-          },
-          "minItems": 1
-        },
-        "status": {
-          "enum": [
-            "passed",
-            "needs-review",
-            "failed"
-          ]
-        },
-        "checks": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/check"
-          },
-          "minItems": 1
-        },
-        "verifiedAt": {
-          "type": "string",
-          "minLength": 1
+        {
+          "$ref": "#/$defs/verificationV2"
         }
-      },
-      "required": [
-        "kind",
-        "version",
-        "plan",
-        "snapshot",
-        "execution",
-        "visualReview",
-        "comparisons",
-        "status",
-        "checks",
-        "verifiedAt"
       ]
     },
     "stage": {
@@ -3551,6 +3485,3399 @@
         "sourcePointer",
         "sourceValue",
         "closureCheckIds"
+      ]
+    },
+    "captureV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "nextgame-ui-art-capture"
+        },
+        "version": {
+          "const": 1
+        },
+        "assetPath": {
+          "type": "string",
+          "pattern": "^/Game/UI/(?:UMG|AIPrototype)/[^.]+$"
+        },
+        "context": {
+          "$ref": "#/$defs/context"
+        },
+        "snapshotSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "image": {
+          "$ref": "#/$defs/binding"
+        },
+        "capturedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "acquisition": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "method": {
+              "enum": [
+                "official-unreal-mcp",
+                "nxue-agent",
+                "mixed"
+              ]
+            },
+            "fallbackReason": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "method"
+          ]
+        },
+        "canonical": {
+          "const": true
+        }
+      },
+      "required": [
+        "kind",
+        "version",
+        "assetPath",
+        "context",
+        "snapshotSha256",
+        "image",
+        "capturedAt",
+        "acquisition",
+        "canonical"
+      ]
+    },
+    "captureV2": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "nextgame-ui-art-capture"
+        },
+        "version": {
+          "const": 2
+        },
+        "assetPath": {
+          "type": "string",
+          "pattern": "^/Game/UI/(?:UMG|AIPrototype)/[^.]+$"
+        },
+        "context": {
+          "$ref": "#/$defs/context"
+        },
+        "snapshotSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "image": {
+          "$ref": "#/$defs/binding"
+        },
+        "capturedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "acquisition": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "method": {
+              "enum": [
+                "official-unreal-mcp",
+                "nxue-agent",
+                "mixed"
+              ]
+            },
+            "fallbackReason": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "method"
+          ]
+        },
+        "canonical": {
+          "const": true
+        },
+        "geometryEvidence": {
+          "$ref": "#/$defs/binding"
+        }
+      },
+      "required": [
+        "kind",
+        "version",
+        "assetPath",
+        "context",
+        "snapshotSha256",
+        "image",
+        "capturedAt",
+        "acquisition",
+        "canonical",
+        "geometryEvidence"
+      ]
+    },
+    "verificationV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "nextgame-ui-art-verification"
+        },
+        "version": {
+          "const": 1
+        },
+        "plan": {
+          "$ref": "#/$defs/binding"
+        },
+        "snapshot": {
+          "$ref": "#/$defs/binding"
+        },
+        "execution": {
+          "$ref": "#/$defs/binding"
+        },
+        "visualReview": {
+          "$ref": "#/$defs/binding"
+        },
+        "comparisons": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/binding"
+          },
+          "minItems": 1
+        },
+        "status": {
+          "enum": [
+            "passed",
+            "needs-review",
+            "failed"
+          ]
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/check"
+          },
+          "minItems": 1
+        },
+        "verifiedAt": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "kind",
+        "version",
+        "plan",
+        "snapshot",
+        "execution",
+        "visualReview",
+        "comparisons",
+        "status",
+        "checks",
+        "verifiedAt"
+      ]
+    },
+    "verificationV2": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "nextgame-ui-art-verification"
+        },
+        "version": {
+          "const": 2
+        },
+        "plan": {
+          "$ref": "#/$defs/binding"
+        },
+        "snapshot": {
+          "$ref": "#/$defs/binding"
+        },
+        "execution": {
+          "$ref": "#/$defs/binding"
+        },
+        "visualReview": {
+          "$ref": "#/$defs/binding"
+        },
+        "comparisons": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/binding"
+          },
+          "minItems": 1
+        },
+        "status": {
+          "enum": [
+            "passed",
+            "needs-review",
+            "failed"
+          ]
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/check"
+          },
+          "minItems": 1
+        },
+        "verifiedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "geometryEvidence": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": {
+            "$ref": "#/$defs/binding"
+          }
+        },
+        "geometryAdoption": {
+          "$ref": "#/$defs/binding"
+        }
+      },
+      "required": [
+        "kind",
+        "version",
+        "plan",
+        "snapshot",
+        "execution",
+        "visualReview",
+        "comparisons",
+        "status",
+        "checks",
+        "verifiedAt",
+        "geometryEvidence",
+        "geometryAdoption"
+      ]
+    },
+    "measuredGeometryConfiguration": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "scope": {
+          "const": "flat-static-item-pilot"
+        },
+        "projectRoot": {
+          "type": "string",
+          "minLength": 1
+        },
+        "referenceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "contentRootWidgetName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "designContentSize": {
+          "$ref": "#/$defs/size"
+        },
+        "producer": {
+          "const": "euw-retainer-nativevm/1"
+        },
+        "cases": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "scale": {
+                "type": "number",
+                "enum": [
+                  1,
+                  0.75
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "scale"
+            ]
+          }
+        }
+      },
+      "required": [
+        "scope",
+        "projectRoot",
+        "referenceId",
+        "contentRootWidgetName",
+        "designContentSize",
+        "producer",
+        "cases"
+      ]
+    },
+    "measuredGeometryAdoption": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "nextgame-ui-measured-geometry-adoption"
+        },
+        "version": {
+          "const": 1
+        },
+        "capability": {
+          "const": "measured-presentation-geometry/1"
+        },
+        "createdAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "request": {
+          "$ref": "#/$defs/binding"
+        },
+        "decisions": {
+          "$ref": "#/$defs/binding"
+        },
+        "plan": {
+          "$ref": "#/$defs/binding"
+        },
+        "execution": {
+          "$ref": "#/$defs/binding"
+        },
+        "finalSnapshot": {
+          "$ref": "#/$defs/binding"
+        },
+        "hostEvidence": {
+          "$ref": "#/$defs/binding"
+        },
+        "collector": {
+          "$ref": "#/$defs/binding"
+        },
+        "helpers": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/binding"
+          }
+        },
+        "fontEvidence": {
+          "$ref": "#/$defs/binding"
+        },
+        "configuration": {
+          "$ref": "#/$defs/measuredGeometryConfiguration"
+        }
+      },
+      "required": [
+        "kind",
+        "version",
+        "capability",
+        "createdAt",
+        "request",
+        "decisions",
+        "plan",
+        "execution",
+        "finalSnapshot",
+        "hostEvidence",
+        "collector",
+        "helpers",
+        "fontEvidence",
+        "configuration"
+      ]
+    },
+    "measuredGeometryEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "nextgame-ui-measured-presentation-geometry"
+        },
+        "version": {
+          "const": 1
+        },
+        "adoption": {
+          "$ref": "#/$defs/binding"
+        },
+        "collectorRaw": {
+          "$ref": "#/$defs/binding"
+        },
+        "finalSnapshot": {
+          "$ref": "#/$defs/binding"
+        },
+        "sourceAsset": {
+          "$ref": "#/$defs/binding"
+        },
+        "loadedSnapshotBefore": {
+          "$ref": "#/$defs/binding"
+        },
+        "loadedSnapshotAfter": {
+          "$ref": "#/$defs/binding"
+        },
+        "cases": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "captureIndex": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1
+              }
+            },
+            "required": [
+              "id",
+              "captureIndex"
+            ]
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "version",
+        "adoption",
+        "collectorRaw",
+        "finalSnapshot",
+        "sourceAsset",
+        "loadedSnapshotBefore",
+        "loadedSnapshotAfter",
+        "cases"
+      ]
+    },
+    "retainerGeometrySample": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "image": {
+          "$ref": "#/$defs/binding"
+        },
+        "capturedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "frame": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "context": {
+          "$ref": "#/$defs/context"
+        },
+        "wholeWidgetRenderScale": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          }
+        },
+        "widgetInstance": {
+          "type": "string",
+          "minLength": 1
+        },
+        "retainerInstance": {
+          "type": "string",
+          "minLength": 1
+        },
+        "renderTarget": {
+          "type": "string",
+          "minLength": 1
+        },
+        "producerReadback": {
+          "$ref": "#/$defs/binding"
+        },
+        "geometryReadback": {
+          "$ref": "#/$defs/binding"
+        },
+        "runtimeReadback": {
+          "$ref": "#/$defs/binding"
+        },
+        "fontEvidence": {
+          "$ref": "#/$defs/binding"
+        }
+      },
+      "required": [
+        "id",
+        "image",
+        "capturedAt",
+        "frame",
+        "context",
+        "wholeWidgetRenderScale",
+        "widgetInstance",
+        "retainerInstance",
+        "renderTarget",
+        "producerReadback",
+        "geometryReadback",
+        "runtimeReadback",
+        "fontEvidence"
+      ]
+    },
+    "retainerGeometryRaw": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "nextgame-ui-retainer-nativevm-capture"
+        },
+        "version": {
+          "const": 1
+        },
+        "producer": {
+          "const": "euw-retainer-nativevm/1"
+        },
+        "assetPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "projectRoot": {
+          "type": "string",
+          "minLength": 1
+        },
+        "processId": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "engine": {
+          "type": "string",
+          "minLength": 1
+        },
+        "world": {
+          "type": "string",
+          "minLength": 1
+        },
+        "commandLine": {
+          "type": "string",
+          "minLength": 1
+        },
+        "noPIE": {
+          "const": true
+        },
+        "noMapOrAssetSave": {
+          "const": true
+        },
+        "startedAt": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "finishedAt": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "adoption": {
+          "$ref": "#/$defs/binding"
+        },
+        "collectorSource": {
+          "$ref": "#/$defs/binding"
+        },
+        "helpers": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/binding"
+          }
+        },
+        "finalSnapshot": {
+          "$ref": "#/$defs/binding"
+        },
+        "sourceAsset": {
+          "$ref": "#/$defs/binding"
+        },
+        "sourceAssetBeforeSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "sourceAssetAfterSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "loadedSnapshotBefore": {
+          "$ref": "#/$defs/binding"
+        },
+        "loadedSnapshotAfter": {
+          "$ref": "#/$defs/binding"
+        },
+        "loadedAcquisition": {
+          "$ref": "#/$defs/binding"
+        },
+        "captures": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "$ref": "#/$defs/retainerGeometrySample"
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "version",
+        "producer",
+        "assetPath",
+        "projectRoot",
+        "processId",
+        "engine",
+        "world",
+        "commandLine",
+        "noPIE",
+        "noMapOrAssetSave",
+        "startedAt",
+        "finishedAt",
+        "adoption",
+        "collectorSource",
+        "helpers",
+        "finalSnapshot",
+        "sourceAsset",
+        "sourceAssetBeforeSha256",
+        "sourceAssetAfterSha256",
+        "loadedSnapshotBefore",
+        "loadedSnapshotAfter",
+        "loadedAcquisition",
+        "captures"
+      ]
+    },
+    "retainerNativePaintReadback": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "nextgame-ui-retainer-nativevm-geometry-readback"
+        },
+        "version": {
+          "const": 1
+        },
+        "caseId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "capturedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "frame": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "processId": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "helperFunction": {
+          "type": "string",
+          "minLength": 1
+        },
+        "widgetInstance": {
+          "type": "string",
+          "minLength": 1
+        },
+        "captureCanvasInstance": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rawNativePaint": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "CaptureCanvas": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "producer": {
+                  "const": "BlueprintVM.GetPaintSpaceGeometry.LocalSizeAndLocalToAbsoluteCoordinates"
+                },
+                "function": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "widgetPath": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "values": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "LocalSize": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "TopLeft": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "TopRight": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "BottomRight": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "BottomLeft": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    }
+                  },
+                  "required": [
+                    "LocalSize",
+                    "TopLeft",
+                    "TopRight",
+                    "BottomRight",
+                    "BottomLeft"
+                  ]
+                },
+                "rawTransportRepr": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "producer",
+                "function",
+                "widgetPath",
+                "values",
+                "rawTransportRepr"
+              ]
+            },
+            "PilotInstance": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "producer": {
+                  "const": "BlueprintVM.GetPaintSpaceGeometry.LocalSizeAndLocalToAbsoluteCoordinates"
+                },
+                "function": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "widgetPath": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "values": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "LocalSize": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "TopLeft": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "TopRight": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "BottomRight": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "BottomLeft": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    }
+                  },
+                  "required": [
+                    "LocalSize",
+                    "TopLeft",
+                    "TopRight",
+                    "BottomRight",
+                    "BottomLeft"
+                  ]
+                },
+                "rawTransportRepr": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "producer",
+                "function",
+                "widgetPath",
+                "values",
+                "rawTransportRepr"
+              ]
+            },
+            "PanelContent": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "producer": {
+                  "const": "BlueprintVM.GetPaintSpaceGeometry.LocalSizeAndLocalToAbsoluteCoordinates"
+                },
+                "function": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "widgetPath": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "values": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "LocalSize": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "TopLeft": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "TopRight": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "BottomRight": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "BottomLeft": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    }
+                  },
+                  "required": [
+                    "LocalSize",
+                    "TopLeft",
+                    "TopRight",
+                    "BottomRight",
+                    "BottomLeft"
+                  ]
+                },
+                "rawTransportRepr": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "producer",
+                "function",
+                "widgetPath",
+                "values",
+                "rawTransportRepr"
+              ]
+            },
+            "ImgBackground": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "producer": {
+                  "const": "BlueprintVM.GetPaintSpaceGeometry.LocalSizeAndLocalToAbsoluteCoordinates"
+                },
+                "function": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "widgetPath": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "values": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "LocalSize": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "TopLeft": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "TopRight": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "BottomRight": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "BottomLeft": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    }
+                  },
+                  "required": [
+                    "LocalSize",
+                    "TopLeft",
+                    "TopRight",
+                    "BottomRight",
+                    "BottomLeft"
+                  ]
+                },
+                "rawTransportRepr": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "producer",
+                "function",
+                "widgetPath",
+                "values",
+                "rawTransportRepr"
+              ]
+            },
+            "ImgQuality": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "producer": {
+                  "const": "BlueprintVM.GetPaintSpaceGeometry.LocalSizeAndLocalToAbsoluteCoordinates"
+                },
+                "function": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "widgetPath": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "values": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "LocalSize": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "TopLeft": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "TopRight": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "BottomRight": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "BottomLeft": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    }
+                  },
+                  "required": [
+                    "LocalSize",
+                    "TopLeft",
+                    "TopRight",
+                    "BottomRight",
+                    "BottomLeft"
+                  ]
+                },
+                "rawTransportRepr": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "producer",
+                "function",
+                "widgetPath",
+                "values",
+                "rawTransportRepr"
+              ]
+            },
+            "TxtNum": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "producer": {
+                  "const": "BlueprintVM.GetPaintSpaceGeometry.LocalSizeAndLocalToAbsoluteCoordinates"
+                },
+                "function": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "widgetPath": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "values": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "LocalSize": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "TopLeft": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "TopRight": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "BottomRight": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "BottomLeft": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    }
+                  },
+                  "required": [
+                    "LocalSize",
+                    "TopLeft",
+                    "TopRight",
+                    "BottomRight",
+                    "BottomLeft"
+                  ]
+                },
+                "rawTransportRepr": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "producer",
+                "function",
+                "widgetPath",
+                "values",
+                "rawTransportRepr"
+              ]
+            },
+            "Host": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "producer": {
+                  "const": "BlueprintVM.GetPaintSpaceGeometry.LocalSizeAndLocalToAbsoluteCoordinates"
+                },
+                "function": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "widgetPath": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "values": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "LocalSize": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "TopLeft": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "TopRight": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "BottomRight": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "BottomLeft": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    }
+                  },
+                  "required": [
+                    "LocalSize",
+                    "TopLeft",
+                    "TopRight",
+                    "BottomRight",
+                    "BottomLeft"
+                  ]
+                },
+                "rawTransportRepr": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "producer",
+                "function",
+                "widgetPath",
+                "values",
+                "rawTransportRepr"
+              ]
+            },
+            "ProbeCanvas": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "producer": {
+                  "const": "BlueprintVM.GetPaintSpaceGeometry.LocalSizeAndLocalToAbsoluteCoordinates"
+                },
+                "function": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "widgetPath": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "values": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "LocalSize": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "TopLeft": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "TopRight": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "BottomRight": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "BottomLeft": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    }
+                  },
+                  "required": [
+                    "LocalSize",
+                    "TopLeft",
+                    "TopRight",
+                    "BottomRight",
+                    "BottomLeft"
+                  ]
+                },
+                "rawTransportRepr": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "producer",
+                "function",
+                "widgetPath",
+                "values",
+                "rawTransportRepr"
+              ]
+            },
+            "Retainer": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "producer": {
+                  "const": "BlueprintVM.GetPaintSpaceGeometry.LocalSizeAndLocalToAbsoluteCoordinates"
+                },
+                "function": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "widgetPath": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "values": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "LocalSize": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "TopLeft": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "TopRight": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "BottomRight": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "BottomLeft": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
+                    }
+                  },
+                  "required": [
+                    "LocalSize",
+                    "TopLeft",
+                    "TopRight",
+                    "BottomRight",
+                    "BottomLeft"
+                  ]
+                },
+                "rawTransportRepr": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "producer",
+                "function",
+                "widgetPath",
+                "values",
+                "rawTransportRepr"
+              ]
+            }
+          },
+          "required": [
+            "CaptureCanvas",
+            "PilotInstance",
+            "PanelContent",
+            "ImgBackground",
+            "ImgQuality",
+            "TxtNum"
+          ]
+        },
+        "captureSpaceMapping": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "basisSource": {
+              "type": "string",
+              "minLength": 1
+            },
+            "nativeCaptureLocalSize": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "type": "number"
+              }
+            },
+            "topLeft": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "type": "number"
+              }
+            },
+            "xBasis": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "type": "number"
+              }
+            },
+            "yBasis": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "type": "number"
+              }
+            },
+            "determinant": {
+              "type": "number"
+            },
+            "targetPixelSize": {
+              "$ref": "#/$defs/size"
+            }
+          },
+          "required": [
+            "basisSource",
+            "nativeCaptureLocalSize",
+            "topLeft",
+            "xBasis",
+            "yBasis",
+            "determinant",
+            "targetPixelSize"
+          ]
+        },
+        "derivedPixelCorners": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "CaptureCanvas": {
+              "type": "array",
+              "minItems": 4,
+              "maxItems": 4,
+              "items": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            "PilotInstance": {
+              "type": "array",
+              "minItems": 4,
+              "maxItems": 4,
+              "items": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            "PanelContent": {
+              "type": "array",
+              "minItems": 4,
+              "maxItems": 4,
+              "items": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            "ImgBackground": {
+              "type": "array",
+              "minItems": 4,
+              "maxItems": 4,
+              "items": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            "ImgQuality": {
+              "type": "array",
+              "minItems": 4,
+              "maxItems": 4,
+              "items": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            "TxtNum": {
+              "type": "array",
+              "minItems": 4,
+              "maxItems": 4,
+              "items": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            "Host": {
+              "type": "array",
+              "minItems": 4,
+              "maxItems": 4,
+              "items": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            "ProbeCanvas": {
+              "type": "array",
+              "minItems": 4,
+              "maxItems": 4,
+              "items": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            "Retainer": {
+              "type": "array",
+              "minItems": 4,
+              "maxItems": 4,
+              "items": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "required": [
+            "CaptureCanvas",
+            "PilotInstance",
+            "PanelContent",
+            "ImgBackground",
+            "ImgQuality",
+            "TxtNum"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "version",
+        "caseId",
+        "capturedAt",
+        "frame",
+        "processId",
+        "helperFunction",
+        "widgetInstance",
+        "captureCanvasInstance",
+        "rawNativePaint",
+        "captureSpaceMapping",
+        "derivedPixelCorners"
+      ]
+    },
+    "retainerProducerReadback": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "nextgame-ui-retainer-producer-readback"
+        },
+        "version": {
+          "const": 1
+        },
+        "caseId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "capturedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "frame": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "processId": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "engine": {
+          "type": "string",
+          "minLength": 1
+        },
+        "world": {
+          "type": "string",
+          "minLength": 1
+        },
+        "assetPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceAssetSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "collectorSource": {
+          "$ref": "#/$defs/binding"
+        },
+        "helpers": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/binding"
+          }
+        },
+        "hostEvidence": {
+          "$ref": "#/$defs/binding"
+        },
+        "runtimeIdentities": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "host": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "class": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "outer": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "path",
+                "class",
+                "outer"
+              ]
+            },
+            "hostRoot": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "class": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "outer": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "path",
+                "class",
+                "outer"
+              ]
+            },
+            "retainer": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "class": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "outer": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "path",
+                "class",
+                "outer"
+              ]
+            },
+            "captureCanvas": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "class": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "outer": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "path",
+                "class",
+                "outer"
+              ]
+            },
+            "pilot": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "class": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "outer": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "path",
+                "class",
+                "outer"
+              ]
+            }
+          },
+          "required": [
+            "host",
+            "hostRoot",
+            "retainer",
+            "captureCanvas",
+            "pilot"
+          ]
+        },
+        "runtimeRelations": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "hostRootChildren": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "retainerContent": {
+              "type": "string",
+              "minLength": 1
+            },
+            "captureCanvasChildren": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "receiverOuterChains": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "PanelContent": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "ImgBackground": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "ImgQuality": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "TxtNum": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "required": [
+                "PanelContent",
+                "ImgBackground",
+                "ImgQuality",
+                "TxtNum"
+              ]
+            }
+          },
+          "required": [
+            "hostRootChildren",
+            "retainerContent",
+            "captureCanvasChildren",
+            "receiverOuterChains"
+          ]
+        },
+        "retainerSettings": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "retainRender": {
+              "const": true
+            },
+            "renderOnPhase": {
+              "type": "boolean"
+            },
+            "renderOnInvalidation": {
+              "type": "boolean"
+            },
+            "phase": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "phaseCount": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": [
+            "retainRender",
+            "renderOnPhase",
+            "renderOnInvalidation",
+            "phase",
+            "phaseCount"
+          ]
+        },
+        "renderTarget": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "class": {
+              "const": "/Script/Engine.TextureRenderTarget2D"
+            },
+            "outer": {
+              "type": "string",
+              "minLength": 1
+            },
+            "size": {
+              "$ref": "#/$defs/size"
+            },
+            "format": {
+              "const": "RTF_RGBA8"
+            },
+            "formatRaw": {
+              "const": "<TextureRenderTargetFormat.RTF_RGBA8: 2>"
+            },
+            "srgb": {
+              "const": false
+            },
+            "targetGamma": {
+              "const": 1
+            },
+            "clearColor": {
+              "const": [
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "required": [
+            "path",
+            "class",
+            "outer",
+            "size",
+            "format",
+            "formatRaw",
+            "srgb",
+            "targetGamma",
+            "clearColor"
+          ]
+        },
+        "renderTargetAssociation": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "before": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "path": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "class": {
+                    "enum": [
+                      "/Script/Engine.TextureRenderTarget2D",
+                      "/Script/Engine.CanvasRenderTarget2D"
+                    ]
+                  },
+                  "outer": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "size": {
+                    "$ref": "#/$defs/size"
+                  }
+                },
+                "required": [
+                  "path",
+                  "class",
+                  "outer",
+                  "size"
+                ]
+              }
+            },
+            "after": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "path": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "class": {
+                    "enum": [
+                      "/Script/Engine.TextureRenderTarget2D",
+                      "/Script/Engine.CanvasRenderTarget2D"
+                    ]
+                  },
+                  "outer": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "size": {
+                    "$ref": "#/$defs/size"
+                  }
+                },
+                "required": [
+                  "path",
+                  "class",
+                  "outer",
+                  "size"
+                ]
+              }
+            },
+            "new": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "path": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "class": {
+                    "enum": [
+                      "/Script/Engine.TextureRenderTarget2D",
+                      "/Script/Engine.CanvasRenderTarget2D"
+                    ]
+                  },
+                  "outer": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "size": {
+                    "$ref": "#/$defs/size"
+                  }
+                },
+                "required": [
+                  "path",
+                  "class",
+                  "outer",
+                  "size"
+                ]
+              }
+            },
+            "uniqueNewTargetPath": {
+              "type": "string",
+              "minLength": 1
+            },
+            "observedAt": {
+              "type": "string",
+              "minLength": 1
+            },
+            "frame": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "retainerInstance": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "before",
+            "after",
+            "new",
+            "uniqueNewTargetPath",
+            "observedAt",
+            "frame",
+            "retainerInstance"
+          ]
+        },
+        "nativeRawPixels": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "storage": {
+              "const": "little-endian-float32-rgba-byte-values"
+            },
+            "width": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "pixelCount": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "api": {
+              "const": "RenderingLibrary.read_render_target_raw"
+            },
+            "normalize": {
+              "const": false
+            },
+            "channelMin": {
+              "type": "array",
+              "minItems": 4,
+              "maxItems": 4,
+              "items": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 255
+              }
+            },
+            "channelMax": {
+              "type": "array",
+              "minItems": 4,
+              "maxItems": 4,
+              "items": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 255
+              }
+            },
+            "allIntegral": {
+              "const": true
+            },
+            "pngRawMaxAbsoluteDelta": {
+              "const": 0
+            }
+          },
+          "required": [
+            "path",
+            "sha256",
+            "storage",
+            "width",
+            "height",
+            "pixelCount",
+            "api",
+            "normalize",
+            "channelMin",
+            "channelMax",
+            "allIntegral",
+            "pngRawMaxAbsoluteDelta"
+          ]
+        },
+        "png": {
+          "$ref": "#/$defs/binding"
+        },
+        "exporter": {
+          "const": "RenderingLibrary.export_render_target"
+        },
+        "wholeWidgetRenderScale": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number"
+          }
+        },
+        "localeReadback": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "culture": {
+              "type": "string",
+              "minLength": 1
+            },
+            "language": {
+              "type": "string",
+              "minLength": 1
+            },
+            "locale": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "culture",
+            "language",
+            "locale"
+          ]
+        },
+        "staticPreviewInterpretation": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "mode": {
+              "const": "accepted-static-preview-interpretation"
+            },
+            "dataId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "stateId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "quantityText": {
+              "type": "string",
+              "minLength": 1
+            },
+            "runtimeBusinessSetterInvoked": {
+              "const": false
+            }
+          },
+          "required": [
+            "mode",
+            "dataId",
+            "stateId",
+            "quantityText",
+            "runtimeBusinessSetterInvoked"
+          ]
+        },
+        "runtimeIdentity": {
+          "$ref": "#/$defs/binding"
+        },
+        "runtimeReadback": {
+          "$ref": "#/$defs/binding"
+        },
+        "fontEvidence": {
+          "$ref": "#/$defs/binding"
+        },
+        "loadedSnapshotBefore": {
+          "$ref": "#/$defs/binding"
+        },
+        "loadedSnapshotAfter": {
+          "$ref": "#/$defs/binding"
+        }
+      },
+      "required": [
+        "kind",
+        "version",
+        "caseId",
+        "capturedAt",
+        "frame",
+        "processId",
+        "engine",
+        "world",
+        "assetPath",
+        "sourceAssetSha256",
+        "collectorSource",
+        "helpers",
+        "hostEvidence",
+        "runtimeIdentities",
+        "runtimeRelations",
+        "retainerSettings",
+        "renderTarget",
+        "renderTargetAssociation",
+        "nativeRawPixels",
+        "png",
+        "exporter",
+        "wholeWidgetRenderScale",
+        "localeReadback",
+        "staticPreviewInterpretation",
+        "runtimeIdentity",
+        "runtimeReadback",
+        "fontEvidence",
+        "loadedSnapshotBefore",
+        "loadedSnapshotAfter"
+      ]
+    },
+    "retainerHostEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "pilot-production-host-os-identity"
+        },
+        "observedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expectedPid": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "processName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "projectCommandLineMatched": {
+          "const": true
+        },
+        "executePythonScriptObserved": {
+          "type": "boolean"
+        },
+        "sourceAssetSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "endpoints": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "LocalAddress": {
+                "type": "string",
+                "minLength": 1
+              },
+              "LocalPort": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "OwningProcess": {
+                "type": "integer",
+                "minimum": 1
+              }
+            },
+            "required": [
+              "LocalAddress",
+              "LocalPort",
+              "OwningProcess"
+            ]
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "observedAt",
+        "expectedPid",
+        "processName",
+        "projectCommandLineMatched",
+        "executePythonScriptObserved",
+        "sourceAssetSha256",
+        "endpoints"
+      ]
+    },
+    "retainerHelperIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "nextgame-ui-retainer-nativevm-helper-identity"
+        },
+        "version": {
+          "const": 1
+        },
+        "observedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "function": {
+          "type": "string",
+          "minLength": 1
+        },
+        "graphRef": {
+          "type": "string",
+          "minLength": 1
+        },
+        "blueprint": {
+          "type": "string",
+          "minLength": 1
+        },
+        "blueprintClass": {
+          "const": "/Script/Blutility.EditorUtilityWidgetBlueprint"
+        },
+        "processId": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "engine": {
+          "type": "string",
+          "minLength": 1
+        },
+        "projectRoot": {
+          "type": "string",
+          "minLength": 1
+        },
+        "world": {
+          "type": "string",
+          "minLength": 1
+        },
+        "commandLine": {
+          "type": "string",
+          "minLength": 1
+        },
+        "topology": {
+          "$ref": "#/$defs/binding"
+        },
+        "helperUassetExists": {
+          "const": false
+        },
+        "locale": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "culture": {
+              "type": "string",
+              "minLength": 1
+            },
+            "language": {
+              "type": "string",
+              "minLength": 1
+            },
+            "locale": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "culture",
+            "language",
+            "locale"
+          ]
+        },
+        "preparedOnly": {
+          "const": true
+        },
+        "captureStarted": {
+          "const": false
+        },
+        "widgetGetParentApi": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "available": {
+              "const": true
+            },
+            "doc": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "available",
+            "doc"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "version",
+        "observedAt",
+        "function",
+        "graphRef",
+        "blueprint",
+        "blueprintClass",
+        "processId",
+        "engine",
+        "projectRoot",
+        "world",
+        "commandLine",
+        "topology",
+        "helperUassetExists",
+        "locale",
+        "preparedOnly",
+        "captureStarted",
+        "widgetGetParentApi"
+      ]
+    },
+    "retainerRuntimeIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "nextgame-ui-runtime-receiver-identity"
+        },
+        "version": {
+          "const": 1
+        },
+        "capturedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "editorPid": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "officialEndpoint": {
+          "type": "string",
+          "minLength": 1
+        },
+        "assetPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pilotInstance": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "class": {
+              "type": "string",
+              "minLength": 1
+            },
+            "outer": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "path",
+            "class",
+            "outer"
+          ]
+        },
+        "widgets": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "enum": [
+                  "PanelContent",
+                  "ImgBackground",
+                  "ImgQuality",
+                  "TxtNum"
+                ]
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "class": {
+                "type": "string",
+                "minLength": 1
+              },
+              "outer": {
+                "type": "string",
+                "minLength": 1
+              },
+              "slot": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "class": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "outer": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "path",
+                      "class",
+                      "outer"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "name",
+              "path",
+              "class",
+              "outer",
+              "slot"
+            ]
+          }
+        },
+        "caseId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "frame": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "collectorSource": {
+          "$ref": "#/$defs/binding"
+        }
+      },
+      "required": [
+        "kind",
+        "version",
+        "capturedAt",
+        "editorPid",
+        "officialEndpoint",
+        "assetPath",
+        "pilotInstance",
+        "widgets",
+        "caseId",
+        "frame",
+        "collectorSource"
+      ]
+    },
+    "retainerRuntimeReadback": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "nextgame-ui-official-runtime-receiver-collection"
+        },
+        "version": {
+          "const": 1
+        },
+        "status": {
+          "const": "collected"
+        },
+        "startedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "completedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "officialEndpoint": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reportedEditorPid": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "processIdentityVerifiedByThisReader": {
+          "const": false
+        },
+        "requiresUpperProcessIdentityBinding": {
+          "const": true
+        },
+        "caseId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "identityCapturedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "runtimeIdentity": {
+          "$ref": "#/$defs/binding"
+        },
+        "sourceExecution": {
+          "$ref": "#/$defs/binding"
+        },
+        "sourceSnapshot": {
+          "$ref": "#/$defs/binding"
+        },
+        "readerSource": {
+          "$ref": "#/$defs/binding"
+        },
+        "programmaticEnvironment": {
+          "type": "object"
+        },
+        "relatedToolSchemas": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "inputSchema": {
+                "type": "object"
+              },
+              "outputSchema": {
+                "type": "object"
+              }
+            },
+            "required": [
+              "name",
+              "inputSchema",
+              "outputSchema"
+            ]
+          }
+        },
+        "transportCalls": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "sequence": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "kind": {
+                "enum": [
+                  "describe",
+                  "call"
+                ]
+              },
+              "startedAt": {
+                "type": "string",
+                "minLength": 1
+              },
+              "completedAt": {
+                "type": "string",
+                "minLength": 1
+              },
+              "request": {
+                "type": "object"
+              },
+              "response": {},
+              "error": {
+                "type": "null"
+              }
+            },
+            "required": [
+              "sequence",
+              "kind",
+              "startedAt",
+              "completedAt",
+              "request",
+              "response",
+              "error"
+            ]
+          }
+        },
+        "nativeCalls": {
+          "type": "array",
+          "minItems": 21,
+          "maxItems": 21,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "sequence": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "tool": {
+                "type": "string",
+                "minLength": 1
+              },
+              "arguments": {
+                "type": "object"
+              },
+              "response": {},
+              "error": {
+                "type": "null"
+              }
+            },
+            "required": [
+              "sequence",
+              "tool",
+              "arguments",
+              "response",
+              "error"
+            ]
+          }
+        },
+        "programmaticRaw": {
+          "type": "object"
+        },
+        "normalized": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "identityAcquisition": {
+              "const": "external-bound-runtime-identity"
+            },
+            "propertyAcquisition": {
+              "const": "official-unreal-mcp"
+            },
+            "widgets": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "PanelContent": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "widgetName": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "objectPath": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "outerPath": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "classPath": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "properties": {
+                      "type": "object"
+                    },
+                    "slot": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "objectPath": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "outerPath": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "classPath": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "properties": {
+                              "type": "object"
+                            }
+                          },
+                          "required": [
+                            "objectPath",
+                            "outerPath",
+                            "classPath",
+                            "properties"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "widgetName",
+                    "objectPath",
+                    "outerPath",
+                    "classPath",
+                    "properties",
+                    "slot"
+                  ]
+                },
+                "ImgBackground": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "widgetName": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "objectPath": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "outerPath": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "classPath": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "properties": {
+                      "type": "object"
+                    },
+                    "slot": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "objectPath": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "outerPath": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "classPath": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "properties": {
+                              "type": "object"
+                            }
+                          },
+                          "required": [
+                            "objectPath",
+                            "outerPath",
+                            "classPath",
+                            "properties"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "widgetName",
+                    "objectPath",
+                    "outerPath",
+                    "classPath",
+                    "properties",
+                    "slot"
+                  ]
+                },
+                "ImgQuality": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "widgetName": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "objectPath": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "outerPath": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "classPath": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "properties": {
+                      "type": "object"
+                    },
+                    "slot": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "objectPath": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "outerPath": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "classPath": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "properties": {
+                              "type": "object"
+                            }
+                          },
+                          "required": [
+                            "objectPath",
+                            "outerPath",
+                            "classPath",
+                            "properties"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "widgetName",
+                    "objectPath",
+                    "outerPath",
+                    "classPath",
+                    "properties",
+                    "slot"
+                  ]
+                },
+                "TxtNum": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "widgetName": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "objectPath": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "outerPath": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "classPath": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "properties": {
+                      "type": "object"
+                    },
+                    "slot": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "objectPath": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "outerPath": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "classPath": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "properties": {
+                              "type": "object"
+                            }
+                          },
+                          "required": [
+                            "objectPath",
+                            "outerPath",
+                            "classPath",
+                            "properties"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "widgetName",
+                    "objectPath",
+                    "outerPath",
+                    "classPath",
+                    "properties",
+                    "slot"
+                  ]
+                }
+              },
+              "required": [
+                "PanelContent",
+                "ImgBackground",
+                "ImgQuality",
+                "TxtNum"
+              ]
+            }
+          },
+          "required": [
+            "identityAcquisition",
+            "propertyAcquisition",
+            "widgets"
+          ]
+        },
+        "error": {
+          "type": "null"
+        }
+      },
+      "required": [
+        "kind",
+        "version",
+        "status",
+        "startedAt",
+        "completedAt",
+        "officialEndpoint",
+        "reportedEditorPid",
+        "processIdentityVerifiedByThisReader",
+        "requiresUpperProcessIdentityBinding",
+        "caseId",
+        "identityCapturedAt",
+        "runtimeIdentity",
+        "sourceExecution",
+        "sourceSnapshot",
+        "readerSource",
+        "programmaticEnvironment",
+        "relatedToolSchemas",
+        "transportCalls",
+        "nativeCalls",
+        "programmaticRaw",
+        "normalized",
+        "error"
+      ]
+    },
+    "retainerFullSnapshotAcquisition": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "nextgame-ui-full-snapshot-acquisition"
+        },
+        "version": {
+          "const": 1
+        },
+        "status": {
+          "const": "collected"
+        },
+        "startedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "completedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "officialEndpoint": {
+          "type": "string",
+          "minLength": 1
+        },
+        "processId": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "hostEvidence": {
+          "$ref": "#/$defs/binding"
+        },
+        "sourceExecution": {
+          "$ref": "#/$defs/binding"
+        },
+        "readerSource": {
+          "$ref": "#/$defs/binding"
+        },
+        "snapshot": {
+          "$ref": "#/$defs/binding"
+        },
+        "rawCalls": {
+          "$ref": "#/$defs/binding"
+        }
+      },
+      "required": [
+        "kind",
+        "version",
+        "status",
+        "startedAt",
+        "completedAt",
+        "officialEndpoint",
+        "processId",
+        "hostEvidence",
+        "sourceExecution",
+        "readerSource",
+        "snapshot",
+        "rawCalls"
+      ]
+    },
+    "retainerLoadedAcquisitions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "nextgame-ui-loaded-snapshot-acquisitions"
+        },
+        "version": {
+          "const": 1
+        },
+        "officialEndpoint": {
+          "type": "string",
+          "minLength": 1
+        },
+        "processId": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "hostEvidence": {
+          "$ref": "#/$defs/binding"
+        },
+        "reads": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "role": {
+                "enum": [
+                  "unit-before",
+                  "unit-after",
+                  "scale075-before",
+                  "scale075-after"
+                ]
+              },
+              "snapshot": {
+                "$ref": "#/$defs/binding"
+              },
+              "acquisition": {
+                "$ref": "#/$defs/binding"
+              }
+            },
+            "required": [
+              "role",
+              "snapshot",
+              "acquisition"
+            ]
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "version",
+        "officialEndpoint",
+        "processId",
+        "hostEvidence",
+        "reads"
+      ]
+    },
+    "retainerLoadedRawCalls": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "method": {
+          "type": "string",
+          "minLength": 1
+        },
+        "officialEndpoint": {
+          "type": "string",
+          "minLength": 1
+        },
+        "processId": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "hostEvidence": {
+          "$ref": "#/$defs/binding"
+        },
+        "actualSnapshotStateSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "officialCalls": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "kind": {
+                    "const": "describe"
+                  },
+                  "toolset": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "startedAt": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "completedAt": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "result": {
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "toolset",
+                  "startedAt",
+                  "completedAt",
+                  "result"
+                ]
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "kind": {
+                    "const": "call"
+                  },
+                  "toolset": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "tool": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "arguments": {
+                    "type": "object"
+                  },
+                  "startedAt": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "completedAt": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "result": {
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "toolset",
+                  "tool",
+                  "arguments",
+                  "startedAt",
+                  "completedAt",
+                  "result"
+                ]
+              }
+            ]
+          }
+        },
+        "nativeMode": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "method": {
+              "const": "nxue-agent"
+            },
+            "startedAt": {
+              "type": "string",
+              "minLength": 1
+            },
+            "completedAt": {
+              "type": "string",
+              "minLength": 1
+            },
+            "command": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "response": {
+              "type": "object"
+            }
+          },
+          "required": [
+            "method",
+            "startedAt",
+            "completedAt",
+            "command",
+            "response"
+          ]
+        }
+      },
+      "required": [
+        "method",
+        "officialEndpoint",
+        "processId",
+        "hostEvidence",
+        "actualSnapshotStateSha256",
+        "officialCalls",
+        "nativeMode"
       ]
     }
   }

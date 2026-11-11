@@ -1,0 +1,438 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nextgame.local/schemas/existing-asset-snapshot-2.json",
+  "title": "Existing asset snapshot/2, explicitly separate from Art snapshot/1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "version",
+    "capturedAt",
+    "acquisition",
+    "assets"
+  ],
+  "properties": {
+    "kind": {
+      "const": "nextgame-ui-existing-asset-snapshot"
+    },
+    "version": {
+      "const": "2"
+    },
+    "capturedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "acquisition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method"
+      ],
+      "properties": {
+        "method": {
+          "enum": [
+            "official-unreal-mcp",
+            "mixed"
+          ]
+        },
+        "fallbackReason": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "if": {
+        "properties": {
+          "method": {
+            "const": "mixed"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "fallbackReason"
+        ]
+      }
+    },
+    "assets": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/asset"
+      }
+    }
+  },
+  "$defs": {
+    "name": {
+      "type": "string",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+    },
+    "sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "ref": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1
+    },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha"
+        }
+      }
+    },
+    "slot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "classPath",
+        "properties"
+      ],
+      "properties": {
+        "classPath": {
+          "$ref": "#/$defs/ref"
+        },
+        "properties": {
+          "type": "object"
+        }
+      }
+    },
+    "widget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "widgetName",
+        "treeIndex",
+        "isVariable",
+        "isInherited",
+        "widgetRefPath",
+        "parentRefPath",
+        "slotRefPath",
+        "namedSlotHostRefPath",
+        "classPath",
+        "parentWidgetName",
+        "properties",
+        "slot"
+      ],
+      "properties": {
+        "widgetName": {
+          "$ref": "#/$defs/name"
+        },
+        "treeIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "isVariable": {
+          "type": "boolean"
+        },
+        "isInherited": {
+          "type": "boolean"
+        },
+        "widgetRefPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "parentRefPath": {
+          "$ref": "#/$defs/ref"
+        },
+        "slotRefPath": {
+          "$ref": "#/$defs/ref"
+        },
+        "namedSlotHostRefPath": {
+          "$ref": "#/$defs/ref"
+        },
+        "classPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "parentWidgetName": {
+          "$ref": "#/$defs/ref"
+        },
+        "properties": {
+          "type": "object"
+        },
+        "slot": {
+          "$ref": "#/$defs/slot"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "classPath": {
+                "const": "/Script/UMG.ScaleBox"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "properties": {
+                "required": [
+                  "stretch",
+                  "stretchDirection",
+                  "ignoreInheritedScale"
+                ],
+                "properties": {
+                  "stretch": {
+                    "enum": [
+                      "None",
+                      "Fill",
+                      "ScaleToFit",
+                      "ScaleToFitX",
+                      "ScaleToFitY",
+                      "ScaleToFill",
+                      "ScaleBySafeZone",
+                      "UserSpecified",
+                      "UserSpecifiedWithClipping"
+                    ]
+                  },
+                  "stretchDirection": {
+                    "enum": [
+                      "Both",
+                      "DownOnly",
+                      "UpOnly"
+                    ]
+                  },
+                  "ignoreInheritedScale": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "properties": {
+                "not": {
+                  "anyOf": [
+                    {
+                      "required": [
+                        "stretch"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "stretchDirection"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "ignoreInheritedScale"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "classPath": {
+                "const": "/Script/UMG.ProgressBar"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "properties": {
+                "required": [
+                  "fillColorAndOpacity"
+                ],
+                "properties": {
+                  "fillColorAndOpacity": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "r",
+                      "g",
+                      "b",
+                      "a"
+                    ],
+                    "properties": {
+                      "r": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "g": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "b": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "a": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "properties": {
+                "not": {
+                  "required": [
+                    "fillColorAndOpacity"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "declaration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "widgetName",
+        "treeIndex",
+        "isVariable",
+        "isInherited",
+        "widgetRefPath",
+        "parentRefPath",
+        "slotRefPath",
+        "namedSlotHostRefPath",
+        "declaredClassPath"
+      ],
+      "properties": {
+        "widgetName": {
+          "$ref": "#/$defs/name"
+        },
+        "treeIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "isVariable": {
+          "type": "boolean"
+        },
+        "isInherited": {
+          "const": true
+        },
+        "widgetRefPath": {
+          "type": "null"
+        },
+        "parentRefPath": {
+          "$ref": "#/$defs/ref"
+        },
+        "slotRefPath": {
+          "$ref": "#/$defs/ref"
+        },
+        "namedSlotHostRefPath": {
+          "$ref": "#/$defs/ref"
+        },
+        "declaredClassPath": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "assetPath",
+        "parentClassPath",
+        "designSizeMode",
+        "protectedReferences",
+        "referencesComplete",
+        "referencesDigest",
+        "uncertainties",
+        "widgets",
+        "declaredInheritedWidgets",
+        "widgetOrder",
+        "rawEvidence",
+        "sourceAsset",
+        "originalAssetFilePath"
+      ],
+      "properties": {
+        "assetPath": {
+          "type": "string",
+          "pattern": "^/Game/UI/(?:UMG|AIPrototype)/[A-Za-z0-9_/]+$"
+        },
+        "parentClassPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "designSizeMode": {
+          "enum": [
+            "FillScreen",
+            "Desired",
+            "Custom",
+            "CustomOnScreen",
+            "DesiredOnScreen",
+            null
+          ]
+        },
+        "protectedReferences": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/name"
+          }
+        },
+        "referencesComplete": {
+          "const": false
+        },
+        "referencesDigest": {
+          "$ref": "#/$defs/sha"
+        },
+        "uncertainties": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "widgets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/widget"
+          }
+        },
+        "declaredInheritedWidgets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/declaration"
+          }
+        },
+        "widgetOrder": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/name"
+          }
+        },
+        "rawEvidence": {
+          "$ref": "#/$defs/binding"
+        },
+        "sourceAsset": {
+          "$ref": "#/$defs/binding"
+        },
+        "originalAssetFilePath": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

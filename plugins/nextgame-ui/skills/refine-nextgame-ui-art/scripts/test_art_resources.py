@@ -1,10 +1,12 @@
 """Synthetic batch integration tests; never imports UE assets or writes tables."""
 import hashlib
 import json
+import os
 from pathlib import Path
 import shutil
 import struct
 import sys
+from types import ModuleType
 import unittest
 import uuid
 import zlib
@@ -28,7 +30,7 @@ def png_bytes():
 class ResourceBatchTests(unittest.TestCase):
     def setUp(self):
         actual_project = next(p for p in Path(__file__).resolve().parents if (p / "Tools/UIResourceImport/import_contract.py").is_file())
-        self.base = actual_project / "Saved/CodexArtResourceTests"
+        self.base = Path(os.environ.get("NEXTGAME_ART_TEST_ROOT", actual_project / "Saved/CodexArtResourceTests")).resolve()
         self.root = self.base / ("batch-" + uuid.uuid4().hex)
         self.root.mkdir(parents=True)
         self.addCleanup(self.cleanup)
@@ -38,7 +40,7 @@ class ResourceBatchTests(unittest.TestCase):
         (self.project / "Test.uproject").write_text("{}")
         self.tools = self.project / "Tools/UIResourceImport"
         self.tools.mkdir(parents=True)
-        for name in ("import_contract.py", "register_icons.py", "resource_ids.py"):
+        for name in ("import_contract.py", "register_icons.py", "resource_ids.py", "system_mapping.py", "atlas_identity.py"):
             shutil.copy2(actual_project / "Tools/UIResourceImport" / name, self.tools / name)
         self.source, self.stage, self.published = (self.root / name for name in ("source", "stage", "published"))
         for path in (self.source, self.stage, self.published):
@@ -126,9 +128,47 @@ class ResourceBatchTests(unittest.TestCase):
 
     def test_standalone_catalog_deterministic_read_only_and_no_registry_ids(self):
         item = self.fixture()
+        # Exercise the real transitive and lazy imports without any Resource
+        # directory on PYTHONPATH, including ambient modules with those names.
+        self.manifest.update(atlas_identity_version=1, system_map={"version": 2,
+            "systems": {"Demo": {"owner": "UI", "usage": ["test"], "grouping_reason": "fixture"}},
+            "tokens": {"demo": "Demo"}, "files": {}})
+        self.flush()
         before = {str(p): p.read_bytes() for p in self.root.rglob("*") if p.is_file()}
-        first, second = self.load(), self.load()
+        aliases = {name: ModuleType(name) for name in ("import_contract", "register_icons", "resource_ids", "system_mapping", "atlas_identity", "ambient_only")}
+        old_resolve = Path.resolve
+        module_keys = {k: v for k, v in sys.modules.items() if k.startswith("_nextgame_art_")}
+        search_path, bytecode = list(sys.path), sys.dont_write_bytecode
+        with patch.dict(sys.modules, aliases):
+            first, second = self.load(), self.load()
+            dependency = self.tools / "system_mapping.py"
+            data = dependency.read_bytes()
+            try:
+                dependency.unlink()
+                with self.assertRaisesRegex(ValueError, "missing from selected tool directory"):
+                    self.load()
+            finally:
+                dependency.write_bytes(data)
+            # Model an escaped dependency resolution without requiring Windows
+            # symlink privileges; it must fail before foreign code can execute.
+            def escaped(path, *args, **kwargs):
+                return self.root / "foreign.py" if path == dependency else old_resolve(path, *args, **kwargs)
+            with patch.object(Path, "resolve", escaped), self.assertRaisesRegex(ValueError, "remain in the selected tool directory"):
+                self.load()
+            contract = self.tools / "import_contract.py"
+            original = contract.read_bytes()
+            try:
+                contract.write_bytes(original + b"\nfrom ambient_only import must_not_load\n")
+                with self.assertRaisesRegex(ValueError, "missing from selected tool directory"):
+                    self.load()
+            finally:
+                contract.write_bytes(original)
+            self.assertTrue(all(sys.modules.get(name) is module for name, module in aliases.items()))
+        self.assertEqual(search_path, sys.path)
+        self.assertEqual(bytecode, sys.dont_write_bytecode)
+        self.assertEqual(module_keys, {k: v for k, v in sys.modules.items() if k.startswith("_nextgame_art_")})
         self.assertEqual(first, second)
+        self.assertEqual(len(first["provenance"]["validatorFiles"]), 3)
         self.assertEqual(first["resources"][0]["sourceRelative"], item["source_relative"])
         self.assertEqual(first["resources"][0]["brushResourceObject"], {"refPath": item["asset"]})
         self.assertEqual(first["resources"][0]["dependencies"], [])
@@ -212,6 +252,22 @@ class ResourceBatchTests(unittest.TestCase):
         self.readback_path.write_bytes(self.readback_path.read_bytes() + b"\n")
         with self.assertRaisesRegex(ValueError, "binding is stale"):
             validate_catalog(self.catalog_path)
+        # A dependency changing during execution must also fail, while the
+        # public three-validator provenance remains compatible with old batches.
+        self.flush()
+        dependency = self.tools / "system_mapping.py"
+        original = dependency.read_bytes()
+        load_module = resources._load_module
+        def changed(path, name, **kwargs):
+            module = load_module(path, name, **kwargs)
+            if path == dependency:
+                path.write_bytes(original + b"\n# concurrent dependency change\n")
+            return module
+        try:
+            with patch.object(resources, "_load_module", changed), self.assertRaisesRegex(ValueError, "code changed during verification"):
+                self.load()
+        finally:
+            dependency.write_bytes(original)
         self.flush()
         validator = self.tools / "import_contract.py"
         validator.write_bytes(validator.read_bytes() + b"\n# changed validator\n")

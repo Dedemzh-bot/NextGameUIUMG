@@ -7,6 +7,7 @@ connect to Unreal or use the resource tool's mutating pipeline entry points.
 from __future__ import annotations
 
 import argparse
+import builtins
 import datetime as dt
 import hashlib
 import importlib.util
@@ -37,14 +38,16 @@ def _json(data: bytes) -> dict:
     return value
 
 
-def _load_module(path: Path, name: str) -> ModuleType:
+def _load_module(path: Path, name: str, *, source: bytes, importer) -> ModuleType:
     spec = importlib.util.spec_from_file_location(name, path)
     if spec is None or spec.loader is None:
         raise ValueError("Cannot load resource validator: " + str(path))
     module = importlib.util.module_from_spec(spec)
+    module.__dict__["__builtins__"] = {**vars(builtins), "__import__": importer}
     sys.modules[name] = module
     try:
-        spec.loader.exec_module(module)
+        # Execute the exact hashed source, never a same-mtime cached pyc.
+        exec(compile(source, str(path), "exec"), module.__dict__)
     except BaseException:
         sys.modules.pop(name, None)
         raise
@@ -53,43 +56,64 @@ def _load_module(path: Path, name: str) -> ModuleType:
 
 def _run_existing_validators(tool_root: Path, manifest_path: Path, readback_path: Path, manifest: dict):
     """Load exact project files without trusting same-named ambient modules."""
+    tool_root = tool_root.resolve(strict=True)
     paths = {name: (tool_root / (name + ".py")).resolve(strict=True)
         for name in ("import_contract", "register_icons", "resource_ids")}
     if any(path.parent != tool_root for path in paths.values()):
         raise ValueError("Resource validator symlinks must remain in the selected tool directory")
-    before = [_binding(path) for path in paths.values()]
+    sources = {name: path.read_bytes() for name, path in paths.items()}
+    before = [{"path": str(path), "sha256": _hash(sources[name])} for name, path in paths.items()]
+    checked = {path: record for path, record in zip(paths.values(), before)}
     suffix = uuid.uuid4().hex
     loaded_names = []
-    previous_ids = sys.modules.get("resource_ids")
+    modules = {}
     previous_bytecode = sys.dont_write_bytecode
-    # register_icons imports resource_ids by its historic absolute name. Borrow
-    # that alias only during loading and restore it, so another tool's module
-    # cannot silently supply a different validator. Loading writes no pyc files.
+    original_import = builtins.__import__
+
+    def local_module(name):
+        if name in modules:
+            return modules[name]
+        module_name = "_nextgame_art_" + name + "_" + suffix
+        if module_name in loaded_names:
+            return sys.modules[module_name]
+        path = (tool_root / (name + ".py")).resolve(strict=True)
+        if path.parent != tool_root:
+            raise ValueError("Resource validator dependencies must remain in the selected tool directory")
+        source = sources[name] if name in sources else path.read_bytes()
+        checked.setdefault(path, {"path": str(path), "sha256": _hash(source)})
+        # Register the private identity before execution, including circular imports.
+        loaded_names.append(module_name)
+        module = _load_module(path, module_name, source=source, importer=scoped_import)
+        modules[name] = module
+        return module
+
+    def scoped_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if level or not name:
+            raise ValueError("Resource validators require absolute flat local module imports")
+        if name.split(".", 1)[0] in sys.stdlib_module_names:
+            return original_import(name, globals, locals, fromlist, level)
+        if "." in name or not name.isidentifier():
+            raise ValueError("Resource validator dependencies must be flat modules in the selected tool directory")
+        try:
+            return local_module(name)
+        except FileNotFoundError as exc:
+            raise ValueError("Resource validator dependency missing from selected tool directory: " + name) from exc
+
+    # Historic absolute local imports resolve only inside this invocation. No
+    # sys.path entry or public sys.modules alias can select another tool's code.
     sys.dont_write_bytecode = True
     try:
-        for key in ("resource_ids", "import_contract", "register_icons"):
-            module_name = "_nextgame_art_" + key + "_" + suffix
-            loaded_names.append(module_name)
-            module = _load_module(paths[key], module_name)
-            if key == "resource_ids":
-                sys.modules["resource_ids"] = module
-            elif key == "import_contract":
-                contract = module
-            else:
-                registry = module
+        contract = local_module("import_contract")
+        registry = local_module("register_icons")
         contract.validate_import_contract(manifest)
         verified_manifest, _, _ = registry._verify_readback(manifest_path, readback_path)
         if verified_manifest != manifest:
             raise ValueError("Manifest changed while resource validators were running")
     finally:
-        if previous_ids is None:
-            sys.modules.pop("resource_ids", None)
-        else:
-            sys.modules["resource_ids"] = previous_ids
         for name in loaded_names:
             sys.modules.pop(name, None)
         sys.dont_write_bytecode = previous_bytecode
-    if before != [_binding(path) for path in paths.values()]:
+    if any(record != _binding(path) for path, record in checked.items()):
         raise ValueError("Resource validator code changed during verification")
     return before
 

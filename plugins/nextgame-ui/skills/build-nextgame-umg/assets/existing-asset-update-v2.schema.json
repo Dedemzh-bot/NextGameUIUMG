@@ -1,0 +1,882 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nextgame.local/schemas/existing-asset-update-0.4.json",
+  "title": "UILayoutSpec 0.4 explicitly reviewed existing asset layout update",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "capability",
+    "mode",
+    "asset",
+    "referenceSize",
+    "profile",
+    "baseline",
+    "nodes",
+    "additions",
+    "reparents",
+    "collections"
+  ],
+  "properties": {
+    "version": {
+      "const": "0.4"
+    },
+    "capability": {
+      "const": "existing-asset-layout-update/2"
+    },
+    "mode": {
+      "enum": [
+        "prototype",
+        "production"
+      ]
+    },
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "folder",
+        "name"
+      ],
+      "properties": {
+        "folder": {
+          "type": "string",
+          "pattern": "^/Game/UI/(?:UMG|AIPrototype)(?:/[A-Za-z0-9_]+)+$"
+        },
+        "name": {
+          "$ref": "#/$defs/name"
+        }
+      }
+    },
+    "referenceSize": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "integer",
+        "minimum": 1
+      }
+    },
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "assetKind",
+        "listRole",
+        "designSizeMode"
+      ],
+      "properties": {
+        "assetKind": {
+          "enum": [
+            "screen",
+            "child-widget"
+          ]
+        },
+        "listRole": {
+          "enum": [
+            "none",
+            "entry"
+          ]
+        },
+        "designSizeMode": {
+          "enum": [
+            "FillScreen",
+            "Desired",
+            "Custom",
+            "DesiredOnScreen",
+            "CustomOnScreen",
+            null
+          ]
+        },
+        "providerSizing": {
+          "$ref": "#/$defs/providerSizing"
+        },
+        "designSizeModeTarget": {
+          "enum": [
+            "FillScreen",
+            "Desired"
+          ]
+        },
+        "desiredSizeProof": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "nodeId",
+            "size",
+            "acceptedRequirementRef"
+          ],
+          "properties": {
+            "nodeId": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "minLength": 1
+            },
+            "size": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              }
+            },
+            "acceptedRequirementRef": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "snapshot",
+        "rawTree",
+        "stateSha256"
+      ],
+      "properties": {
+        "snapshot": {
+          "$ref": "#/$defs/binding"
+        },
+        "rawTree": {
+          "$ref": "#/$defs/binding"
+        },
+        "stateSha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "classPath",
+          "isVariable",
+          "parent",
+          "role",
+          "rect",
+          "properties",
+          "slotClassPath",
+          "nativeProperties",
+          "nativeSlot"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]*$"
+          },
+          "name": {
+            "$ref": "#/$defs/name"
+          },
+          "classPath": {
+            "type": "string",
+            "minLength": 1
+          },
+          "isVariable": {
+            "type": "boolean"
+          },
+          "parent": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "role": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9.-]*$"
+          },
+          "rect": {
+            "type": "array",
+            "minItems": 4,
+            "maxItems": 4,
+            "items": false,
+            "prefixItems": [
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 1
+              },
+              {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 1
+              }
+            ]
+          },
+          "properties": {
+            "$comment": "Reserved semantic envelope. 0.3 has no implicit canonical-property lowering.",
+            "type": "object",
+            "additionalProperties": false
+          },
+          "slotClassPath": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "nativeProperties": {
+            "type": "object"
+          },
+          "nativeSlot": {
+            "type": "object"
+          },
+          "adaptiveLayout": {
+            "$ref": "#/$defs/adaptiveLayout"
+          },
+          "flowSlot": {
+            "$ref": "#/$defs/flowSlot"
+          },
+          "contentStateAcceptance": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "property",
+                "acceptedRequirementRef",
+                "reason"
+              ],
+              "properties": {
+                "property": {
+                  "enum": [
+                    "text",
+                    "visibility"
+                  ]
+                },
+                "acceptedRequirementRef": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "reason": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "additions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/addition"
+      }
+    },
+    "reparents": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/reparent"
+      }
+    },
+    "collections": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/collection"
+      }
+    }
+  },
+  "$defs": {
+    "name": {
+      "type": "string",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "adaptiveLayout": {
+      "type": "object",
+      "required": [
+        "horizontal",
+        "vertical",
+        "reason"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "horizontal": {
+          "enum": [
+            "left",
+            "center",
+            "right",
+            "stretch"
+          ]
+        },
+        "vertical": {
+          "enum": [
+            "top",
+            "center",
+            "bottom",
+            "stretch"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "flowSlot": {
+      "type": "object",
+      "required": [
+        "size",
+        "padding",
+        "horizontalAlignment",
+        "verticalAlignment"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "size": {
+          "type": "object",
+          "required": [
+            "rule"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "rule": {
+              "enum": [
+                "Auto",
+                "Fill"
+              ]
+            },
+            "weight": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "rule": {
+                    "const": "Fill"
+                  }
+                },
+                "required": [
+                  "rule"
+                ]
+              },
+              "then": {
+                "required": [
+                  "weight"
+                ]
+              },
+              "else": {
+                "not": {
+                  "required": [
+                    "weight"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "padding": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "items": false,
+          "minItems": 4,
+          "maxItems": 4
+        },
+        "horizontalAlignment": {
+          "enum": [
+            "Fill",
+            "Left",
+            "Center",
+            "Right"
+          ]
+        },
+        "verticalAlignment": {
+          "enum": [
+            "Fill",
+            "Top",
+            "Center",
+            "Bottom"
+          ]
+        }
+      }
+    },
+    "nativeProperties": {
+      "$comment": "Partial observed native fields, not UE code. Runtime validation also intersects the current ArtEditor read/write allowlist and requires unchanged protected fields.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "brush": {},
+        "brushDelegate": {},
+        "colorAndOpacity": {},
+        "foregroundColor": {},
+        "renderOpacity": {},
+        "font": {},
+        "widgetStyle": {},
+        "shadowColorAndOpacity": {},
+        "shadowOffset": {},
+        "text": {},
+        "justification": {},
+        "wrapTextAt": {},
+        "autoWrapText": {},
+        "minDesiredWidth": {},
+        "lineHeightPercentage": {},
+        "renderTransform": {},
+        "renderTransformPivot": {},
+        "visibility": {},
+        "clipping": {},
+        "pixelSnapping": {},
+        "zOffset": {},
+        "padding": {},
+        "entryWidgetClass": {},
+        "orientation": {},
+        "entryWidth": {},
+        "entryHeight": {},
+        "horizontalEntrySpacing": {},
+        "verticalEntrySpacing": {},
+        "navigation": {},
+        "widthOverride": {},
+        "heightOverride": {},
+        "minDesiredHeight": {},
+        "maxDesiredWidth": {},
+        "maxDesiredHeight": {},
+        "bOverride_WidthOverride": {},
+        "bOverride_HeightOverride": {},
+        "bOverride_MinDesiredWidth": {},
+        "bOverride_MinDesiredHeight": {},
+        "bOverride_MaxDesiredWidth": {},
+        "bOverride_MaxDesiredHeight": {}
+      }
+    },
+    "nativeSlot": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "layoutData": {},
+        "anchors": {},
+        "offsets": {},
+        "alignment": {},
+        "autoSize": {},
+        "bAutoSize": {},
+        "zOrder": {},
+        "padding": {},
+        "size": {},
+        "horizontalAlignment": {},
+        "verticalAlignment": {},
+        "row": {},
+        "column": {},
+        "rowSpan": {},
+        "columnSpan": {},
+        "layer": {},
+        "nudge": {}
+      }
+    },
+    "addition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "classPath",
+        "isVariable",
+        "parent",
+        "role",
+        "rect",
+        "nativeProperties",
+        "nativeSlot",
+        "slotClassPath",
+        "childIndex",
+        "acceptedRequirementRef"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]*$"
+        },
+        "name": {
+          "$ref": "#/$defs/name"
+        },
+        "classPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "isVariable": {
+          "type": "boolean"
+        },
+        "parent": {
+          "type": "string",
+          "minLength": 1
+        },
+        "role": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9.-]*$"
+        },
+        "rect": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": false,
+          "prefixItems": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 1
+            },
+            {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 1
+            }
+          ]
+        },
+        "nativeProperties": {
+          "type": "object"
+        },
+        "nativeSlot": {
+          "type": "object"
+        },
+        "slotClassPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "childIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "acceptedRequirementRef": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reuseEvidence": {
+          "$ref": "#/$defs/binding"
+        }
+      }
+    },
+    "reparent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "nodeId",
+        "beforeParent",
+        "afterParent",
+        "beforeSlotClassPath",
+        "afterSlotClassPath",
+        "childIndex",
+        "nativeSlot",
+        "acceptedRequirementRef"
+      ],
+      "properties": {
+        "nodeId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "beforeParent": {
+          "type": "string",
+          "minLength": 1
+        },
+        "afterParent": {
+          "type": "string",
+          "minLength": 1
+        },
+        "beforeSlotClassPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "afterSlotClassPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "childIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "nativeSlot": {
+          "type": "object"
+        },
+        "acceptedRequirementRef": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "collection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "nodeId",
+        "semantics",
+        "entryClassPath",
+        "providerAssetPath",
+        "providerLayout",
+        "entrySize",
+        "spacing",
+        "columns",
+        "hostSize",
+        "overflow",
+        "acceptedRequirementRef",
+        "visibleSize",
+        "trailingGapPolicy",
+        "layoutMode"
+      ],
+      "properties": {
+        "nodeId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "semantics": {
+          "const": "runtime-data-collection"
+        },
+        "entryClassPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "providerAssetPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "providerLayout": {
+          "$ref": "#/$defs/binding"
+        },
+        "entrySize": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          }
+        },
+        "spacing": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "columns": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "hostSize": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          }
+        },
+        "overflow": {
+          "enum": [
+            "fixed-viewport",
+            "show-all"
+          ]
+        },
+        "acceptedRequirementRef": {
+          "type": "string",
+          "minLength": 1
+        },
+        "visibleSize": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          }
+        },
+        "trailingGapPolicy": {
+          "const": "allocated-inside-host"
+        },
+        "layoutMode": {
+          "enum": [
+            "grid",
+            "single-entry",
+            "linear"
+          ]
+        }
+      }
+    },
+    "consumer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "assetPath",
+        "widgetName",
+        "entrySize",
+        "acceptedRequirementRef"
+      ],
+      "properties": {
+        "assetPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "widgetName": {
+          "$ref": "#/$defs/name"
+        },
+        "entrySize": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          }
+        },
+        "acceptedRequirementRef": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": [
+            "collection",
+            "named-slot-content"
+          ]
+        },
+        "slotName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hostEvidence": {
+          "$ref": "#/$defs/binding"
+        }
+      }
+    },
+    "providerSizing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "targetSize",
+        "rootSizingNodeId",
+        "consumers",
+        "acceptedRequirementRef",
+        "sizingMode",
+        "supportedSizes",
+        "visibleSize",
+        "contentSizing"
+      ],
+      "properties": {
+        "targetSize": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          }
+        },
+        "rootSizingNodeId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "consumers": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/consumer"
+          }
+        },
+        "acceptedRequirementRef": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sizingMode": {
+          "enum": [
+            "fixed",
+            "host-adaptive"
+          ]
+        },
+        "supportedSizes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          }
+        },
+        "visibleSize": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          }
+        },
+        "contentSizing": {
+          "enum": [
+            "fixed-footprint",
+            "fill-host"
+          ]
+        },
+        "inheritedProviderLayout": {
+          "$ref": "#/$defs/binding"
+        }
+      }
+    }
+  }
+}

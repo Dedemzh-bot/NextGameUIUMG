@@ -134,7 +134,8 @@
           "shared-node-states/1",
           "content-driven-child-size/1",
           "content-driven-child-size/2",
-          "existing-asset-property-update/1"
+          "existing-asset-property-update/1",
+          "existing-asset-layout-update/2"
         ]
       },
       "not": {

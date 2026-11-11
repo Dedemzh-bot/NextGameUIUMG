@@ -1,0 +1,675 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nextgame.local/schemas/existing-update-review-1.json",
+  "title": "Supplemental read-only existing-update review/1; no execution or acceptance authority",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/report"
+    },
+    {
+      "$ref": "#/$defs/ownership"
+    },
+    {
+      "$ref": "#/$defs/dependencies"
+    }
+  ],
+  "$defs": {
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "ownership": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "version",
+        "assetPath",
+        "currentSnapshot",
+        "records"
+      ],
+      "properties": {
+        "kind": {
+          "const": "nextgame-ui-widget-ownership"
+        },
+        "version": {
+          "const": "1"
+        },
+        "assetPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "currentSnapshot": {
+          "$ref": "#/$defs/binding"
+        },
+        "records": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "widgetName",
+              "ownerKind",
+              "evidence",
+              "jsonPointer",
+              "reason"
+            ],
+            "properties": {
+              "widgetName": {
+                "type": "string",
+                "minLength": 1
+              },
+              "ownerKind": {
+                "enum": [
+                  "generated",
+                  "manual"
+                ]
+              },
+              "evidence": {
+                "$ref": "#/$defs/binding"
+              },
+              "jsonPointer": {
+                "type": "string"
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "dependencies": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "version",
+        "assetPath",
+        "currentSnapshot",
+        "records"
+      ],
+      "properties": {
+        "kind": {
+          "const": "nextgame-ui-widget-reference-evidence"
+        },
+        "version": {
+          "const": "1"
+        },
+        "assetPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "currentSnapshot": {
+          "$ref": "#/$defs/binding"
+        },
+        "records": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "widgetName",
+              "referenceKind",
+              "evidence",
+              "jsonPointer",
+              "reason"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "widgetName": {
+                "type": "string",
+                "minLength": 1
+              },
+              "referenceKind": {
+                "enum": [
+                  "blueprint",
+                  "animation",
+                  "native",
+                  "lua",
+                  "named-slot"
+                ]
+              },
+              "evidence": {
+                "$ref": "#/$defs/binding"
+              },
+              "jsonPointer": {
+                "type": "string"
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "report": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "version",
+        "assetPath",
+        "status",
+        "readOnly",
+        "executionAllowed",
+        "formalGatesValidated",
+        "visualVerified",
+        "inputs",
+        "authority",
+        "targetPlanSha256",
+        "baselineMatchesCurrent",
+        "ownership",
+        "plannedGeneratedWidgets",
+        "referenceCoverage",
+        "operations",
+        "currentDrift",
+        "widgetOrder",
+        "issues",
+        "summary",
+        "nextActions",
+        "designReference"
+      ],
+      "properties": {
+        "kind": {
+          "const": "nextgame-ui-existing-update-review"
+        },
+        "version": {
+          "const": "1"
+        },
+        "assetPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "enum": [
+            "blocked",
+            "review-ready"
+          ]
+        },
+        "readOnly": {
+          "const": true
+        },
+        "executionAllowed": {
+          "const": false
+        },
+        "formalGatesValidated": {
+          "const": false
+        },
+        "visualVerified": {
+          "const": false
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "layout",
+            "baselineSnapshot",
+            "currentSnapshot",
+            "ownership",
+            "dependencies"
+          ],
+          "properties": {
+            "layout": {
+              "$ref": "#/$defs/binding"
+            },
+            "baselineSnapshot": {
+              "$ref": "#/$defs/binding"
+            },
+            "currentSnapshot": {
+              "$ref": "#/$defs/binding"
+            },
+            "ownership": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/binding"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "dependencies": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/binding"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        "authority": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/binding"
+          }
+        },
+        "targetPlanSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "baselineMatchesCurrent": {
+          "type": "boolean"
+        },
+        "ownership": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "widgetName",
+              "objectStatus",
+              "ownerKind",
+              "ownershipStatus",
+              "ownershipProven",
+              "reason",
+              "evidence"
+            ],
+            "properties": {
+              "widgetName": {
+                "type": "string",
+                "minLength": 1
+              },
+              "ownerKind": {
+                "enum": [
+                  "generated",
+                  "manual",
+                  "inherited",
+                  "unknown"
+                ]
+              },
+              "ownershipStatus": {
+                "enum": [
+                  "observed",
+                  "evidence-bound-declaration",
+                  "unproven"
+                ]
+              },
+              "ownershipProven": {
+                "type": "boolean"
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              },
+              "evidence": {
+                "$ref": "#/$defs/binding"
+              },
+              "objectStatus": {
+                "enum": [
+                  "actual-uobject",
+                  "inherited-declaration-without-uobject"
+                ]
+              }
+            }
+          }
+        },
+        "plannedGeneratedWidgets": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "referenceCoverage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "complete",
+            "missingKinds",
+            "reportedKinds",
+            "hits"
+          ],
+          "properties": {
+            "complete": {
+              "const": false
+            },
+            "missingKinds": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "animation-enumeration",
+                  "native-enumeration",
+                  "external-lua-enumeration"
+                ]
+              }
+            },
+            "reportedKinds": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "blueprint",
+                  "animation",
+                  "native",
+                  "lua",
+                  "named-slot"
+                ]
+              }
+            },
+            "hits": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "widgetName",
+                  "kind",
+                  "certainty",
+                  "evidence",
+                  "jsonPointer",
+                  "reason"
+                ],
+                "properties": {
+                  "widgetName": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "kind": {
+                    "enum": [
+                      "exposed-variable",
+                      "protected-reference",
+                      "blueprint",
+                      "named-slot",
+                      "animation",
+                      "native",
+                      "lua"
+                    ]
+                  },
+                  "certainty": {
+                    "enum": [
+                      "observed",
+                      "possible-text-hit",
+                      "reported-evidence-bound"
+                    ]
+                  },
+                  "evidence": {
+                    "$ref": "#/$defs/binding"
+                  },
+                  "jsonPointer": {
+                    "type": "string"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "operationId",
+              "kind",
+              "widgetName",
+              "property",
+              "before",
+              "after",
+              "current",
+              "status",
+              "explanation",
+              "affectedWidgetNames",
+              "referenceHitCount"
+            ],
+            "properties": {
+              "operationId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "kind": {
+                "enum": [
+                  "set-designer-mode",
+                  "set-property",
+                  "set-slot",
+                  "reparent-widget",
+                  "add-widget"
+                ]
+              },
+              "widgetName": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "property": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "before": {},
+              "after": {},
+              "current": {},
+              "status": {
+                "enum": [
+                  "pending",
+                  "target-observed",
+                  "conflict",
+                  "unsupported"
+                ]
+              },
+              "explanation": {
+                "type": "string",
+                "minLength": 1
+              },
+              "affectedWidgetNames": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "referenceHitCount": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        },
+        "currentDrift": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "widgetName",
+              "changes"
+            ],
+            "properties": {
+              "widgetName": {
+                "type": "string",
+                "minLength": 1
+              },
+              "changes": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "pointer",
+                    "change",
+                    "before",
+                    "after"
+                  ],
+                  "properties": {
+                    "pointer": {
+                      "type": "string"
+                    },
+                    "change": {
+                      "enum": [
+                        "added",
+                        "removed",
+                        "changed"
+                      ]
+                    },
+                    "before": {},
+                    "after": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "widgetOrder": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "baseline",
+            "current",
+            "plannedRootOrder",
+            "plannedChildOrder"
+          ],
+          "properties": {
+            "baseline": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "current": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "plannedRootOrder": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "plannedChildOrder": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        },
+        "issues": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "code",
+              "message",
+              "operationId",
+              "widgetName"
+            ],
+            "properties": {
+              "code": {
+                "type": "string",
+                "minLength": 1
+              },
+              "message": {
+                "type": "string",
+                "minLength": 1
+              },
+              "operationId": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "widgetName": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "summary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "actualWidgetCount",
+            "unknownOwnershipCount",
+            "declaredOwnershipCount",
+            "operationCount",
+            "pendingCount",
+            "targetObservedCount",
+            "blockingIssueCount"
+          ],
+          "properties": {
+            "actualWidgetCount": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "unknownOwnershipCount": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "declaredOwnershipCount": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "operationCount": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "pendingCount": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "targetObservedCount": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "blockingIssueCount": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "nextActions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "designReference": {
+          "const": "https://github.com/DiracSea12/Design2UMG/blob/master/Source/Design2UMGEditor/Private/DesignImportReimportConflict.cpp"
+        }
+      }
+    }
+  }
+}

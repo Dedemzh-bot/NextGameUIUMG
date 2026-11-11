@@ -12,6 +12,7 @@ from typing import Any
 from _contract_common import ASSETS_ROOT, issue, load_json, resolve_contract_path, result
 from validate_build_bundle import DEFAULT_SCHEMA as BUNDLE_SCHEMA, validate_build_bundle
 from validate_requirement_spec import DEFAULT_SCHEMA as REQUIREMENT_SCHEMA, build_requirement_index
+from _inherited_provider_coverage import _inherited_provider_coverage
 from semantic_text import validate_semantic_text_coverage
 from _bundle_capabilities import validate_shared_states
 
@@ -41,10 +42,11 @@ def _load_layout_nodes(bundle: dict[str, Any], bundle_path: Path | None, errors:
             continue
         nodes_by_asset[asset["id"]] = {
             node["id"]: node
-            for node in layout.get("nodes", [])
+            for node in layout.get("nodes", []) + (layout.get("additions", []) if layout.get("version") == "0.4" and layout.get("capability") == "existing-asset-layout-update/2" else [])
             if isinstance(node, dict) and isinstance(node.get("id"), str)
         }
     return nodes_by_asset
+
 
 
 def _role_matches_element_kind(kind: Any, role: Any) -> bool:
@@ -128,6 +130,8 @@ def validate_requirement_coverage(bundle: Any, requirement: Any, *, bundle_path:
         for relation in bundle.get("reuseRelations", []):
             if isinstance(relation, dict):
                 mapped_requirements.update(ref for ref in relation.get("requirementRefs", []) if isinstance(ref, str))
+    inherited_refs, inherited_regions = _inherited_provider_coverage(bundle, requirement, bundle_path, accepted_claims, errors)
+    mapped_requirements.update(inherited_refs)
     verified_requirements = {
         ref
         for check in bundle.get("verification", {}).get("checks", [])
@@ -231,6 +235,10 @@ def validate_requirement_coverage(bundle: Any, requirement: Any, *, bundle_path:
 
     for region_id, region in index["byKind"].get("region", {}).items():
         if region.get("inBuildScope") is not True or not (set(region.get("claimIds", [])) & accepted_claims):
+            continue
+        if region_id in inherited_regions:
+            # Proven inherited canvas sizing is asset-level evidence; there is
+            # deliberately no editable own-root UObject to map or fabricate.
             continue
         region_mappings = [mapping for mapping in mappings if region_id in mapping.get("requirementRefs", [])]
         screen_mappings = [

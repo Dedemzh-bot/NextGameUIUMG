@@ -236,6 +236,33 @@ class ArtEditor:
         return {"version": 1, "kind": "nextgame-ui-art-snapshot", "capturedAt": dt.datetime.now(dt.timezone.utc).isoformat(),
             "acquisition": acquisition, "assets": assets}
 
+    def composition_evidence(self, asset_paths: list[str]) -> dict:
+        """Read-only raw sidecar; never flatten NamedSlot bindings into parent.
+
+        Separate from the closed art-snapshot/1 used for compare-and-swap. This
+        evidence still needs explicit source/code analysis and normalization.
+        """
+        paths = [_asset(path) for path in asset_paths]
+        if not paths or len(paths) != len(set(paths)):
+            raise ValueError("Composition evidence needs nonempty unique asset paths")
+        raw = self._program(_SNAPSHOT_PROGRAM,
+            {"paths": paths, "visualProperties": sorted(VISUAL_PROPERTIES), "slotProperties": sorted(SLOT_PROPERTIES)},
+            [(UMG, "GetWidgets"), (OBJ, "list_properties"), (OBJ, "get_properties"), (OBJ, "get_class"),
+             (BP, "get_default_object"), (UMG, "GetNamedSlots"), (BP, "list_graphs"), (BP, "read_graph_dsl")])
+        if not isinstance(raw, dict) or not isinstance(raw.get("assets"), list) or len(raw["assets"]) != len(paths):
+            raise CapabilityError("Incomplete composition evidence response")
+        if [item.get("assetPath") for item in raw["assets"]] != paths:
+            raise CapabilityError("Composition evidence returned unexpected asset identities")
+        for item in raw["assets"]:
+            if not isinstance(item.get("tree"), dict) or not isinstance(item.get("namedSlots"), list):
+                raise CapabilityError("Missing WidgetTree or raw NamedSlot bindings")
+        return {"kind": "nextgame-umg-composition-evidence", "version": 1,
+            "capturedAt": dt.datetime.now(dt.timezone.utc).isoformat(),
+            "acquisition": {"method": "official-unreal-mcp"}, "assets": raw["assets"],
+            "unresolved": ["Inherited and nested dependencies require explicit asset expansion.",
+                "Runtime class-path defaults, Lua injection and conditional alternatives require separate readback/code evidence.",
+                "This raw acquisition is not normalized source, production execution support or composition acceptance."]}
+
     def _widget(self, asset_path: str, name: str) -> dict:
         matches = [w for w in self._tree(asset_path)["widgets"] if w["widgetName"] == name]
         if len(matches) != 1:
